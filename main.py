@@ -160,12 +160,23 @@ def fetch_latest_tweets(username, limit):
         print(f"❌ Twitter fetch failed: {e}")
         return []
 
-def post_to_twitter(text):
-    try:
-        client_twitter.create_tweet(text=text)
-        print("🐦 Posted to Twitter!")
-    except Exception as e:
-        print("❌ Failed to post tweet:", e)
+def post_to_twitter(text, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            client_twitter.create_tweet(text=text)
+            print("🐦 Posted to Twitter!")
+            return True
+        except tweepy.TooManyRequests as e:
+            reset_time = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
+            wait_seconds = max(60, reset_time - int(time.time()))
+            print(f"🚫 Rate limit hit. Waiting {wait_seconds} seconds before retrying...")
+            wait_with_progress(wait_seconds)
+        except Exception as e:
+            print(f"❌ Failed to post tweet (attempt {attempt + 1}/{max_retries}): {e}")
+            time.sleep(10 + attempt * 5)  # Exponential-ish backoff
+    print("⚠️ Failed to post after retries.")
+    return False
+
 
 # Main loop
 def main_loop():
@@ -191,18 +202,19 @@ def main_loop():
 
                 print("📥 Original Tweet:", tweet)
 
-                # Translate (if needed)
-                # translated = translate_to_korean(tweet)
-                # post_to_twitter(translated)
- 
-                # Rewrite as breaking news
+                # Generate tweet
                 breaking_news_tweet = rewrite_as_breaking_news(tweet)
                 print("📝 Breaking News Tweet:", breaking_news_tweet)
-                post_to_twitter(breaking_news_tweet)
+ 
+                # Try posting with retry
+                success = post_to_twitter(breaking_news_tweet)
 
-                new_posts.append(tweet)
-                post_delay = random.randint(120, 240)
-                wait_with_progress(post_delay)
+                if success:
+                    new_posts.append(tweet)
+                    post_delay = random.randint(120, 240)
+                    wait_with_progress(post_delay)
+                else:
+                    print("⛔ Tweet skipped after failed attempts.")
 
             posted_tweets.update(new_posts)
             save_json(list(posted_tweets), POSTED_TWEETS_FILE)
