@@ -6,6 +6,12 @@ import json
 from config import set_environment
 from tqdm import tqdm
 import random
+from datetime import datetime
+from kakao import (
+    request_access_token,
+    ensure_token,
+    send_kakao_message
+)
 
 # 🔧 Load environment variables
 set_environment()
@@ -167,8 +173,9 @@ def post_to_twitter(text, max_retries=3):
             print("🐦 Posted to Twitter!")
             return True
         except tweepy.TooManyRequests as e:
-            reset_time = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
-            wait_seconds = max(60, reset_time - int(time.time()))
+            # reset_time = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
+            # wait_seconds = max(60, reset_time - int(time.time()))
+            wait_seconds = 30
             print(f"🚫 Rate limit hit. Waiting {wait_seconds} seconds before retrying...")
             wait_with_progress(wait_seconds)
         except Exception as e:
@@ -186,38 +193,44 @@ def main_loop():
     empty_cycle_count = 0
 
     while True:
-        tweets = fetch_latest_tweets(TWITTER_USER, TWEET_LIMIT)
+        # tweets = fetch_latest_tweets(TWITTER_USER, TWEET_LIMIT)
 
-        if not tweets:
-            print("⚠️ No new tweets. Skipping...")
-            empty_cycle_count += 1
-        else:
-            empty_cycle_count = 0
-            new_posts = []
+        # if not tweets:
+        #     print("⚠️ No new tweets. Skipping...")
+        #     empty_cycle_count += 1
+        # else:
+        #     empty_cycle_count = 0
+        #     new_posts = []
 
-            for tweet in tqdm(tweets, desc="🧠 Processing Tweets", unit="tweet"):
-                if tweet in posted_tweets:
-                    print("⏩ Skipping duplicate tweet") 
-                    continue
+        send_kakao_message("Test Send Message !")
+        time.sleep(30)
+        
+            # for tweet in tqdm(tweets, desc="🧠 Processing Tweets", unit="tweet"):
+            #     if tweet in posted_tweets:
+            #         print("⏩ Skipping duplicate tweet") 
+            #         continue
 
-                print("📥 Original Tweet:", tweet)
+            #     print("📥 Original Tweet:", tweet)
 
-                # Generate tweet
-                breaking_news_tweet = rewrite_as_breaking_news(tweet)
-                print("📝 Breaking News Tweet:", breaking_news_tweet)
- 
-                # Try posting with retry
-                success = post_to_twitter(breaking_news_tweet)
+            #     # Generate tweet
+            #     breaking_news_tweet = rewrite_as_breaking_news(tweet)
+            #     print("📝 Breaking News Tweet:", breaking_news_tweet)
 
-                if success:
-                    new_posts.append(tweet)
-                    post_delay = random.randint(120, 240)
-                    wait_with_progress(post_delay)
-                else:
-                    print("⛔ Tweet skipped after failed attempts.")
+            #     # Send Kakao Message First
+            #     send_kakao_message(breaking_news_tweet)
 
-            posted_tweets.update(new_posts)
-            save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+            #     # Try posting with retry
+            #     success = post_to_twitter(breaking_news_tweet)
+
+            #     if success:
+            #         new_posts.append(tweet)
+            #         post_delay = random.randint(120, 240)
+            #         wait_with_progress(post_delay)
+            #     else:
+            #         print("⛔ Tweet skipped after failed attempts.")
+
+            # posted_tweets.update(new_posts)
+            # save_json(list(posted_tweets), POSTED_TWEETS_FILE)
 
         delay = 30
         print(f"✅ Cycle complete. Waiting {delay} seconds before next check...\n")
