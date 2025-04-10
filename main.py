@@ -19,8 +19,9 @@ set_environment()
 # 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-TWITTER_USER = "Investingcom"
+# TWITTER_USER = "Investingcom"
 # TWITTER_USER = "BRICSinfo"
+TWITTER_USER = "DeItaone"
 TWEET_LIMIT = 5
 
 # Twitter Clients
@@ -193,44 +194,41 @@ def main_loop():
     empty_cycle_count = 0
 
     while True:
-        # tweets = fetch_latest_tweets(TWITTER_USER, TWEET_LIMIT)
+        tweets = fetch_latest_tweets(TWITTER_USER, TWEET_LIMIT)
 
-        # if not tweets:
-        #     print("⚠️ No new tweets. Skipping...")
-        #     empty_cycle_count += 1
-        # else:
-        #     empty_cycle_count = 0
-        #     new_posts = []
-
-        send_kakao_message("Test Send Message !")
-        time.sleep(30)
+        if not tweets:
+            print("⚠️ No new tweets. Skipping...")
+            empty_cycle_count += 1
+        else:
+            empty_cycle_count = 0
+            new_posts = []
         
-            # for tweet in tqdm(tweets, desc="🧠 Processing Tweets", unit="tweet"):
-            #     if tweet in posted_tweets:
-            #         print("⏩ Skipping duplicate tweet") 
-            #         continue
+            for tweet in tqdm(tweets, desc="🧠 Processing Tweets", unit="tweet"):
+                if tweet in posted_tweets:
+                    print("⏩ Skipping duplicate tweet") 
+                    continue
 
-            #     print("📥 Original Tweet:", tweet)
+                print("📥 Original Tweet:", tweet) 
 
-            #     # Generate tweet
-            #     breaking_news_tweet = rewrite_as_breaking_news(tweet)
-            #     print("📝 Breaking News Tweet:", breaking_news_tweet)
+                # Generate tweet
+                breaking_news_tweet = rewrite_as_breaking_news(tweet)
+                print("📝 Breaking News Tweet:", breaking_news_tweet)
 
-            #     # Send Kakao Message First
-            #     send_kakao_message(breaking_news_tweet)
+                # Send Kakao Message First 
+                # send_kakao_message(breaking_news_tweet)
 
-            #     # Try posting with retry
-            #     success = post_to_twitter(breaking_news_tweet)
+                # Try posting with retry
+                success = post_to_twitter(breaking_news_tweet)
 
-            #     if success:
-            #         new_posts.append(tweet)
-            #         post_delay = random.randint(120, 240)
-            #         wait_with_progress(post_delay)
-            #     else:
-            #         print("⛔ Tweet skipped after failed attempts.")
+                if success:
+                    new_posts.append(tweet)
+                    post_delay = random.randint(120, 240)
+                    wait_with_progress(post_delay)
+                else:
+                    print("⛔ Tweet skipped after failed attempts.")
 
-            # posted_tweets.update(new_posts)
-            # save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+            posted_tweets.update(new_posts)
+            save_json(list(posted_tweets), POSTED_TWEETS_FILE)
 
         delay = 30
         print(f"✅ Cycle complete. Waiting {delay} seconds before next check...\n")
