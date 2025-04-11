@@ -192,8 +192,8 @@ def main_loop():
         process_user(username, posted_tweets)
         user_queue.append(username)
         print(f"✅ Done with @{username}. Waiting 60s before next user...\n")
-        wait_with_progress(60)
-
+        wait_with_progress(90) 
+  
 if __name__ == "__main__":
     try:
         main_loop()
