@@ -6,12 +6,6 @@ import json
 from config import set_environment
 from tqdm import tqdm
 import random
-from datetime import datetime
-from kakao import (
-    request_access_token,
-    ensure_token,
-    send_kakao_message
-)
 
 # 🔧 Load environment variables
 set_environment()
@@ -19,9 +13,10 @@ set_environment()
 # 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-# TWITTER_USER = "Investingcom"
-# TWITTER_USER = "BRICSinfo"
-TWITTER_USER = "DeItaone"
+
+# 유저 큐 설정
+user_queue = ["DeItaone", "Investingcom", "BRICSinfo"]  # 원하는 유저를 이 리스트에 추가하세요
+
 TWEET_LIMIT = 5
 
 # Twitter Clients
@@ -113,8 +108,7 @@ def rewrite_as_breaking_news(text, retry=3):
     🔹 뉴스는 있는 그대로 전해주세요.
     🔹 뉴스 내용에 맞는 긴장감과 어조를 사용해주세요.
     🔹 핵심 정보는 반드시 유지해주세요.
-    🔹 트윗의 마지막에는 투자자들이 취해야 할 스탠스를 뉴스를 바탕으로 분석적으로 제시해주세요. 투자와 관련이 없는 뉴스이면 제시안해도 됩니다. 
-    🔹 해시태그는 영어로 유지하고, 필요하면 하나 정도만 포함하세요. 이모지는 뉴스 상황에 맞게 써주세요!
+    🔹 해시태그는 영어로 유지하고, 필요하면 한두개 정도만 포함하세요. 이모지는 뉴스 상황에 맞게 써주세요!
     🔹 최종 결과는 한국어로 작성되어야 하며, 해시태그만 영어로 남겨야 합니다.
 
     트윗 원문:
@@ -185,8 +179,7 @@ def post_to_twitter(text, max_retries=3):
     print("⚠️ Failed to post after retries.")
     return False
 
-
-# Main loop
+# Main Loop
 def main_loop():
     print("\n🚀 [START] Twitter Translator + Poster")
 
@@ -194,30 +187,33 @@ def main_loop():
     empty_cycle_count = 0
 
     while True:
-        tweets = fetch_latest_tweets(TWITTER_USER, TWEET_LIMIT)
+        if not user_queue:
+            print("⚠️ 유저 큐가 비어 있습니다.")
+            break
+
+        username = user_queue.pop(0)  # 맨 앞 사용자 꺼내기
+        print(f"\n🔁 Checking tweets for: @{username}")
+        tweets = fetch_latest_tweets(username, TWEET_LIMIT)
 
         if not tweets:
-            print("⚠️ No new tweets. Skipping...")
+            print(f"⚠️ No new tweets for @{username}. Re-adding to end of queue.")
             empty_cycle_count += 1
         else:
             empty_cycle_count = 0
             new_posts = []
-        
-            for tweet in tqdm(tweets, desc="🧠 Processing Tweets", unit="tweet"):
+
+            for tweet in tqdm(tweets, desc=f"🧠 Processing Tweets from @{username}", unit="tweet"):
                 if tweet in posted_tweets:
                     print("⏩ Skipping duplicate tweet") 
                     continue
 
-                print("📥 Original Tweet:", tweet) 
+                print("📥 Original Tweet:", tweet)
 
-                # Generate tweet
                 breaking_news_tweet = rewrite_as_breaking_news(tweet)
                 print("📝 Breaking News Tweet:", breaking_news_tweet)
 
-                # Send Kakao Message First 
-                # send_kakao_message(breaking_news_tweet)
+                # send_kakao_message(breaking_news_tweet)  # 카카오 연동 시 사용
 
-                # Try posting with retry
                 success = post_to_twitter(breaking_news_tweet)
 
                 if success:
@@ -230,9 +226,13 @@ def main_loop():
             posted_tweets.update(new_posts)
             save_json(list(posted_tweets), POSTED_TWEETS_FILE)
 
+        # 무조건 사용자 다시 큐 뒤로 추가
+        user_queue.append(username)
+
         delay = 30
         print(f"✅ Cycle complete. Waiting {delay} seconds before next check...\n")
         wait_with_progress(delay)
+
 
 if __name__ == "__main__":
     try:
