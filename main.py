@@ -18,13 +18,13 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
-user_queue = deque(["TrumpDailyPosts", "DeItaone", "Investingcom", "BRICSinfo"])
+user_queue = deque(["Investingcom", "DeItaone", "BRICSinfo", "TrumpDailyPosts",])
 TWEET_LIMIT = 5
 
 # Twitter Clients
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
-client_twitter = tweepy.Client(
+client_twitter = tweepy.Client( 
     consumer_key=os.getenv("TWITTER_API_KEY"),
     consumer_secret=os.getenv("TWITTER_API_SECRET"), 
     access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
