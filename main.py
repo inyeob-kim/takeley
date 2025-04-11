@@ -15,7 +15,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 유저 큐 설정
-user_queue = ["DeItaone", "Investingcom", "BRICSinfo"]  # 원하는 유저를 이 리스트에 추가하세요
+user_queue = ["DeItaone", "Investingcom", "BRICSinfo", "SawyerMerritt"]  # 원하는 유저를 이 리스트에 추가하세요
 
 TWEET_LIMIT = 5
 
@@ -137,14 +137,15 @@ def fetch_latest_tweets(username, limit):
 
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
-        tweets = [tweet.text for tweet in tweets_data]
+        # 트윗 ID와 텍스트 함께 반환
+        tweets = [(tweet.id, tweet.text) for tweet in tweets_data]
 
         if tweets_data:
             latest_id = tweets_data[0].id
             save_last_seen_id(username, latest_id)
 
         print(f"✅ {len(tweets)} new tweets fetched")
-        save_json(tweets, CACHE_FILE)
+        save_json([t[1] for t in tweets], CACHE_FILE)  # 텍스트만 저장
         return tweets
 
     except tweepy.TooManyRequests as e:
@@ -156,7 +157,8 @@ def fetch_latest_tweets(username, limit):
 
     except Exception as e:
         print(f"❌ Twitter fetch failed: {e}")
-        return []
+        return [] 
+
 
 def post_to_twitter(text, max_retries=3):
     for attempt in range(max_retries):
@@ -199,24 +201,27 @@ def main_loop():
             empty_cycle_count = 0
             new_posts = []
 
-            for tweet in tqdm(tweets, desc=f"🧠 Processing Tweets from @{username}", unit="tweet"):
-                if tweet in posted_tweets:
-                    print("⏩ Skipping duplicate tweet") 
+            for tweet_id, tweet_text in tqdm(tweets, desc=f"🧠 Processing Tweets from @{username}", unit="tweet"):
+                if tweet_text in posted_tweets:
+                    print("⏩ Skipping duplicate tweet")
                     continue
 
-                print("📥 Original Tweet:", tweet)
+                print("📥 Original Tweet:", tweet_text)
 
-                breaking_news_tweet = rewrite_as_breaking_news(tweet)
-                print("📝 Breaking News Tweet:", breaking_news_tweet)
+                breaking_news_tweet = rewrite_as_breaking_news(tweet_text)
+                
+                # 원본 트윗 URL 추가
+                tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+                final_text = f"{breaking_news_tweet}\n\n🔗 {tweet_url}"
 
-                # send_kakao_message(breaking_news_tweet)  # 카카오 연동 시 사용
+                print("📝 Final Tweet with URL:", final_text)
 
-                success = post_to_twitter(breaking_news_tweet)
+                success = post_to_twitter(final_text)
 
                 if success:
-                    new_posts.append(tweet)
+                    new_posts.append(final_text)
                     post_delay = random.randint(30, 60)
-                    wait_with_progress(post_delay)
+                    wait_with_progress(post_delay) 
                 else:
                     print("⛔ Tweet skipped after failed attempts.")
 
