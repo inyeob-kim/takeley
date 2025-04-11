@@ -173,10 +173,11 @@ def process_user(username, posted_tweets):
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text)
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-        final_text = f"{breaking_news}\n\n #BREAKING #BreakingNews #MarketAlert #StockMarket\n\n{tweet_url}"
+        # final_text = f"{breaking_news}\n\n #BREAKING #BreakingNews #MarketAlert #StockMarket\n\n{tweet_url}"
+         final_text = f"{breaking_news}\n\n #BREAKING #BreakingNews #MarketAlert #StockMarket"
  
         success = post_to_twitter(final_text)
-        if success:
+        if success: 
             new_posts.append(str(tweet_id))
 
     posted_tweets.update(new_posts)
