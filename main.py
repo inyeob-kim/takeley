@@ -99,6 +99,7 @@ def rewrite_as_breaking_news(text, retry=3):
         - 해시태그는 절대 사용하지 말 것
         - 분석, 감성, 의견은 절대 넣지 말고 **사실(Fact)만** 전달
         - 만약 특별한 의미가 있는 트윗이라고 판단이 되지 않으면, 그냥 해석해서 있는 그대로 전달
+        - 만약 트윗이 URL 링크뿐이라면 그냥 해석할 필요 없고 empty string 리턴.
 
         트윗 원문:
         \"{text}\"
@@ -113,7 +114,7 @@ def rewrite_as_breaking_news(text, retry=3):
         except Exception as e:
             print(f"⚠️ Rewriting failed (attempt {attempt+1}/{retry}): {e}")
             time.sleep(2)
-    return f"[GPT 실패] 원문 그대로 전달:\n\n{text}"
+    return f"번역 실패. 원문 그대로 전달:\n\n{text}"
 
 # 트윗 가져오기
 def fetch_latest_tweets(username, limit):
