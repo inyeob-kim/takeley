@@ -218,7 +218,7 @@ def main_loop():
 
                 if success:
                     new_posts.append(tweet)
-                    post_delay = random.randint(120, 240)
+                    post_delay = random.randint(30, 60)
                     wait_with_progress(post_delay)
                 else:
                     print("⛔ Tweet skipped after failed attempts.")
