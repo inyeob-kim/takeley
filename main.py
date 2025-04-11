@@ -18,7 +18,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
-user_queue = deque(["TrumpDailyPosts", "DeItaone", "BRICSinfo",])
+user_queue = deque(["TrumpDailyPosts", "DeItaone", "BRICSinfo", "Investingcom"])
 TWEET_LIMIT = 5
 
 # Twitter Clients
