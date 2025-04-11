@@ -17,8 +17,8 @@ set_environment()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
-# 유저 큐 설정
-user_queue = deque(["Investingcom", "BRICSinfo", "DeItaone", "TrumpDailyPosts"])
+# 사용자 큐 설정
+user_queue = deque(["TrumpDailyPosts", "DeItaone", "BRICSinfo",])
 TWEET_LIMIT = 5
 
 # Twitter Clients
@@ -26,7 +26,7 @@ client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
 client_twitter = tweepy.Client(
     consumer_key=os.getenv("TWITTER_API_KEY"),
-    consumer_secret=os.getenv("TWITTER_API_SECRET"),
+    consumer_secret=os.getenv("TWITTER_API_SECRET"), 
     access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
     access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 )
@@ -156,44 +156,39 @@ def post_to_twitter(text, max_retries=3):
     return False
 
 # 사용자별 트윗 처리
-async def process_user(username, posted_tweets, lock):
-    loop = asyncio.get_event_loop()
-    tweets = await loop.run_in_executor(None, functools.partial(fetch_latest_tweets, username, TWEET_LIMIT))
-
+def process_user(username, posted_tweets):
+    tweets = fetch_latest_tweets(username, TWEET_LIMIT)
     new_posts = []
     for tweet_id, tweet_text in tweets:
         if str(tweet_id) in posted_tweets:
             continue
 
         print(f"🧠 @{username}: {tweet_text}")
-        breaking_news = await loop.run_in_executor(None, functools.partial(rewrite_as_breaking_news, tweet_text))
+        breaking_news = rewrite_as_breaking_news(tweet_text)
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         final_text = f"{breaking_news}\n\n🔗 {tweet_url}"
 
-        success = await loop.run_in_executor(None, functools.partial(post_to_twitter, final_text))
+        success = post_to_twitter(final_text)
         if success:
             new_posts.append(str(tweet_id))
-            await asyncio.sleep(random.randint(15, 30))
 
-    async with lock: 
-        posted_tweets.update(new_posts)
-        save_json(list(posted_tweets), POSTED_TWEETS_FILE)
- 
+    posted_tweets.update(new_posts)
+    save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+
 # 메인 루프
-async def main_loop():
-    print("\n🚀 [START] Async Twitter Translator + Poster")
+def main_loop():
+    print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
     posted_tweets = load_json(POSTED_TWEETS_FILE)
-    lock = asyncio.Lock()
 
     while True:
-        tasks = [process_user(username, posted_tweets, lock) for username in list(user_queue)]
-        await asyncio.gather(*tasks)
-        user_queue.rotate(-1)
-        print("✅ All users processed. Waiting 10s...\n")
-        await asyncio.sleep(5)
- 
+        username = user_queue.popleft()
+        process_user(username, posted_tweets)
+        user_queue.append(username)
+        print(f"✅ Done with @{username}. Waiting 60s before next user...\n")
+        wait_with_progress(60)
+
 if __name__ == "__main__":
     try:
-        asyncio.run(main_loop())
+        main_loop()
     except KeyboardInterrupt:
         print("\n🛑 Program terminated by user.")
