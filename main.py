@@ -6,6 +6,7 @@ import json
 from config import set_environment
 from tqdm import tqdm
 import random
+import asyncio
 
 # 🔧 Load environment variables
 set_environment()
@@ -15,7 +16,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 유저 큐 설정
-user_queue = ["Investingcom", "BRICSinfo", "SawyerMerritt", "DeItaone"]  # 원하는 유저를 이 리스트에 추가하세요
+user_queue = ["Investingcom", "BRICSinfo", "DeItaone", "TrumpDailyPosts"]  # 원하는 유저를 이 리스트에 추가하세요
 
 TWEET_LIMIT = 5
 
@@ -185,66 +186,58 @@ def post_to_twitter(text, max_retries=3):
     print("⚠️ Failed to post after retries.")
     return False
 
-# Main Loop
-def main_loop():
-    print("\n🚀 [START] Twitter Translator + Poster")
+async def process_user(username, posted_tweets):
+    print(f"\n🔁 [Async] Checking tweets for @{username}")
+    tweets = fetch_latest_tweets(username, TWEET_LIMIT)
 
+    if not tweets:
+        print(f"⚠️ No new tweets for @{username}.")
+        return
+
+    new_posts = []
+
+    for tweet_id, tweet_text in tweets:
+        if tweet_text in posted_tweets:
+            print("⏩ Skipping duplicate tweet")
+            continue
+
+        print("📥 Original Tweet:", tweet_text)
+
+        breaking_news_tweet = rewrite_as_breaking_news(tweet_text)
+        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+        final_text = f"{breaking_news_tweet}\n\n🔗 {tweet_url}"
+
+        print("📝 Final Tweet with URL:", final_text)
+
+        success = post_to_twitter(final_text)
+        if success:
+            new_posts.append(final_text)
+            await asyncio.sleep(random.randint(30, 60))  # 비동기 대기
+
+    posted_tweets.update(new_posts)
+    save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+
+
+# Main Loop
+async def main_loop():
+    print("\n🚀 [START] Async Twitter Translator + Poster")
     posted_tweets = load_json(POSTED_TWEETS_FILE)
-    empty_cycle_count = 0
 
     while True:
         if not user_queue:
             print("⚠️ 유저 큐가 비어 있습니다.")
             break
+ 
+        # 유저별 작업 생성
+        tasks = [process_user(username, posted_tweets) for username in list(user_queue)]
+        await asyncio.gather(*tasks)
 
-        username = user_queue.pop(0)  # 맨 앞 사용자 꺼내기
-        print(f"\n🔁 Checking tweets for: @{username}")
-        tweets = fetch_latest_tweets(username, TWEET_LIMIT)
-
-        if not tweets:
-            print(f"⚠️ No new tweets for @{username}. Re-adding to end of queue.")
-            empty_cycle_count += 1
-        else:
-            empty_cycle_count = 0
-            new_posts = []
-
-            for tweet_id, tweet_text in tqdm(tweets, desc=f"🧠 Processing Tweets from @{username}", unit="tweet"):
-                if tweet_text in posted_tweets:
-                    print("⏩ Skipping duplicate tweet")
-                    continue
-
-                print("📥 Original Tweet:", tweet_text)
-
-                breaking_news_tweet = rewrite_as_breaking_news(tweet_text)
-                
-                # 원본 트윗 URL 추가
-                tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-                final_text = f"{breaking_news_tweet}\n\n🔗 {tweet_url}"
-
-                print("📝 Final Tweet with URL:", final_text)
-
-                success = post_to_twitter(final_text)
-
-                if success:
-                    new_posts.append(final_text)
-                    post_delay = random.randint(30, 60)
-                    wait_with_progress(post_delay) 
-                else:
-                    print("⛔ Tweet skipped after failed attempts.")
-
-            posted_tweets.update(new_posts)
-            save_json(list(posted_tweets), POSTED_TWEETS_FILE)
-
-        # 무조건 사용자 다시 큐 뒤로 추가
-        user_queue.append(username)
-
-        delay = 10
-        print(f"✅ Cycle complete. Waiting {delay} seconds before next check...\n")
-        wait_with_progress(delay)
-
+        print(f"✅ All users processed. Waiting 10 seconds before next round...\n")
+        await asyncio.sleep(10)
 
 if __name__ == "__main__":
     try:
-        main_loop()
+        asyncio.run(main_loop())
     except KeyboardInterrupt:
         print("\n🛑 Program terminated by user.")
+
