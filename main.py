@@ -94,10 +94,11 @@ def rewrite_as_breaking_news(text, retry=3):
 
         주의:
         - 전체는 반드시 **3줄 이내**, 간결하고 강렬하게
-        - 이모지는 꼭 포함하되, 너무 많지 않게 (2~5개)
+        - 이모지는 꼭 포함하되, 너무 많지 않게 (2~5개) 
         - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
         - 해시태그는 절대 사용하지 말 것
         - 분석, 감성, 의견은 절대 넣지 말고 **사실(Fact)만** 전달
+        - 만약 특별한 의미가 있는 트윗이라고 판단이 되지 않으면, 그냥 해석해서 있는 그대로 전달
 
         트윗 원문:
         \"{text}\"
@@ -114,7 +115,6 @@ def rewrite_as_breaking_news(text, retry=3):
             time.sleep(2)
     return f"[GPT 실패] 원문 그대로 전달:\n\n{text}"
 
-
 # 트윗 가져오기
 def fetch_latest_tweets(username, limit):
     try:
@@ -128,6 +128,7 @@ def fetch_latest_tweets(username, limit):
 
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
+        print(f"📊 @{username}: {len(tweets_data)} tweets fetched.")
         tweets = [(tweet.id, tweet.text) for tweet in tweets_data]
 
         if tweets_data:
@@ -163,6 +164,10 @@ def process_user(username, posted_tweets):
     new_posts = []
     for tweet_id, tweet_text in tweets:
         if str(tweet_id) in posted_tweets:
+            continue
+
+        if not tweet_text.strip():
+            print(f"⚠️ Skipping @{username}'s tweet ({tweet_id}) due to empty text.")
             continue
 
         print(f"🧠 @{username}: {tweet_text}")
