@@ -15,7 +15,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 유저 큐 설정
-user_queue = ["DeItaone", "Investingcom", "BRICSinfo", "SawyerMerritt"]  # 원하는 유저를 이 리스트에 추가하세요
+user_queue = ["Investingcom", "BRICSinfo", "SawyerMerritt", "DeItaone"]  # 원하는 유저를 이 리스트에 추가하세요
 
 TWEET_LIMIT = 5
 
@@ -238,7 +238,7 @@ def main_loop():
         # 무조건 사용자 다시 큐 뒤로 추가
         user_queue.append(username)
 
-        delay = 30
+        delay = 10
         print(f"✅ Cycle complete. Waiting {delay} seconds before next check...\n")
         wait_with_progress(delay)
 
