@@ -84,7 +84,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
         반드시 아래 출력 규칙을 지켜주세요:
 
-        🚨 글로벌 이슈 속보
+        [🚨 글로벌 이슈 속보]
         \n\n
         핵심 인물 또는 기관 + 행동/사건 요약(1~3줄)
         시장에 미칠 영향 요약(1줄)
@@ -93,24 +93,43 @@ def rewrite_as_breaking_news(text, username, retry=3):
         주의:
         - 전체는 반드시 **5줄 이내**, 간결하고 강렬하게
         - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
-        - 해시태그는 절대 사용하지 말 것
         - 분석, 감성, 의견은 절대 넣지 말고 **사실(Fact)만** 전달
         - 만약 특별한 의미가 있는 트윗이라고 판단이 되지 않으면, 그냥 해석해서 있는 그대로 전달
         - 만약 트윗이 URL 링크뿐이라면 그냥 해석할 필요 없고 @{username} 리턴
 
         트윗 원문:
         \"{text}\"
+
+        **위의 뉴스 내용에 맞는 적절한 해시태그 2~3개**를 아래와 같은 형식으로 생성해 주세요:
+
+        예시:
+        - 일반 경제 속보: #StockMarket, #Economy, #Finance
+        - 금리/물가 관련: #FOMC, #Inflation, #Fed
+        - 지정학 뉴스: #Geopolitics, #GlobalMarkets
+        - 특정 기업 뉴스: #Tesla, #Apple, #Earnings
+        
+        반드시 **뉴스 내용과 관련된 해시태그**를 사용하세요. 해시태그는 뉴스 내용의 주제에 맞게 2~3개로 제한하고, 뉴스와 직접적인 연관이 없는 해시태그는 사용하지 말아 주세요.
+
+        **형식**: 
+        뉴스 본문 내용
+        \n\n
+        #Hashtag1 #Hashtag2 #Hashtag3
     """
+    
     for attempt in range(retry): 
         try:
             response = openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}]
             )
-            return response.choices[0].message.content.strip()
+            result = response.choices[0].message.content.strip()
+
+            return result
+
         except Exception as e:
             print(f"⚠️ Rewriting failed (attempt {attempt+1}/{retry}): {e}")
             time.sleep(2)
+    
     return f"번역 실패. 원문 그대로 전달:\n\n{text}"
 
 # 트윗 가져오기
@@ -171,9 +190,8 @@ def process_user(username, posted_tweets):
 
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
-        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-        # final_text = f"{breaking_news}\n\n #BREAKING #BreakingNews #MarketAlert #StockMarket\n\n{tweet_url}"
-        final_text = f"{breaking_news}\n\n #BREAKING\n#BreakingNews\n#StockMarket\n\n{tweet_url}"
+        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}" # tweet_url
+        final_text = f"{breaking_news}\n\n출처: @{username}"
   
         success = post_to_twitter(final_text) 
         if success: 
