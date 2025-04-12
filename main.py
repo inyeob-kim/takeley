@@ -78,7 +78,7 @@ def wait_with_progress(seconds):
         time.sleep(1)
 
 # GPT Functions (동기 → executor)
-def rewrite_as_breaking_news(text, retry=3):
+def rewrite_as_breaking_news(text, username, retry=3):
     prompt = f"""
         당신은 '주식이 미쳤다 뉴스'라는 가상의 글로벌 금융 속보 매체의 기자입니다.
 
@@ -87,18 +87,18 @@ def rewrite_as_breaking_news(text, retry=3):
         반드시 아래 출력 규칙을 지켜주세요:
 
         🚨 실시간 뉴스 | 글로벌 이슈 속보
-        (두 줄 개행 후)
-        첫 줄: 핵심 인물 또는 기관 + 행동/사건 요약
-        둘째 줄: 시장에 미칠 영향 요약
-        셋째 줄: 향후 일정이나 예고
+        \n\n
+        핵심 인물 또는 기관 + 행동/사건 요약(1~3줄)
+        시장에 미칠 영향 요약(1줄)
+        향후 일정이나 예고(1줄)
 
         주의:
-        - 전체는 반드시 **3~4줄 이내**, 간결하고 강렬하게
+        - 전체는 반드시 **5줄 이내**, 간결하고 강렬하게
         - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
         - 해시태그는 절대 사용하지 말 것
         - 분석, 감성, 의견은 절대 넣지 말고 **사실(Fact)만** 전달
         - 만약 특별한 의미가 있는 트윗이라고 판단이 되지 않으면, 그냥 해석해서 있는 그대로 전달
-        - 만약 트윗이 URL 링크뿐이라면 그냥 해석할 필요 없고 empty string 리턴.
+        - 만약 트윗이 URL 링크뿐이라면 그냥 해석할 필요 없고 @{username} 리턴
 
         트윗 원문:
         \"{text}\"
@@ -171,10 +171,10 @@ def process_user(username, posted_tweets):
             continue
 
         print(f"🧠 @{username}: {tweet_text}")
-        breaking_news = rewrite_as_breaking_news(tweet_text)
+        breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         # final_text = f"{breaking_news}\n\n #BREAKING #BreakingNews #MarketAlert #StockMarket\n\n{tweet_url}"
-        final_text = f"{breaking_news}\n\n #BREAKING\n#BreakingNews\n#StockMarket\n{tweet_url}"
+        final_text = f"{breaking_news}\n\n #BREAKING\n#BreakingNews\n#StockMarket\n\n{tweet_url}"
   
         success = post_to_twitter(final_text) 
         if success: 
