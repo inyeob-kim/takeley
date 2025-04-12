@@ -5,10 +5,8 @@ import os
 import json
 from config import set_environment
 from tqdm import tqdm
-import random
-import asyncio
-import functools
 from collections import deque
+from datetime import datetime
 
 # 🔧 Load environment variables
 set_environment()
@@ -128,7 +126,8 @@ def fetch_latest_tweets(username, limit):
 
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
-        print(f"📊 @{username}: {len(tweets_data)} tweets fetched.")
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{now}] 📊 @{username}: {len(tweets_data)} tweets fetched.")
         tweets = [(tweet.id, tweet.text) for tweet in tweets_data]
 
         if tweets_data:
