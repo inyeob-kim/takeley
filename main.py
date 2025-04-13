@@ -84,7 +84,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
         반드시 아래 출력 규칙을 지켜주세요:
 
-        [🚨 글로벌 이슈 속보]
+        🚨 글로벌 이슈 속보
         \n\n
         핵심 인물 또는 기관 + 행동/사건 요약(1~3줄)
         시장에 미칠 영향 요약(1줄)
@@ -191,7 +191,7 @@ def process_user(username, posted_tweets):
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}" # tweet_url
-        final_text = f"{breaking_news}\n\n@{username}\n🔗{tweet_url}"
+        final_text = f"{breaking_news}\n\n@{username}\n\n🔗{tweet_url}"
   
         success = post_to_twitter(final_text) 
         if success: 
