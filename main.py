@@ -191,7 +191,7 @@ def process_user(username, posted_tweets):
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}" # tweet_url
-        final_text = f"{breaking_news}\n\n출처: @{username}\n{tweet_url}"
+        final_text = f"{breaking_news}\n\n@{username}\n🔗{tweet_url}"
   
         success = post_to_twitter(final_text) 
         if success: 
