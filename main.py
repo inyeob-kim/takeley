@@ -16,8 +16,8 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
-user_queue = deque(["KobeissiLetter", "Investingcom", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
-
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
+ 
 TWEET_LIMIT = 5 
 
 # Twitter Clients
@@ -166,13 +166,13 @@ def fetch_latest_tweets(username, limit):
 
         if not user_id:
             return None  # user_id가 없으면 데이터가 없다고 처리
-
-        print(f"📊 Processing Username: @{username} / UserID: {user_id}")
  
         since_id = load_last_seen_id(username)
-        params = {"id": user_id, "max_results": limit}
+        params = {"id": user_id, "max_results": limit} 
         if since_id:
             params["since_id"] = since_id
+
+        print(f"📊 Processing Username: @{username} / UserID: {user_id} / SinceID: {since_id}") 
  
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
