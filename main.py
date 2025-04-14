@@ -252,6 +252,7 @@ def main_loop():
     while user_queue:
         username = user_queue.popleft()
         process_user(username, set(posted_tweets))
+        user_queue.append(username)
         next_user_delay = 60
         print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
         wait_with_progress(next_user_delay)  # 1분 대기
