@@ -17,6 +17,16 @@ TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
 user_queue = deque(["KobeissiLetter", "Investingcom", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
+
+# 사용자별 user_id 저장
+USER_IDS = {
+    "KobeissiLetter": "",  
+    "Investingcom": "",    
+    "DeItaone": "",
+    "BRICSinfo": "",
+    "TrumpDailyPosts": ""
+}
+
 TWEET_LIMIT = 5
 
 # Twitter Clients
@@ -98,6 +108,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     - 분석이나 의견 없이 **객관적인 사실만** 전달할 것
     - 긴 트윗이라도 핵심 정보 위주로 압축할 것
     - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
+    - 시장에 미칠 영향이나 향후 일정 및 예고가 없을 경우 **절대 만들어내지말고** 쓸 필요 없음.
 
     트윗 원문:
     \"{text}\"
@@ -116,7 +127,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
             response = openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}]
-            )
+            ) 
             result = response.choices[0].message.content.strip()
 
             return result
@@ -127,11 +138,18 @@ def rewrite_as_breaking_news(text, username, retry=3):
     
     return f"번역 실패. 원문 그대로 전달:\n\n{text}"
 
-# 트윗 가져오기
+
+
+# 트윗 가져오기 (user_id를 미리 가져와서 사용)
 def fetch_latest_tweets(username, limit):
     try:
-        user = client_twitter_read.get_user(username=username)
-        user_id = user.data.id
+        user_id = USER_IDS.get(username)
+        if not user_id:
+            user = client_twitter_read.get_user(username=username)
+            user_id = user.data.id
+            USER_IDS[username] = user_id  # 새로운 user_id는 저장해서 나중에 사용
+
+        print(f"[{now}] 📊 @{username}: {len(tweets_data)} tweets fetched.")
 
         since_id = load_last_seen_id(username)
         params = {"id": user_id, "max_results": limit}
@@ -149,15 +167,15 @@ def fetch_latest_tweets(username, limit):
             save_last_seen_id(username, latest_id)
 
         return tweets
+
     except tweepy.TooManyRequests as e:
         reset = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
         wait_seconds = max(0, reset - int(time.time()))
-        print(f"🚫 Rate limit hit for @{username}. Waiting {wait_seconds} seconds...")
-        wait_with_progress(wait_seconds)
-        return fetch_latest_tweets(username, limit)
+        print(f"🚫 Rate limit hit for @{username}. Skipping user. Retry after {wait_seconds}s.")
+        return None  # ❗️None을 리턴해서 건너뛰도록
     except Exception as e:
         print(f"❌ Twitter fetch failed for {username}: {e}")
-        return []
+        return None
 
 # 트윗 작성
 def post_to_twitter(text, max_retries=3):
@@ -174,6 +192,10 @@ def post_to_twitter(text, max_retries=3):
 # 사용자별 트윗 처리
 def process_user(username, posted_tweets):
     tweets = fetch_latest_tweets(username, TWEET_LIMIT)
+    if tweets is None:
+        print(f"⏭️ @{username} skipped due to rate limit.\n")
+        return  # ❗️이 유저는 건너뜀
+
     new_posts = []
     for tweet_id, tweet_text in tweets:
         if str(tweet_id) in posted_tweets:
@@ -185,15 +207,17 @@ def process_user(username, posted_tweets):
 
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
-        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}" # tweet_url
+        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
-  
-        success = post_to_twitter(final_text) 
-        if success: 
+
+        success = post_to_twitter(final_text)
+        if success:
             new_posts.append(str(tweet_id))
+            wait_with_progress(10)
 
     posted_tweets.update(new_posts)
     save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+
 
 # 메인 루프
 def main_loop():
@@ -205,7 +229,7 @@ def main_loop():
         process_user(username, posted_tweets)
         user_queue.append(username)
         print(f"✅ Done with @{username}. Waiting 90s before next user...\n")
-        wait_with_progress(90) 
+        wait_with_progress(60)
   
 if __name__ == "__main__":
     try:
