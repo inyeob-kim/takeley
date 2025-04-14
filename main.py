@@ -16,11 +16,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
-user_queue = deque(["KobeissiLetter", "Investingcom", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
 
 # 사용자별 user_id 저장
 USER_IDS = {
-    "KobeissiLetter": "",  
+    "KobeissiLetter": "",   
     "Investingcom": "",    
     "DeItaone": "",
     "BRICSinfo": "",
@@ -81,8 +81,8 @@ def load_last_seen_id(username):
             print(f"⚠️ Failed to read last seen ID for {username}: {e}")
     return None
 
-def wait_with_progress(seconds):
-    for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s (rate limit)", unit="s"):
+def wait_with_progress(seconds): 
+    for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
 # GPT Functions (동기 → executor)
@@ -145,12 +145,13 @@ def fetch_latest_tweets(username, limit):
     try:
         user_id = USER_IDS.get(username)
         if not user_id:
+            print(f"📊 Fetching UserID of Username: @{username}")
             user = client_twitter_read.get_user(username=username)
             user_id = user.data.id
             USER_IDS[username] = user_id  # 새로운 user_id는 저장해서 나중에 사용
 
-        print(f"[{now}] 📊 @{username}: {len(tweets_data)} tweets fetched.")
-
+        print(f"📊 Processing Username: @{username} / UserID: {user_id}")
+ 
         since_id = load_last_seen_id(username)
         params = {"id": user_id, "max_results": limit}
         if since_id:
@@ -228,8 +229,10 @@ def main_loop():
         username = user_queue.popleft()
         process_user(username, posted_tweets)
         user_queue.append(username)
-        print(f"✅ Done with @{username}. Waiting 90s before next user...\n")
-        wait_with_progress(60)
+
+        next_user_delay = 60
+        print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
+        wait_with_progress(next_user_delay)
   
 if __name__ == "__main__":
     try:
