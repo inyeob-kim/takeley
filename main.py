@@ -6,9 +6,9 @@ import json
 from config import set_environment
 from tqdm import tqdm
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
-# 🔧 Load environment variables
+# 🔧 Load environment variables 
 set_environment()
 
 # 🔑 API Keys
@@ -16,18 +16,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
+user_queue = deque(["KobeissiLetter", "Investingcom", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
 
-# 사용자별 user_id 저장
-USER_IDS = {
-    "KobeissiLetter": "",   
-    "Investingcom": "",    
-    "DeItaone": "",
-    "BRICSinfo": "",
-    "TrumpDailyPosts": ""
-}
-
-TWEET_LIMIT = 5
+TWEET_LIMIT = 5 
 
 # Twitter Clients
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
@@ -41,6 +32,7 @@ client_twitter = tweepy.Client(
 
 CACHE_FILE = "tweets.json"
 POSTED_TWEETS_FILE = "posted_tweets.json"
+USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
 
 # File helpers
 def save_json(data, filename):
@@ -52,13 +44,13 @@ def save_json(data, filename):
 
 def load_json(filename):
     if not os.path.exists(filename):
-        return set()
+        return {}
     try:
         with open(filename, "r", encoding="utf-8") as f:
-            return set(json.load(f))
+            return json.load(f)
     except Exception as e:
         print(f"⚠️ Failed to load {filename}: {e}")
-        return set()
+        return {}
 
 def get_last_seen_file(username):
     return f"{username}_last_seen_id.txt"
@@ -121,7 +113,6 @@ def rewrite_as_breaking_news(text, username, retry=3):
     #Hashtag1 #Hashtag2 #Hashtag3
     """
 
-    
     for attempt in range(retry): 
         try:
             response = openai.chat.completions.create(
@@ -138,17 +129,43 @@ def rewrite_as_breaking_news(text, username, retry=3):
     
     return f"번역 실패. 원문 그대로 전달:\n\n{text}"
 
-
-
 # 트윗 가져오기 (user_id를 미리 가져와서 사용)
+def fetch_user_id(username):
+    try:
+        user = client_twitter_read.get_user(username=username)
+        user_id = user.data.id
+        return user_id
+    except tweepy.TooManyRequests as e:
+        reset = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
+        wait_seconds = max(0, reset - int(time.time()))
+        print(f"🚫 Rate limit hit for @{username}. Skipping user. Retry after {wait_seconds}s.")
+        
+        # Convert to KST (UTC +9)
+        reset_time = datetime.fromtimestamp(reset, timezone.utc) + timedelta(hours=9)
+        reset_time_str = reset_time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f"🕒 Rate limit will reset at: {reset_time_str} KST")
+        
+        return None
+    except tweepy.TweepyException as e:
+        print(f"❌ Failed to fetch user ID for @{username}: {e}")
+        return None
+
+
 def fetch_latest_tweets(username, limit):
     try:
-        user_id = USER_IDS.get(username)
+        # 파일에서 user_id를 읽기
+        USER_IDS = load_json(USER_ID_FILE)
+
+        user_id = USER_IDS.get(username)  # 파일에서 가져온 user_id
         if not user_id:
             print(f"📊 Fetching UserID of Username: @{username}")
-            user = client_twitter_read.get_user(username=username)
-            user_id = user.data.id
-            USER_IDS[username] = user_id  # 새로운 user_id는 저장해서 나중에 사용
+            user_id = fetch_user_id(username)
+            if user_id:
+                USER_IDS[username] = user_id  # 새로운 user_id는 저장해서 나중에 사용
+                save_json(USER_IDS, USER_ID_FILE)
+
+        if not user_id:
+            return None  # user_id가 없으면 데이터가 없다고 처리
 
         print(f"📊 Processing Username: @{username} / UserID: {user_id}")
  
@@ -156,7 +173,7 @@ def fetch_latest_tweets(username, limit):
         params = {"id": user_id, "max_results": limit}
         if since_id:
             params["since_id"] = since_id
-
+ 
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -173,10 +190,17 @@ def fetch_latest_tweets(username, limit):
         reset = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
         wait_seconds = max(0, reset - int(time.time()))
         print(f"🚫 Rate limit hit for @{username}. Skipping user. Retry after {wait_seconds}s.")
+        
+        # Convert to KST (UTC +9)
+        reset_time = datetime.fromtimestamp(reset, timezone.utc) + timedelta(hours=9)
+        reset_time_str = reset_time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f"🕒 Rate limit will reset at: {reset_time_str} KST")
+
         return None  # ❗️None을 리턴해서 건너뛰도록
     except Exception as e:
         print(f"❌ Twitter fetch failed for {username}: {e}")
         return None
+
 
 # 트윗 작성
 def post_to_twitter(text, max_retries=3):
@@ -225,17 +249,17 @@ def main_loop():
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
     posted_tweets = load_json(POSTED_TWEETS_FILE)
 
-    while True:
+    while user_queue:
         username = user_queue.popleft()
-        process_user(username, posted_tweets)
-        user_queue.append(username)
-
+        process_user(username, set(posted_tweets))
         next_user_delay = 60
         print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
-        wait_with_progress(next_user_delay)
-  
+        wait_with_progress(next_user_delay)  # 1분 대기
+
 if __name__ == "__main__":
-    try:
-        main_loop()
-    except KeyboardInterrupt:
-        print("\n🛑 Program terminated by user.")
+    # 사용자 ID 로딩
+    USER_IDS = load_json(USER_ID_FILE)
+    
+    # 메인 루프 실행
+    main_loop()
+
