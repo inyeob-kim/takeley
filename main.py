@@ -281,6 +281,7 @@ def main_loop():
         # Check for interim report (every 10 new tweets)
         current_tweet_count = len(posted_tweets)
         new_tweets = current_tweet_count - last_interim_count
+        print(f'📊 Keeping Track of Number of New Tweets : {new_tweets}')
         if new_tweets >= 10:
             print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
             
