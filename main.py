@@ -280,10 +280,13 @@ def main_loop():
 
     is_daily_report_posted = False
 
-    while True:
-        if not is_within_active_hours("16:00", "10:00"):
-            active_hour_delay = 300
-            print(f"🌙 Outside active hours (16:00pm - 10:00am(+1)). Sleeping for {active_hour_delay} seconds...")
+    ACTIVE_HOUR_START_TIME = "14:30"
+    ACTIVE_HOUR_END_TIME = "10:00"
+
+    while True: 
+        if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME):
+            active_hour_delay = 60 
+            print(f"🌙 Outside active hours ( {ACTIVE_HOUR_START_TIME}pm - {ACTIVE_HOUR_END_TIME}am(+1) ). Sleeping for {active_hour_delay} seconds...")
             wait_with_progress(active_hour_delay)
             continue
 
@@ -319,7 +322,8 @@ def main_loop():
                 print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
                 is_daily_report_posted = False
 
-            next_user_delay = random.randint(50, 70)
+            # next_user_delay = random.randint(60, 90) 
+            next_user_delay = 90 
             print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
             wait_with_progress(next_user_delay)
         else:
