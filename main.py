@@ -283,7 +283,7 @@ def main_loop():
     while True:
         if not is_within_active_hours("16:00", "10:00"):
             active_hour_delay = 300
-            print(f"🌙 Outside active hours (16:00pm - 10:00am(+1)). Sleeping for {active_hour_delay} minutes...")
+            print(f"🌙 Outside active hours (16:00pm - 10:00am(+1)). Sleeping for {active_hour_delay} seconds...")
             wait_with_progress(active_hour_delay)
             continue
 
