@@ -185,8 +185,8 @@ def post_summary_report(post_time="16:30"):
     # Split the post_time into hours and minutes
     post_hour, post_minute = map(int, post_time.split(":"))
 
-    now = datetime.now()
-    next_post_time = datetime.combine(now.date(), datetime.min.time()) + timedelta(days=0, hours=post_hour, minutes=post_minute)
+    now = datetime.now() 
+    next_post_time = datetime.combine(now.date(), datetime.min.time()) + timedelta(days=1, hours=post_hour, minutes=post_minute)
     time_to_wait = (next_post_time - now).total_seconds()
     print(f"Next Post Time : {next_post_time} / Time to Wait : {time_to_wait}")
  

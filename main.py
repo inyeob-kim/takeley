@@ -8,6 +8,7 @@ from tqdm import tqdm
 from collections import deque
 from datetime import datetime, timezone, timedelta
 import random
+import pytz
 from summary_report import post_summary_report, post_interim_report
 
 # 🔧 Load environment variables 
@@ -253,66 +254,72 @@ def process_user(username, posted_tweets):
     posted_tweets.extend(new_posts)
     save_json(posted_tweets, POSTED_TWEETS_FILE)
 
-def main_loop():
-    
-    print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
-    posted_tweets = load_json(POSTED_TWEETS_FILE)  # Load posted tweets
+def is_within_active_hours(start_time="16:00", end_time="10:00"):
+    # Get current time in KST
+    kst = pytz.timezone("Asia/Seoul")
+    now_kst = datetime.now(kst).time()
 
-    # Initialize state for interim report
+    start_time_obj = datetime.strptime(start_time, "%H:%M").time()
+    end_time_obj = datetime.strptime(end_time, "%H:%M").time()
+
+    if start_time_obj < end_time_obj:
+        # Window doesn't cross midnight
+        return start_time_obj <= now_kst < end_time_obj
+    else:
+        # Window crosses midnight
+        return now_kst >= start_time_obj or now_kst < end_time_obj
+
+def main_loop():
+    print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
+    posted_tweets = load_json(POSTED_TWEETS_FILE)
+
     tweet_count_state_file = "tweet_count_state.json"
     tweet_count_state = load_json(tweet_count_state_file)
-    last_interim_count = tweet_count_state.get("last_interim_count", 0)  # Default to 0 if not set
-    recent_tweets = []  # Track tweets since last interim report
+    last_interim_count = tweet_count_state.get("last_interim_count", 0)
+    recent_tweets = []
 
     is_daily_report_posted = False
 
-    while user_queue:
+    while True:
+        if is_within_active_hours("16:00", "10:00"):
+            if user_queue:
+                username = user_queue.popleft()
+                before_count = len(posted_tweets)
+                process_user(username, posted_tweets)
+                user_queue.append(username)
 
-        username = user_queue.popleft()
-        # Store length before processing to identify new tweets
-        before_count = len(posted_tweets)
-        process_user(username, posted_tweets)  # Shared mutable list, appends new tweets
-        user_queue.append(username)
+                new_tweets_slice = posted_tweets[before_count:]
+                recent_tweets.extend(new_tweets_slice)
 
-        # Add new tweets to recent_tweets
-        new_tweets_slice = posted_tweets[before_count:]  # Get new entries
-        recent_tweets.extend(new_tweets_slice)
+                current_tweet_count = len(posted_tweets)
+                new_tweets = current_tweet_count - last_interim_count
+                print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
+                if new_tweets >= 10:
+                    print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
+                    tweets_to_report = recent_tweets[-10:]
+                    post_interim_report(new_tweets, tweets_to_report)
+                    last_interim_count = current_tweet_count
+                    tweet_count_state["last_interim_count"] = last_interim_count
+                    save_json(tweet_count_state, tweet_count_state_file)
+                    recent_tweets.clear()
 
-        # Check for interim report (every 10 new tweets)
-        current_tweet_count = len(posted_tweets)
-        new_tweets = current_tweet_count - last_interim_count
-        print(f'📊 Keeping Track of Number of New Tweets : {new_tweets}')
-        if new_tweets >= 10:
-            print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
-            
-            # Pass up to the most recent 10 tweets
-            tweets_to_report = recent_tweets[-10:]  # Slice last 10 (or fewer)
-            post_interim_report(new_tweets, tweets_to_report)
-            last_interim_count = current_tweet_count  # Update baseline
+                now = datetime.now().strftime("%H:%M")
+                daily_report_post_time = "16:30"
+                if not is_daily_report_posted and now >= daily_report_post_time:
+                    post_summary_report(daily_report_post_time)
+                    is_daily_report_posted = True
 
-            # Save state
-            tweet_count_state["last_interim_count"] = last_interim_count
-            save_json(tweet_count_state, tweet_count_state_file)
-            recent_tweets.clear()  # Reset for next batch
+                reset_time = "05:00"
+                if now >= reset_time and now < "05:01":
+                    print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
+                    is_daily_report_posted = False
 
-        # Get current time in HH:MM format
-        now = datetime.now().strftime("%H:%M")
-
-        # Post summary report once per day
-        daily_report_post_time = "16:30"
-        if not is_daily_report_posted and now >= daily_report_post_time:
-            post_summary_report(daily_report_post_time)
-            is_daily_report_posted = True
-            
-        # Reset daily report flag at 05:00
-        reset_time = "05:00"
-        if now == reset_time:
-            print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
-            is_daily_report_posted = False
-
-        next_user_delay = random.randint(50, 70)
-        print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
-        wait_with_progress(next_user_delay)
-
-if __name__ == "__main__":
-    main_loop()
+                next_user_delay = random.randint(50, 70)
+                print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
+                wait_with_progress(next_user_delay)
+            else:
+                print("🟨 No users in queue. Sleeping for 5 minutes...")
+                wait_with_progress(300)
+        else:
+            print("🌙 Outside active hours (16:00 - 10:00). Sleeping for 10 minutes...")
+            wait_with_progress(600)
