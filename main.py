@@ -281,45 +281,51 @@ def main_loop():
     is_daily_report_posted = False
 
     while True:
-        if is_within_active_hours("16:00", "10:00"):
-            if user_queue:
-                username = user_queue.popleft()
-                before_count = len(posted_tweets)
-                process_user(username, posted_tweets)
-                user_queue.append(username)
+        if not is_within_active_hours("16:00", "10:00"):
+            active_hour_delay = 300
+            print(f"🌙 Outside active hours (16:00pm - 10:00am(+1)). Sleeping for {active_hour_delay} minutes...")
+            wait_with_progress(active_hour_delay)
+            continue
 
-                new_tweets_slice = posted_tweets[before_count:]
-                recent_tweets.extend(new_tweets_slice)
+        if user_queue:
+            username = user_queue.popleft()
+            before_count = len(posted_tweets) 
+            process_user(username, posted_tweets)
+            user_queue.append(username)
 
-                current_tweet_count = len(posted_tweets)
-                new_tweets = current_tweet_count - last_interim_count
-                print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
-                if new_tweets >= 10:
-                    print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
-                    tweets_to_report = recent_tweets[-10:]
-                    post_interim_report(new_tweets, tweets_to_report)
-                    last_interim_count = current_tweet_count
-                    tweet_count_state["last_interim_count"] = last_interim_count
-                    save_json(tweet_count_state, tweet_count_state_file)
-                    recent_tweets.clear()
+            new_tweets_slice = posted_tweets[before_count:]
+            recent_tweets.extend(new_tweets_slice)
 
-                now = datetime.now().strftime("%H:%M")
-                daily_report_post_time = "16:30"
-                if not is_daily_report_posted and now >= daily_report_post_time:
-                    post_summary_report(daily_report_post_time)
-                    is_daily_report_posted = True
+            current_tweet_count = len(posted_tweets)
+            new_tweets = current_tweet_count - last_interim_count
+            print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
+            if new_tweets >= 10:
+                print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
+                tweets_to_report = recent_tweets[-10:]
+                post_interim_report(new_tweets, tweets_to_report)
+                last_interim_count = current_tweet_count
+                tweet_count_state["last_interim_count"] = last_interim_count
+                save_json(tweet_count_state, tweet_count_state_file)
+                recent_tweets.clear()
 
-                reset_time = "05:00"
-                if now >= reset_time and now < "05:01":
-                    print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
-                    is_daily_report_posted = False
+            now = datetime.now().strftime("%H:%M")
+            daily_report_post_time = "16:30"
+            if not is_daily_report_posted and now >= daily_report_post_time:
+                post_summary_report(daily_report_post_time)
+                is_daily_report_posted = True
 
-                next_user_delay = random.randint(50, 70)
-                print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
-                wait_with_progress(next_user_delay)
-            else:
-                print("🟨 No users in queue. Sleeping for 5 minutes...")
-                wait_with_progress(300)
+            reset_time = "05:00"
+            if now >= reset_time and now < "05:01":
+                print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
+                is_daily_report_posted = False
+
+            next_user_delay = random.randint(50, 70)
+            print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
+            wait_with_progress(next_user_delay)
         else:
-            print("🌙 Outside active hours (16:00 - 10:00). Sleeping for 10 minutes...")
-            wait_with_progress(600)
+            print("🟨 No users in queue. Sleeping for 5 minutes...")
+            wait_with_progress(300)
+
+
+if __name__ == "__main__":
+    main_loop()
