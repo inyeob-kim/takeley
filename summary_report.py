@@ -167,33 +167,26 @@ def wait_with_progress(seconds):
     for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
-def post_summary_report(post_time="16:30"): 
-    """ 
-    Schedules the summary post for the given time (post_time) on the next day.
-    `post_time` should be in HH:MM format, e.g., "16:30" for 4:30 PM.
-    """
-    # Split the post_time into hours and minutes
-    post_hour, post_minute = map(int, post_time.split(":"))
+def post_summary_report():
+    """ Posts the summary of tweets filtered from the past day (e.g., between 16:30 and 05:00). """
+    print(f"🕒 Attempting to post summary at runtime: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-    now = datetime.now() 
-    next_post_time = datetime.combine(now.date(), datetime.min.time()) + timedelta(days=1, hours=post_hour, minutes=post_minute)
-    time_to_wait = (next_post_time - now).total_seconds()
-    print(f"Next Post Time : {next_post_time} / Time to Wait : {time_to_wait}")
- 
-    # After waiting, summarize and post the tweets from the specified ti me range
-    posted_tweets = load_json(POSTED_TWEETS_FILE)  # Load previously posted tweets
-    filtered_tweets = filter_tweets_by_time(posted_tweets)  # Filter tweets from 4:30 PM to 5:00 AM
+    posted_tweets = load_json(POSTED_TWEETS_FILE)
+    filtered_tweets = filter_tweets_by_time(posted_tweets)  # e.g., from 16:30 to 05:00 next day
 
     if not filtered_tweets:
         print(f'⚠️ There are NO filtered tweets to post Daily Report!')
-        return 
-    
-    summary = summarize_tweets(filtered_tweets)  # Summarize the filtered tweets
-    
-    success = post_to_twitter(summary)  # Use the post_to_twitter function from your code
+        return False
+
+    summary = summarize_tweets(filtered_tweets)
+    success = post_to_twitter(summary)
+
     if success:
         print(f"🐦 Summary posted to Twitter!")
+        return True
     else: 
         print(f"❌ Failed to post the summary.")
+        return False
 
-    wait_with_progress(10)
+
+

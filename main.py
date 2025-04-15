@@ -282,7 +282,8 @@ def main_loop():
     ACTIVE_HOUR_END_TIME = "10:00"
 
     is_daily_report_posted = False
-    DAILY_REPORT_POST_TIME = "16:30"
+    DAILY_REPORT_POST_TIME_START = "16:30"
+    DAILY_REPORT_POST_TIME_END = "17:00"
     DAILY_REPORT_RESET_TIME = "05:00"
 
     while True: 
@@ -314,14 +315,16 @@ def main_loop():
                 recent_tweets.clear()
 
             now = datetime.now().strftime("%H:%M")
-            if not is_daily_report_posted and now >= DAILY_REPORT_POST_TIME:
-                post_summary_report(DAILY_REPORT_POST_TIME)
-                is_daily_report_posted = True
+            if not is_daily_report_posted and "16:30" <= now < "17:00":
+                post_report_result = post_summary_report()
+                if post_report_result:
+                    is_daily_report_posted = True
 
-            DAILY_REPORT_RESET_TIME = "05:00"
             if now >= DAILY_REPORT_RESET_TIME and now < "05:10": 
                 print(f'🔄 Daily Report Flag Time Successfully Reset to {DAILY_REPORT_RESET_TIME}')
                 is_daily_report_posted = False
+
+            print(f"✅ Daily Report Posted : {is_daily_report_posted}\n")
 
             # next_user_delay = random.randint(60, 90) 
             next_user_delay = 90 
