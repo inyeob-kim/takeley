@@ -105,23 +105,12 @@ def summarize_tweets(tweets):
         print(f"❌ Failed to summarize tweets: {e}")
         return "뉴스 요약 실패"
 
-
-def post_summary(summary):
-    
-    # success = post_to_twitter(final_text)  # Use the post_to_twitter function from your code
-    # if success:
-    #     print(f"🐦 Summary posted to Twitter!")
-    # else: 
-    #     print(f"❌ Failed to post the summary.")
-
-    return
-
 # 트윗 작성
 def post_to_twitter(text, max_retries=3):
     for attempt in range(max_retries):
         try:
             client_twitter.create_tweet(text=text)
-            print("🐦 Posted to Twitter!")
+            print(f'📌📌📌📌📌 Daily Report Posted!! 📌📌📌📌📌')
             return True
         except Exception as e:
             print(f"❌ Tweet post failed: {e}")
@@ -164,6 +153,11 @@ def post_summary_report(post_time="16:30"):
         return 
     
     summary = summarize_tweets(filtered_tweets)  # Summarize the filtered tweets
-    post_summary(summary)  # Post the summary
-    print(f'📌📌📌📌📌 Daily Report Posted!! 📌📌📌📌📌')
+    
+    success = post_to_twitter(summary)  # Use the post_to_twitter function from your code
+    if success:
+        print(f"🐦 Summary posted to Twitter!")
+    else: 
+        print(f"❌ Failed to post the summary.")
+
     wait_with_progress(10)
