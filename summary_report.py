@@ -1,14 +1,11 @@
-from datetime import datetime, timedelta
-import time
 import openai
 import tweepy
 import openai
-import time
 import os
 import json
 from config import set_environment
 from tqdm import tqdm
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time  # Add 'time' here
 
  
 
@@ -32,19 +29,16 @@ client_twitter = tweepy.Client(
 CACHE_FILE = "tweets.json"
 POSTED_TWEETS_FILE = "posted_tweets.json"
 USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
- 
-def filter_tweets_by_time(tweets):
 
+def filter_tweets_by_time(tweets):
     filtered_tweets = []
-    
-    for tweet in tweets:
+
+    for tweet in tweets: 
         tweet_time = datetime.strptime(tweet['time'], "%Y-%m-%d %H:%M:%S").time()
 
-        # Time ranges
-        evening_start = time(16, 30)  # 4:30 PM
+        evening_start = time(16, 30)  # 16:30 PM  
         early_morning_end = time(5, 0)  # 5:00 AM
 
-        # Between 16:30 and 23:59 OR between 00:00 and 05:00
         if tweet_time >= evening_start or tweet_time < early_morning_end:
             filtered_tweets.append(tweet)
 
