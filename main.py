@@ -7,6 +7,8 @@ from config import set_environment
 from tqdm import tqdm
 from collections import deque
 from datetime import datetime, timezone, timedelta
+import random
+from summary_report import post_summary_report
 
 # 🔧 Load environment variables 
 set_environment()
@@ -101,7 +103,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
 
     트윗 원문 (작성자: @{username}): 
-    \"{text}\"
+    \"{text}\" 
 
     출력 형식: 
     뉴스 본문 내용 (6줄 이내, 간결하고 강력하게)
@@ -171,14 +173,14 @@ def fetch_latest_tweets(username, limit):
 
         if not user_id:
             return None  # user_id가 없으면 데이터가 없다고 처리
- 
+     
         since_id = load_last_seen_id(username)
         params = {"id": user_id, "max_results": limit} 
         if since_id: 
             params["since_id"] = since_id
 
         print(f"📊 Processing Username: @{username} / UserID: {user_id} / SinceID: {since_id}") 
- 
+     
         response = client_twitter_read.get_users_tweets(**params)
         tweets_data = response.data or []
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -227,7 +229,7 @@ def process_user(username, posted_tweets):
 
     new_posts = []
     for tweet_id, tweet_text in tweets:
-        if str(tweet_id) in posted_tweets:
+        if any(str(tweet['tweet_id']) == str(tweet_id) for tweet in posted_tweets):
             continue
 
         if not tweet_text.strip():
@@ -241,30 +243,48 @@ def process_user(username, posted_tweets):
 
         success = post_to_twitter(final_text)
         if success:
-            new_posts.append(str(tweet_id))
-            wait_with_progress(10)
+            new_posts.append({
+                "tweet_id": tweet_id,
+                "content": breaking_news,
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }) 
+            wait_with_progress(10) 
 
-    posted_tweets.update(new_posts)
-    save_json(list(posted_tweets), POSTED_TWEETS_FILE)
+    posted_tweets.extend(new_posts)
+    save_json(posted_tweets, POSTED_TWEETS_FILE)
 
-
-# 메인 루프
 def main_loop():
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
-    posted_tweets = load_json(POSTED_TWEETS_FILE)
+    posted_tweets = load_json(POSTED_TWEETS_FILE)  # ✅ use list for storing tweets
+
+    is_daily_report_posted = False
 
     while user_queue:
+
         username = user_queue.popleft()
-        process_user(username, set(posted_tweets))
+        process_user(username, posted_tweets)  # shared mutable list
         user_queue.append(username)
-        next_user_delay = 60
+
+
+        # Get current time in HH:MM format
+        now = datetime.now().strftime("%H:%M")
+
+        # Post summary report once per day
+        daily_report_post_time = "16:30"
+        print(f'⚠️ Daily Report Post Not Availabe Yet. Availabe at {daily_report_post_time}')
+        if not is_daily_report_posted and now >= daily_report_post_time:
+            post_summary_report(daily_report_post_time)
+            is_daily_report_posted = True
+            
+        # Reset daily report flag at 05:00
+        reset_time = "05:00"
+        if now == reset_time:
+            print(f'🔄 Daily Report Flag Time Successfully Reset to {reset_time}')
+            is_daily_report_posted = False
+
+        next_user_delay = random.randint(50, 70)
         print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
-        wait_with_progress(next_user_delay)  # 1분 대기
+        wait_with_progress(next_user_delay)
 
 if __name__ == "__main__":
-    # 사용자 ID 로딩
-    USER_IDS = load_json(USER_ID_FILE)
-    
-    # 메인 루프 실행
     main_loop()
-
