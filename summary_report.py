@@ -104,6 +104,52 @@ def summarize_tweets(tweets):
     except Exception as e:
         print(f"❌ Failed to summarize tweets: {e}")
         return "뉴스 요약 실패"
+    
+def post_interim_report(tweet_count, recent_tweets):
+
+    tweet_texts = [tweet['content'] for tweet in recent_tweets]
+    combined_text = " ".join(tweet_texts)
+
+    prompt = f"""
+        📢 **중간 뉴스 리포트**
+
+        너는 월가의 투자 전문가로, 최근 {tweet_count}개의 금융 및 경제 뉴스 트윗을 분석해 투자자들에게 빠르게 전달하는 역할을 맡고 있어.
+
+        아래 트윗 내용을 바탕으로 투자자들이 이해하기 쉽게 정리해줘:
+        - 핵심 뉴스를 최대 2개 주제로 나누어 요약 (예: 금리, 주식시장 등)
+        - 각 주제는 1~2문장으로 간결히 설명
+        - 이모지는 주제 앞에 하나만 사용 (예: 📈 시장, 🏦 금리, ⚠️ 리스크)
+        - 마지막에 "**다음 업데이트 기대점 🔮**"로 간단한 전망 (1문장)
+        - 출력은 한글로, 명확하고 전문적으로
+
+        최근 트윗:
+        {combined_text}
+
+        출력 형식:
+        ---
+        📢 **중간 뉴스 리포트** ({tweet_count}개 트윗)
+        1. [주제] 이모지 + 제목
+        - 내용
+        2. [주제] 이모지 + 제목
+        - 내용 
+        🔮 **다음 업데이트 기대점**
+        - 전망
+        ---
+        #주식이미쳤다 #금융속보
+    """
+
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        report_text = response.choices[0].message.content.strip()
+        client_twitter.create_tweet(text=report_text)
+        print(f"Interim report posted for {tweet_count} tweets:\n{report_text}")
+        print(f'📊📌 Interim Report Posted for {tweet_count}!!')
+    except Exception as e:
+        print(f"❌ Failed to post interim report: {e}") 
+
 
 # 트윗 작성
 def post_to_twitter(text, max_retries=3):

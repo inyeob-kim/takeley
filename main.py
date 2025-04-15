@@ -8,7 +8,7 @@ from tqdm import tqdm
 from collections import deque
 from datetime import datetime, timezone, timedelta
 import random
-from summary_report import post_summary_report
+from summary_report import post_summary_report, post_interim_report
 
 # 🔧 Load environment variables 
 set_environment()
@@ -254,24 +254,51 @@ def process_user(username, posted_tweets):
     save_json(posted_tweets, POSTED_TWEETS_FILE)
 
 def main_loop():
+    
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
-    posted_tweets = load_json(POSTED_TWEETS_FILE)  # ✅ use list for storing tweets
+    posted_tweets = load_json(POSTED_TWEETS_FILE)  # Load posted tweets
+
+    # Initialize state for interim report
+    tweet_count_state_file = "tweet_count_state.json"
+    tweet_count_state = load_json(tweet_count_state_file)
+    last_interim_count = tweet_count_state.get("last_interim_count", 0)  # Default to 0 if not set
+    recent_tweets = []  # Track tweets since last interim report
 
     is_daily_report_posted = False
 
     while user_queue:
 
         username = user_queue.popleft()
-        process_user(username, posted_tweets)  # shared mutable list
+        # Store length before processing to identify new tweets
+        before_count = len(posted_tweets)
+        process_user(username, posted_tweets)  # Shared mutable list, appends new tweets
         user_queue.append(username)
 
+        # Add new tweets to recent_tweets
+        new_tweets_slice = posted_tweets[before_count:]  # Get new entries
+        recent_tweets.extend(new_tweets_slice)
+
+        # Check for interim report (every 10 new tweets)
+        current_tweet_count = len(posted_tweets)
+        new_tweets = current_tweet_count - last_interim_count
+        if new_tweets >= 10:
+            print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
+            
+            # Pass up to the most recent 10 tweets
+            tweets_to_report = recent_tweets[-10:]  # Slice last 10 (or fewer)
+            post_interim_report(new_tweets, tweets_to_report)
+            last_interim_count = current_tweet_count  # Update baseline
+
+            # Save state
+            tweet_count_state["last_interim_count"] = last_interim_count
+            save_json(tweet_count_state, tweet_count_state_file)
+            recent_tweets.clear()  # Reset for next batch
 
         # Get current time in HH:MM format
         now = datetime.now().strftime("%H:%M")
 
         # Post summary report once per day
         daily_report_post_time = "16:30"
-        print(f'⚠️ Daily Report Post Not Availabe Yet. Availabe at {daily_report_post_time}')
         if not is_daily_report_posted and now >= daily_report_post_time:
             post_summary_report(daily_report_post_time)
             is_daily_report_posted = True
