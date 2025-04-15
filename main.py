@@ -14,10 +14,10 @@ set_environment()
 # 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-
-# 사용자 큐 설정
-user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo", "TrumpDailyPosts"])
  
+# 사용자 큐 설정
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts"])
+
 TWEET_LIMIT = 5 
 
 # Twitter Clients
@@ -77,8 +77,8 @@ def wait_with_progress(seconds):
     for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
-# GPT Functions (동기 → executor)
 def rewrite_as_breaking_news(text, username, retry=3):
+
     prompt = f"""
     당신은 '주식이 미쳤다 뉴스'라는 가상의 글로벌 금융 속보 매체의 기자입니다.
 
@@ -88,10 +88,8 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     🚨 글로벌 이슈 속보
     \n\n
-    핵심 인물 또는 기관 + 행동/사건 요약 (1~4줄)
+    핵심 인물 또는 기관 + 행동/사건 요약 
     → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
-    시장에 미칠 영향 요약 (1줄)
-    향후 일정이나 예고 (1줄)
 
     주의 사항: 
     - 전체는 반드시 **6줄 이내**, 간결하고 강력하게
@@ -100,17 +98,25 @@ def rewrite_as_breaking_news(text, username, retry=3):
     - 분석이나 의견 없이 **객관적인 사실만** 전달할 것
     - 긴 트윗이라도 핵심 정보 위주로 압축할 것
     - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
-    - 시장에 미칠 영향이나 향후 일정 및 예고가 없을 경우 **절대 만들어내지말고** 쓸 필요 없음.
+    - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
 
-    트윗 원문:
+    트윗 원문 (작성자: @{username}): 
     \"{text}\"
 
-    이 뉴스에 적합한 해시태그 2~3개를 함께 작성하세요. 반드시 뉴스와 직접 관련된 것만 포함하세요.
+    출력 형식: 
+    뉴스 본문 내용 (6줄 이내, 간결하고 강력하게)
 
-    출력 형식:
-    뉴스 본문 내용
-    \n\n
-    #Hashtag1 #Hashtag2 #Hashtag3
+    티커가 존재할 경우:  
+    [본문]   
+    \n\n  
+    $TSLA $NVDA (티커 여러 개 가능)  
+    \n\n  
+    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+
+    티커가 존재하지 않을 경우:  
+    [본문]  
+    \n\n  
+    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
     """
 
     for attempt in range(retry): 
@@ -126,7 +132,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
         except Exception as e:
             print(f"⚠️ Rewriting failed (attempt {attempt+1}/{retry}): {e}")
             time.sleep(2)
-    
+
     return f"번역 실패. 원문 그대로 전달:\n\n{text}"
 
 # 트윗 가져오기 (user_id를 미리 가져와서 사용)
@@ -150,7 +156,6 @@ def fetch_user_id(username):
         print(f"❌ Failed to fetch user ID for @{username}: {e}")
         return None
 
-
 def fetch_latest_tweets(username, limit):
     try:
         # 파일에서 user_id를 읽기
@@ -169,7 +174,7 @@ def fetch_latest_tweets(username, limit):
  
         since_id = load_last_seen_id(username)
         params = {"id": user_id, "max_results": limit} 
-        if since_id:
+        if since_id: 
             params["since_id"] = since_id
 
         print(f"📊 Processing Username: @{username} / UserID: {user_id} / SinceID: {since_id}") 
@@ -200,7 +205,6 @@ def fetch_latest_tweets(username, limit):
     except Exception as e:
         print(f"❌ Twitter fetch failed for {username}: {e}")
         return None
-
 
 # 트윗 작성
 def post_to_twitter(text, max_retries=3):
