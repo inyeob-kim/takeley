@@ -33,23 +33,19 @@ CACHE_FILE = "tweets.json"
 POSTED_TWEETS_FILE = "posted_tweets.json"
 USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
  
-# Time range constants
-START_TIME = 16  # 16:30 PM
-END_TIME = 5  # 5:00 AM
-
 def filter_tweets_by_time(tweets):
-    """
-    Filters tweets to get only those between 4:30 PM and 5:00 AM.
-    """
+
     filtered_tweets = []
-    now = datetime.now()
-
+    
     for tweet in tweets:
-        tweet_time = datetime.strptime(tweet['time'], "%Y-%m-%d %H:%M:%S")
+        tweet_time = datetime.strptime(tweet['time'], "%Y-%m-%d %H:%M:%S").time()
 
-        # Check if the tweet was made between 4:30 PM and 5:00 AM
-        if (tweet_time.hour >= START_TIME and tweet_time.minute >= 30) or \
-           (tweet_time.hour < END_TIME):
+        # Time ranges
+        evening_start = time(16, 30)  # 4:30 PM
+        early_morning_end = time(5, 0)  # 5:00 AM
+
+        # Between 16:30 and 23:59 OR between 00:00 and 05:00
+        if tweet_time >= evening_start or tweet_time < early_morning_end:
             filtered_tweets.append(tweet)
 
     return filtered_tweets
