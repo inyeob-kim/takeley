@@ -222,7 +222,28 @@ def post_to_twitter(text, max_retries=3):
             time.sleep(5)
     return False
 
-# 사용자별 트윗 처리
+def is_similar_to_recent(new_text, recent_texts):
+
+    prompt = (
+        "You are an assistant that checks for semantic duplication between social media posts. "
+        "Given a new post and a list of previous posts, determine if the new one is semantically similar "
+        "to any of the previous ones. Respond only with 'YES' or 'NO'.\n\n"
+        f"New Post:\n{new_text}\n\n"
+        f"Previous Posts:\n" +
+        "\n---\n".join(recent_texts) +
+        "\n\nIs the new post semantically similar to any of the previous posts?"
+    )
+
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    ) 
+    result = response.choices[0].message.content.strip()
+
+    return result.upper() == "YES"
+
+
+# 사용자별 트윗 처리 
 def process_user(username, posted_tweets):
     tweets = fetch_latest_tweets(username, TWEET_LIMIT)
     if tweets is None:
@@ -240,6 +261,13 @@ def process_user(username, posted_tweets):
 
         print(f"🧠 @{username}: {tweet_text}")
         breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
+
+        # 🔍 Check for similarity in recent posts -> if similar tweet already posted -> skip posting
+        recent_posts = [p["content"] for p in posted_tweets[-10:]]
+        if is_similar_to_recent(breaking_news, recent_posts):
+            print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
+            continue
+
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
 
@@ -279,7 +307,7 @@ def main_loop():
     last_interim_count = tweet_count_state.get("last_interim_count", 0)
     recent_tweets = []
 
-    ACTIVE_HOUR_START_TIME = "14:30"
+    ACTIVE_HOUR_START_TIME = "17:30"
     ACTIVE_HOUR_END_TIME = "10:00"
 
     is_daily_report_posted = False
@@ -290,7 +318,7 @@ def main_loop():
     while True: 
         if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME):
             active_hour_delay = 60 
-            print(f"🌙 Outside active hours ( {ACTIVE_HOUR_START_TIME}pm - {ACTIVE_HOUR_END_TIME}am(+1) ). Sleeping for {active_hour_delay} seconds...")
+            print(f"🌙 Outside active hours ({ACTIVE_HOUR_START_TIME}pm - {ACTIVE_HOUR_END_TIME}am the next day). Sleeping for {active_hour_delay} seconds...")
             wait_with_progress(active_hour_delay)
             continue
 
@@ -304,9 +332,9 @@ def main_loop():
             recent_tweets.extend(new_tweets_slice)
 
             current_tweet_count = len(posted_tweets)
-            new_tweets = current_tweet_count - last_interim_count
+            new_tweets = current_tweet_count - last_interim_count 
             print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
-            if new_tweets >= 10:
+            if new_tweets >= 20: # every 20 tweets it gives interim report to users... 
                 print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
                 tweets_to_report = recent_tweets[-10:]
                 post_interim_report(new_tweets, tweets_to_report)
