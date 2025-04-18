@@ -308,7 +308,7 @@ def main_loop():
     recent_tweets = []
 
     ACTIVE_HOUR_START_TIME = "17:30"
-    ACTIVE_HOUR_END_TIME = "10:00"
+    ACTIVE_HOUR_END_TIME = "8:00" 
 
     is_daily_report_posted = False
     DAILY_REPORT_POST_TIME_START = "16:30"
