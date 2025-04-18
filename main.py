@@ -286,7 +286,11 @@ def process_user(username, posted_tweets, num_posted):
     num_posted = num_posted + 1
     save_json(posted_tweets, POSTED_TWEETS_FILE)
 
-def is_within_active_hours(start_time="16:00", end_time="10:00"):
+def is_within_active_hours(start_time="16:00", end_time="10:00", test_mode=False):
+
+    if test_mode:
+        return True
+
     # Get current time in KST
     kst = pytz.timezone("Asia/Seoul")
     now_kst = datetime.now(kst).time()
@@ -310,8 +314,8 @@ def main_loop():
     last_interim_count = tweet_count_state.get("last_interim_count", 0)
     recent_tweets = []
 
-    ACTIVE_HOUR_START_TIME = "16:30"
-    ACTIVE_HOUR_END_TIME = "8:00" 
+    ACTIVE_HOUR_START_TIME = "16:30"  
+    ACTIVE_HOUR_END_TIME = "8:00"  
 
     is_daily_report_posted = False 
     DAILY_REPORT_POST_TIME_START = "16:30"
@@ -321,7 +325,8 @@ def main_loop():
     total_num_posts_today = 0
 
     while True: 
-        if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME):
+        
+        if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME, test_mode=True): # if test_mode = True, it always returns True
             active_hour_delay = 60 
             print(f"🌙 Outside active hours ({ACTIVE_HOUR_START_TIME}pm - {ACTIVE_HOUR_END_TIME}am the next day). Sleeping for {active_hour_delay} seconds...")
             wait_with_progress(active_hour_delay)
