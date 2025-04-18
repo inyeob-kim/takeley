@@ -94,12 +94,18 @@ def rewrite_as_breaking_news(text, username, retry=3):
     - 전체 뉴스는 반드시 **10줄 이내**, 짧고 임팩트 있게
     - "**중요한 발표**", "**중요한 내용**" 같은 **모호한 표현은 절대 금지**
     - **사실 기반으로만 작성**, 모르면 추측 없이 원문 그대로 번역
+    - **핵심 키워드(기관명, 인물명, 숫자 등)는 중요하기 때문에 원문 그대로 사용**
     - 긴 트윗이라도 **핵심 정보만 간결하게 요약**
-    - **링크만 있는 트윗**이라면 "⬇️⬇️⬇️"로만 출력
     - **뉴스 내용이 특정 상장 기업과 직접적으로 관련 있을 경우에만**, 본문 중 적절한 위치에 티커를 **$TSLA 형식으로 포함**
     - 티커와 해시태그는 뉴스 본문과 **두 줄 띄운 후** 작성
     - **해시태그는 2~3개**, 뉴스와 직접 관련된 핵심 키워드만
     - 참고: 현재 미국 대통령은 **도널드 트럼프**입니다 (전 대통령 아님)
+    - **아래 조건 중 하나라도 해당되면**, 요약 없이 "⬇️⬇️⬇️"만 출력:
+    1. 트윗이 **링크만 포함된 경우**
+    2. 트윗 내용이 **출처 정보, 작성 시간, 작성자 정보 등 형식적인 문구로만 구성된 경우**
+    3. 내용이 너무 짧아 **핵심 사건이나 사실적 정보가 전혀 없는 경우**
+    - 이런 경우엔 티커 및 해시태그도 생략
+    
 
     📩 트윗 원문 (작성자: @{username}):  
     \"{text}\"
@@ -111,8 +117,8 @@ def rewrite_as_breaking_news(text, username, retry=3):
     투자자들 안전자산 선호 심화  
 
     $JPM $DIA  
- 
-    #JP모건 #침체경고 #시장분석
+
+    #JP모건 #침체경고 #시장분석 
 
     ⏬ 아래 형식을 따라 작성해주세요:
     [첫 줄: 🚨 + 핵심 요약]  
@@ -122,7 +128,6 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     [해시태그: 관련 핵심 키워드 2~3개]
     """
-
 
 
     for attempt in range(retry): 
@@ -224,7 +229,11 @@ def post_to_twitter(text, max_retries=3):
             time.sleep(5)
     return False
 
-def is_similar_to_recent(new_text, recent_texts):
+def is_similar_to_recent(new_text, recent_texts, username):
+
+    # skips checking similar post for TrumpDailyPosts.
+    if username == "TrumpDailyPosts":
+        return False
 
     prompt = (
         "You are an assistant that checks for semantic duplication between social media posts. "
@@ -266,7 +275,7 @@ def process_user(username, posted_tweets, num_posted):
 
         # 🔍 Check for similarity in recent posts -> if similar tweet already posted -> skip posting
         recent_posts = [p["content"] for p in posted_tweets[-10:]]
-        if is_similar_to_recent(breaking_news, recent_posts):
+        if is_similar_to_recent(breaking_news, recent_posts, username):
             print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
             continue
 
