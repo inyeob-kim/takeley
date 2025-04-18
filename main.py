@@ -83,45 +83,47 @@ def wait_with_progress(seconds):
 def rewrite_as_breaking_news(text, username, retry=3):
 
     prompt = f"""
-    당신은 '주식이 미쳤다 뉴스'라는 가상의 글로벌 금융 속보 매체의 기자입니다.
+    당신은 '주식이 미쳤다 뉴스'라는 글로벌 속보 전문 매체의 기자입니다.
 
-    당신의 임무는 트위터 속보를 **한글로 번역해**, 아래 형식의 **시선을 끄는 실시간 속보 뉴스 템플릿**으로 작성하는 것입니다.
+    당신의 임무는 트위터 속보를 **한글로 번역한 후**, 아래 형식의 **강렬한 실시간 뉴스 템플릿**으로 작성하는 것입니다.
 
-    아래 출력 형식을 반드시 지켜주세요:
+    🧠 출력 원칙:
+    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  
+    - 예: "🚨 파월, 금리 인하 시사…시장 기대감 폭발"
+    - **이모지 2~3개 사용** (처음 또는 문장 중 자연스럽게 배치)
+    - 전체 뉴스는 반드시 **6줄 이내**, 짧고 임팩트 있게
+    - "**중요한 발표**", "**중요한 내용**" 같은 **모호한 표현은 절대 금지**
+    - **사실 기반으로만 작성**, 모르면 추측 없이 원문 그대로 번역
+    - 긴 트윗이라도 **핵심 정보만 간결하게 요약**
+    - **링크만 있는 트윗**이라면 "⬇️⬇️⬇️"로만 출력
+    - **뉴스 내용이 특정 상장 기업과 직접적으로 관련 있을 경우에만**, 본문 중 적절한 위치에 티커를 **$TSLA 형식으로 포함**
+    - 티커와 해시태그는 뉴스 본문과 **두 줄 띄운 후** 작성
+    - **해시태그는 2~3개**, 뉴스와 직접 관련된 핵심 키워드만
+    - 참고: 현재 미국 대통령은 **도널드 트럼프**입니다 (전 대통령 아님)
 
-    🚨 글로벌 이슈 속보
-    \n\n
-    핵심 인물 또는 기관 + 행동/사건 요약 
-    → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
+    📩 트윗 원문 (작성자: @{username}):  
+    \"{text}\"
 
-    주의 사항: 
-    - 전체는 반드시 **6줄 이내**, 간결하고 강력하게
-    - "**중요한 발표**", "**중요한 내용**"과 같이 **모호한 표현은 절대 사용하지 마세요**
-    - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
-    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것
-    - 긴 트윗이라도 핵심 정보 위주로 압축할 것
-    - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
-    - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
-    - **뉴스 분위기와 맥락에 어울리는 이모지를 2~3개 정도만 자연스럽게 사용**하세요 (예: 📉📈🌍🔥). 과도한 이모지 사용은 금지합니다.
+    📰 출력 형식 예시:
+    🚨 JP모건 “경기침체 피할 수 없다” 경고  
+    글로벌 증시 일제히 하락세 📉  
+    美 채권 수익률 급락, 달러 강세 반전  
+    투자자들 안전자산 선호 심화  
 
-    트윗 원문 (작성자: @{username}):  
-    \"{text}\" 
+    $JPM $DIA  
+ 
+    #JP모건 #침체경고 #시장분석
 
-    출력 형식: 
-    뉴스 본문 내용 (6줄 이내, 간결하고 강력하게)
+    ⏬ 아래 형식을 따라 작성해주세요:
+    [첫 줄: 🚨 + 핵심 요약]  
+    [사건 내용 (최대 5줄 이내로 압축)]  
 
-    티커가 존재할 경우:  
-    [본문]   
-    \n\n  
-    $TSLA $NVDA (티커 여러 개 가능)  
-    \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+    [티커: 특정 상장기업 관련 있을 경우만]  
 
-    티커가 존재하지 않을 경우:  
-    [본문]  
-    \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+    [해시태그: 관련 핵심 키워드 2~3개]
     """
+
+
 
     for attempt in range(retry): 
         try:
@@ -244,7 +246,7 @@ def is_similar_to_recent(new_text, recent_texts):
 
 
 # 사용자별 트윗 처리 
-def process_user(username, posted_tweets):
+def process_user(username, posted_tweets, num_posted):
     tweets = fetch_latest_tweets(username, TWEET_LIMIT)
     if tweets is None:
         print(f"⏭️ @{username} skipped due to rate limit.\n")
@@ -281,6 +283,7 @@ def process_user(username, posted_tweets):
             wait_with_progress(10) 
 
     posted_tweets.extend(new_posts)
+    num_posted = num_posted + 1
     save_json(posted_tweets, POSTED_TWEETS_FILE)
 
 def is_within_active_hours(start_time="16:00", end_time="10:00"):
@@ -307,13 +310,15 @@ def main_loop():
     last_interim_count = tweet_count_state.get("last_interim_count", 0)
     recent_tweets = []
 
-    ACTIVE_HOUR_START_TIME = "17:30"
+    ACTIVE_HOUR_START_TIME = "16:30"
     ACTIVE_HOUR_END_TIME = "8:00" 
 
-    is_daily_report_posted = False
+    is_daily_report_posted = False 
     DAILY_REPORT_POST_TIME_START = "16:30"
     DAILY_REPORT_POST_TIME_END = "17:00"
     DAILY_REPORT_RESET_TIME = "05:00"
+
+    total_num_posts_today = 0
 
     while True: 
         if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME):
@@ -325,7 +330,7 @@ def main_loop():
         if user_queue:
             username = user_queue.popleft()
             before_count = len(posted_tweets) 
-            process_user(username, posted_tweets)
+            process_user(username, posted_tweets, total_num_posts_today)
             user_queue.append(username)
 
             new_tweets_slice = posted_tweets[before_count:]
@@ -334,9 +339,10 @@ def main_loop():
             current_tweet_count = len(posted_tweets)
             new_tweets = current_tweet_count - last_interim_count 
             print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
-            if new_tweets >= 20: # every 20 tweets it gives interim report to users... 
+            new_tweet_range = 20 # when number of recent new tweets reaches 20
+            if new_tweets >= new_tweet_range: # every new_tweet_range tweets it gives interim report to users... 
                 print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
-                tweets_to_report = recent_tweets[-10:]
+                tweets_to_report = recent_tweets[-new_tweet_range:]
                 post_interim_report(new_tweets, tweets_to_report)
                 last_interim_count = current_tweet_count
                 tweet_count_state["last_interim_count"] = last_interim_count
@@ -357,7 +363,8 @@ def main_loop():
 
             # next_user_delay = random.randint(60, 90) 
             next_user_delay = 90 
-            print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...\n")
+            print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...")
+            print(f"✅ Total number of posts: {total_num_posts_today}\n")
             wait_with_progress(next_user_delay)
         else:
             print("🟨 No users in queue. Sleeping for 5 minutes...")
