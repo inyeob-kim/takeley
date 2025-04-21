@@ -19,10 +19,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
  
 # 사용자 큐 설정
-user_queue = deque(["SawyerMerritt", "Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo"]) 
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo"]) 
 
 TWEET_LIMIT = 5  
-  
+   
 # Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
@@ -80,14 +80,6 @@ def wait_with_progress(seconds):
     for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
-def bold_first_line(text):
-    # Split by the first newline (or two, depending on your format)
-    lines = text.strip().split('\n', 1)
-    bolded_title = bold_unicode(lines[0])
-    rest = lines[1] if len(lines) > 1 else ''
-    return f"{bolded_title}\n{rest}"
-
-
 def rewrite_as_breaking_news(text, username, retry=3):
 
     prompt = f"""
@@ -98,7 +90,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     아래 출력 형식을 반드시 지켜주세요:
 
     주의 사항: 
-    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  (예: "🚨 파월, 금리 인하 시사…시장 기대감 폭발")
+    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  (예: "⚡ 속보: 파월, 금리 인하 시사…시장 기대감 폭발")
     - 핵심 인물 또는 기관 + 행동/사건 요약 → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
     - **시간 흐름이나 정보 흐름에 따라 정돈된 문단 구조**로 구성 (예: 무엇이 언제 발생하는지 중심) 
     - 일정, 실적, 제품 출시 등은 반드시 **트윗 내용 그대로 구체적으로** 써야 합니다.
@@ -114,7 +106,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     \"{text}\"  
 
     출력 형식 예시:
-    🚨 긴급 뉴스: JP모건 “경기침체 피할 수 없다” 경고  
+    ⚡ 속보: JP모건 “경기침체 피할 수 없다” 경고  
 
     글로벌 증시 일제히 하락세 📉  
     美 채권 수익률 급락, 달러 강세 반전  
@@ -126,7 +118,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     아래 형식을 따라 작성해주세요:
     티커가 존재할 경우:  
-    [첫 줄: 🚨 긴급 뉴스: + 핵심 요약]   
+    [첫 줄: ⚡ 속보: + 핵심 요약]   
     \n\n 
     [본문]   
     \n\n  
@@ -135,7 +127,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막 #BreakingNews는 고정)
 
     티커가 존재하지 않을 경우:  
-    [첫 줄: 🚨 긴급 뉴스: + 핵심 요약]  
+    [첫 줄: ⚡ 속보: + 핵심 요약]  
     \n\n
     [본문]  
     \n\n  
