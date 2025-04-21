@@ -121,19 +121,19 @@ def rewrite_as_breaking_news(text, username, retry=3):
     아래 형식을 따라 작성해주세요:
     티커가 존재할 경우:  
     [첫 줄: 🚨 + 핵심 요약]   
-    \n\n
+    \n\n 
     [본문]   
     \n\n  
     $TSLA $NVDA (티커 여러 개 가능)  
     \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막 #BreakingNews는 고정)
 
     티커가 존재하지 않을 경우:  
     [첫 줄: 🚨 + 핵심 요약]  
     \n\n
     [본문]  
     \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막#BreakingNews는 고정) 
     """
 
     for attempt in range(retry): 
