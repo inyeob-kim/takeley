@@ -80,6 +80,13 @@ def wait_with_progress(seconds):
     for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
+def bold_first_line(text):
+    # Split by the first newline (or two, depending on your format)
+    lines = text.strip().split('\n', 1)
+    bolded_title = bold_unicode(lines[0])
+    rest = lines[1] if len(lines) > 1 else ''
+    return f"{bolded_title}\n{rest}"
+
 
 def rewrite_as_breaking_news(text, username, retry=3):
 
@@ -97,7 +104,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     - 일정, 실적, 제품 출시 등은 반드시 **트윗 내용 그대로 구체적으로** 써야 합니다.
     - "**중요한 발표**", "**계획 공개**"처럼 모호하거나 요약된 표현은 절대 금지입니다. (예: "로보택시, 8월 8일 공개 예정" → O / "중요 일정 발표" → X)
     - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
-    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것  
+    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것   
     - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
     - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
     - **뉴스 분위기와 맥락에 어울리는 이모지를 2~3개 정도만 자연스럽게 사용**하세요 (예: 📉📈🌍🔥). 과도한 이모지 사용은 금지합니다.
@@ -107,7 +114,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     \"{text}\"  
 
     출력 형식 예시:
-    🚨 JP모건 “경기침체 피할 수 없다” 경고  
+    🚨 긴급 뉴스: JP모건 “경기침체 피할 수 없다” 경고  
 
     글로벌 증시 일제히 하락세 📉  
     美 채권 수익률 급락, 달러 강세 반전  
@@ -119,7 +126,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     아래 형식을 따라 작성해주세요:
     티커가 존재할 경우:  
-    [첫 줄: 🚨 + 핵심 요약]   
+    [첫 줄: 🚨 긴급 뉴스: + 핵심 요약]   
     \n\n 
     [본문]   
     \n\n  
@@ -128,7 +135,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막 #BreakingNews는 고정)
 
     티커가 존재하지 않을 경우:  
-    [첫 줄: 🚨 + 핵심 요약]  
+    [첫 줄: 🚨 긴급 뉴스: + 핵심 요약]  
     \n\n
     [본문]  
     \n\n  
