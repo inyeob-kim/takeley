@@ -15,15 +15,15 @@ from summary_report import post_summary_report, post_interim_report
 set_environment()
 
 # 🔑 API Keys
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = os.getenv("OPENAI_API_KEY") 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
  
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts"])
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo", "unusual_whales"])
 
 TWEET_LIMIT = 5 
 
-# Twitter Clients
+# Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
 client_twitter = tweepy.Client( 
@@ -80,38 +80,36 @@ def wait_with_progress(seconds):
     for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
+
 def rewrite_as_breaking_news(text, username, retry=3):
 
     prompt = f"""
-    당신은 '주식이 미쳤다 뉴스'라는 글로벌 속보 전문 매체의 기자입니다.
+    당신은 '주식이 미쳤다 뉴스'라는 가상의 글로벌 금융 속보 매체의 기자입니다.
 
-    당신의 임무는 트위터 속보를 **한글로 번역한 후**, 아래 형식의 **강렬한 실시간 뉴스 템플릿**으로 작성하는 것입니다.
+    당신의 임무는 트위터 속보를 **한글로 번역해**, 아래 형식의 **시선을 끄는 실시간 속보 뉴스 템플릿**으로 작성하는 것입니다.
 
-    출력 원칙:
-    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  
-    - 예: "🚨 파월, 금리 인하 시사…시장 기대감 폭발"
-    - **이모지 2~3개 사용** (처음 또는 문장 중 자연스럽게 배치)
-    - 전체 뉴스는 반드시 **10줄 이내**, 짧고 임팩트 있게
-    - "**중요한 발표**", "**중요한 내용**" 같은 **모호한 표현은 절대 금지**
-    - **사실 기반으로만 작성**, 모르면 추측 없이 원문 그대로 번역
-    - **핵심 키워드(기관명, 인물명, 숫자 등)는 중요하기 때문에 원문 그대로 사용**
-    - 긴 트윗이라도 **핵심 정보만 간결하게 요약**
-    - **뉴스 내용이 특정 상장 기업과 직접적으로 관련 있을 경우에만**, 본문 중 적절한 위치에 티커를 **$TSLA 형식으로 포함**
-    - 티커와 해시태그는 뉴스 본문과 **두 줄 띄운 후** 작성
-    - **해시태그는 2~3개**, 뉴스와 직접 관련된 핵심 키워드만
-    - 참고: 현재 미국 대통령은 **도널드 트럼프**입니다 (전 대통령 아님)
-    - **아래 조건 중 하나라도 해당되면**, 요약 없이 "⬇️⬇️⬇️"만 출력:
-    1. 트윗이 **링크만 포함된 경우**
-    2. 트윗 내용이 **출처 정보, 작성 시간, 작성자 정보 등 형식적인 문구로만 구성된 경우**
-    3. 내용이 너무 짧아 **핵심 사건이나 사실적 정보가 전혀 없는 경우**
-    - 이런 경우엔 티커 및 해시태그도 생략
-    
+    아래 출력 형식을 반드시 지켜주세요:
 
-    📩 트윗 원문 (작성자: @{username}):  
-    \"{text}\"
- 
+    주의 사항: 
+    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  (예: "🚨 파월, 금리 인하 시사…시장 기대감 폭발")
+    - 전체는 반드시 **10줄 이내**, 간결하고 강력하게
+    - 핵심 인물 또는 기관 + 행동/사건 요약 
+        → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
+    - **시간 흐름이나 정보 흐름에 따라 정돈된 문단 구조**로 구성 (예: 무엇이 언제 발생하는지 중심) 
+    - "**중요한 발표**", "**중요한 내용**"과 같이 **모호한 표현은 절대 사용하지 마세요**
+    - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
+    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것 
+    - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
+    - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
+    - **뉴스 분위기와 맥락에 어울리는 이모지를 2~3개 정도만 자연스럽게 사용**하세요 (예: 📉📈🌍🔥). 과도한 이모지 사용은 금지합니다.
+    - **중요**: 현재 미국 대통령은 **도널드 트럼프**입니다 (전 대통령 아님)
+
+    트윗 원문 (작성자: @{username}):  
+    \"{text}\" 
+
     출력 형식 예시:
     🚨 JP모건 “경기침체 피할 수 없다” 경고  
+
     글로벌 증시 일제히 하락세 📉  
     美 채권 수익률 급락, 달러 강세 반전  
     투자자들 안전자산 선호 심화  
@@ -121,14 +119,22 @@ def rewrite_as_breaking_news(text, username, retry=3):
     #JP모건 #침체경고 #시장분석 
 
     아래 형식을 따라 작성해주세요:
+    티커가 존재할 경우:  
+    [첫 줄: 🚨 + 핵심 요약]   
+    \n\n
+    [본문]   
+    \n\n  
+    $TSLA $NVDA (티커 여러 개 가능)  
+    \n\n  
+    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
+
+    티커가 존재하지 않을 경우:  
     [첫 줄: 🚨 + 핵심 요약]  
-    [사건 내용 (최대 10줄 이내로 압축)]  
-
-    [티커: 특정 상장기업 관련 있을 경우만]  
-
-    [해시태그: 관련 핵심 키워드 2~3개]
+    \n\n
+    [본문]  
+    \n\n  
+    #Hashtag1 #Hashtag2 #Hashtag3 (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함)
     """
-
 
     for attempt in range(retry): 
         try:
@@ -229,6 +235,29 @@ def post_to_twitter(text, max_retries=3):
             time.sleep(5)
     return False
 
+def is_irrelevant_or_ad(tweet_text, username):
+
+    # skips checking similar post for TrumpDailyPosts.
+    if username == "TrumpDailyPosts":
+        return False
+
+    prompt = (
+        "You are a smart assistant that classifies tweets based on their relevance to financial investors.\n"
+        "If the tweet is promotional, advertising, or unrelated to finance, economics, political, or investment insights, respond with 'YES'.\n"
+        "Otherwise, respond with 'NO'.\n\n"
+        f"Tweet:\n{tweet_text}\n\n"
+        "Is this tweet irrelevant or promotional?"
+    )
+
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    result = response.choices[0].message.content.strip()
+
+    return result.upper() == "YES"
+
+
 def is_similar_to_recent(new_text, recent_texts, username):
 
     # skips checking similar post for TrumpDailyPosts.
@@ -268,6 +297,12 @@ def process_user(username, posted_tweets, num_posted):
 
         if not tweet_text.strip():
             print(f"⚠️ Skipping @{username}'s tweet ({tweet_id}) due to empty text.")
+            continue 
+
+        # ❌ Skip if tweet is ad/promotional/unrelated except Donald Trump Tweet
+        if is_irrelevant_or_ad(tweet_text, username):
+            print(f"🧹 Skipping @{username}'s tweet ({tweet_id}) below — Reason: detected as irrelevant or ad.")
+            print(f"🧹 Skipped Tweet:\n{tweet_text} ")
             continue
 
         print(f"🧠 @{username}: {tweet_text}")
@@ -275,14 +310,14 @@ def process_user(username, posted_tweets, num_posted):
 
         # 🔍 Check for similarity in recent posts -> if similar tweet already posted -> skip posting
         recent_posts = [p["content"] for p in posted_tweets[-10:]]
-        if is_similar_to_recent(breaking_news, recent_posts, username):
+        if is_similar_to_recent(breaking_news, recent_posts, username): # except Donald Trump Tweet
             print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
             continue
-
+ 
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
 
-        success = post_to_twitter(final_text)
+        success = post_to_twitter(final_text) 
         if success:
             new_posts.append({
                 "tweet_id": tweet_id,
