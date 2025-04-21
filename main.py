@@ -19,10 +19,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
  
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo", "unusual_whales"])
+user_queue = deque(["SawyerMerritt", "Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo"]) 
 
-TWEET_LIMIT = 5 
-
+TWEET_LIMIT = 5  
+  
 # Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
@@ -92,20 +92,19 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     주의 사항: 
     - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  (예: "🚨 파월, 금리 인하 시사…시장 기대감 폭발")
-    - 전체는 반드시 **10줄 이내**, 간결하고 강력하게
-    - 핵심 인물 또는 기관 + 행동/사건 요약 
-        → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
+    - 핵심 인물 또는 기관 + 행동/사건 요약 → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
     - **시간 흐름이나 정보 흐름에 따라 정돈된 문단 구조**로 구성 (예: 무엇이 언제 발생하는지 중심) 
-    - "**중요한 발표**", "**중요한 내용**"과 같이 **모호한 표현은 절대 사용하지 마세요**
+    - 일정, 실적, 제품 출시 등은 반드시 **트윗 내용 그대로 구체적으로** 써야 합니다.
+    - "**중요한 발표**", "**계획 공개**"처럼 모호하거나 요약된 표현은 절대 금지입니다. (예: "로보택시, 8월 8일 공개 예정" → O / "중요 일정 발표" → X)
     - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
-    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것 
+    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것  
     - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
     - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
     - **뉴스 분위기와 맥락에 어울리는 이모지를 2~3개 정도만 자연스럽게 사용**하세요 (예: 📉📈🌍🔥). 과도한 이모지 사용은 금지합니다.
-    - **중요**: 현재 미국 대통령은 **도널드 트럼프**입니다 (전 대통령 아님)
+    - **중요**: 현재 미국 대통령은 **도널드 트럼프**이고 이미 대선은 끝난 상태입니다. (전 대통령 아님) 
 
-    트윗 원문 (작성자: @{username}):  
-    \"{text}\" 
+    트윗 원문 (작성자: @{username}):   
+    \"{text}\"  
 
     출력 형식 예시:
     🚨 JP모건 “경기침체 피할 수 없다” 경고  
@@ -411,7 +410,7 @@ def main_loop():
             print(f"✅ Daily Report Posted : {is_daily_report_posted}\n")
 
             # next_user_delay = random.randint(60, 90) 
-            next_user_delay = 90 
+            next_user_delay = 60  
             print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...")
             print(f"✅ Total number of posts: {total_num_posts_today}\n")
             wait_with_progress(next_user_delay)
