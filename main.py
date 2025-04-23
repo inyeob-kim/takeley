@@ -19,9 +19,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
  
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "TrumpDailyPosts", "BRICSinfo"]) 
+user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo"]) 
 
-TWEET_LIMIT = 5  
+TWEET_LIMIT = 5   
    
 # Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
@@ -39,7 +39,7 @@ USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
 
 # File helpers
 def save_json(data, filename):
-    try:
+    try: 
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
@@ -87,25 +87,41 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     당신의 임무는 트위터 속보를 **한글로 번역해**, 아래 형식의 **시선을 끄는 실시간 속보 뉴스 템플릿**으로 작성하는 것입니다.
 
-    아래 출력 형식을 반드시 지켜주세요:
+    ⚠️ 중요 지침:
 
-    주의 사항: 
-    - **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  (예: "⚡ 속보: 파월, 금리 인하 시사…시장 기대감 폭발")
-    - 핵심 인물 또는 기관 + 행동/사건 요약 → 실제 무슨 일이 벌어졌는지 **구체적으로** 설명
-    - **시간 흐름이나 정보 흐름에 따라 정돈된 문단 구조**로 구성 (예: 무엇이 언제 발생하는지 중심) 
-    - 일정, 실적, 제품 출시 등은 반드시 **트윗 내용 그대로 구체적으로** 써야 합니다.
-    - "**중요한 발표**", "**계획 공개**"처럼 모호하거나 요약된 표현은 절대 금지입니다. (예: "로보택시, 8월 8일 공개 예정" → O / "중요 일정 발표" → X)
-    - 핵심 정보(기관명, 숫자, 국가 등)는 원문 그대로 사용 가능
-    - 분석이나 의견 없이 **객관적인 사실만** 전달할 것   
-    - 만약 트윗이 URL 링크뿐이라면 ⬇️⬇️⬇️ 리턴
-    - **트윗 내용이 특정 상장 기업과 직접적으로 관련 있을 경우**, 해당 기업의 티커를 뉴스 본문 중 적절한 위치에 **$TSLA $NVDA** 형식으로 포함하세요. 관련 없다면 티커는 생략하세요.
-    - **뉴스 분위기와 맥락에 어울리는 이모지를 2~3개 정도만 자연스럽게 사용**하세요 (예: 📉📈🌍🔥). 과도한 이모지 사용은 금지합니다.
-    - **중요**: 현재 미국 대통령은 **도널드 트럼프**이고 이미 대선은 끝난 상태입니다. (전 대통령 아님) 
+    1. **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  
+    - 예: "⚡ 속보: 파월, 금리 인하 시사…시장 기대감 폭발"
 
-    트윗 원문 (작성자: @{username}):   
+    2. 핵심 인물 또는 기관 + 행동/사건 요약 → **무슨 일이 벌어졌는지 구체적으로 설명**
+ 
+    3. **시간 흐름, 정보 흐름**에 따라 정돈된 문단 구성  
+    - 예: 사건 발생 → 영향 → 관련 배경
+
+    4. 일정, 실적, 출시 등 숫자나 날짜 정보는 **절대 요약하지 말고 원문 그대로 정확하게 번역**  
+    - ❌ 요약 예: "중요한 발표", "일정 공유"
+    - ✅ 바른 예: "로보택시, 8월 8일 공개 예정", "2분기 매출 2.45억 달러, 전년 대비 12% 증가"
+    - 🔥 반드시 **트윗 속 숫자와 표현을 한 글자도 빠짐없이** 반영할 것
+
+    5. URL 링크뿐인 트윗은 그대로 ⬇️⬇️⬇️ 리턴
+
+    6. 트윗이 특정 **상장 기업**과 직접적 관련 있을 경우, 본문 중 적절히 **티커 ($TSLA $NVDA)** 삽입  
+    - 무관하면 티커 생략
+
+    7. 분위기와 맥락에 어울리는 **이모지 2~3개 자연스럽게 활용**  
+    - 과도한 이모지 금지
+
+    8. **분석, 해석, 추측 일절 금지. 오직 사실만 전달**
+
+    9. **현재 미국 대통령은 도널드 트럼프입니다. (전 대통령 아님)**
+
+    ---
+
+    트윗 원문 (작성자: @{username}):  
     \"{text}\"  
 
+
     출력 형식 예시:
+
     ⚡ 속보: JP모건 “경기침체 피할 수 없다” 경고  
 
     글로벌 증시 일제히 하락세 📉  
@@ -114,26 +130,29 @@ def rewrite_as_breaking_news(text, username, retry=3):
 
     $JPM $DIA  
 
-    #JP모건 #침체경고 #시장분석 
+    #JP모건 #침체경고 #시장분석 #BreakingNews  
 
-    아래 형식을 따라 작성해주세요:
-    티커가 존재할 경우:  
-    [첫 줄: ⚡ 속보: + 핵심 요약]   
-    \n\n 
-    [본문]   
-    \n\n  
-    $TSLA $NVDA (티커 여러 개 가능)  
-    \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막 #BreakingNews는 고정)
 
-    티커가 존재하지 않을 경우:  
-    [첫 줄: ⚡ 속보: + 핵심 요약]  
-    \n\n
+    출력 형식:
+
+    티커 존재 시:  
+    [⚡ 속보: + 핵심 문장]  
+
     [본문]  
-    \n\n  
-    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews (2~3개, 반드시 뉴스와 직접적인 관련이 있어야 함, 마지막#BreakingNews는 고정) 
+
+    $TSLA $NVDA (티커 여러 개 가능)  
+
+    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews  
+
+    티커 없을 시:  
+    [⚡ 속보: + 핵심 문장]  
+
+    [본문]  
+
+    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews  
     """
 
+ 
     for attempt in range(retry): 
         try:
             response = openai.chat.completions.create(
@@ -395,18 +414,18 @@ def main_loop():
                 tweet_count_state["last_interim_count"] = last_interim_count
                 save_json(tweet_count_state, tweet_count_state_file)
                 recent_tweets.clear()
+ 
+            # now = datetime.now().strftime("%H:%M")
+            # if not is_daily_report_posted and "16:30" <= now < "17:00":
+            #     post_report_result = post_summary_report()
+            #     if post_report_result:
+            #         is_daily_report_posted = True
 
-            now = datetime.now().strftime("%H:%M")
-            if not is_daily_report_posted and "16:30" <= now < "17:00":
-                post_report_result = post_summary_report()
-                if post_report_result:
-                    is_daily_report_posted = True
+            # if now >= DAILY_REPORT_RESET_TIME and now < "05:10": 
+            #     print(f'🔄 Daily Report Flag Time Successfully Reset to {DAILY_REPORT_RESET_TIME}')
+            #     is_daily_report_posted = False
 
-            if now >= DAILY_REPORT_RESET_TIME and now < "05:10": 
-                print(f'🔄 Daily Report Flag Time Successfully Reset to {DAILY_REPORT_RESET_TIME}')
-                is_daily_report_posted = False
-
-            print(f"✅ Daily Report Posted : {is_daily_report_posted}\n")
+            # print(f"✅ Daily Report Posted : {is_daily_report_posted}\n")
 
             # next_user_delay = random.randint(60, 90) 
             next_user_delay = 60  
