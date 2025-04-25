@@ -21,7 +21,7 @@ TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 # 사용자 큐 설정
 user_queue = deque(["Investingcom", "KobeissiLetter", "DeItaone", "BRICSinfo"]) 
 
-TWEET_LIMIT = 5   
+TWEET_LIMIT = 5
    
 # Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
@@ -276,28 +276,29 @@ def is_irrelevant_or_ad(tweet_text, username):
 
 
 def is_similar_to_recent(new_text, recent_texts, username):
-
-    # skips checking similar post for TrumpDailyPosts.
+    # Skip checking for specific usernames
     if username == "TrumpDailyPosts":
         return False
 
     prompt = (
-        "You are an assistant that checks for semantic duplication between social media posts. "
-        "Given a new post and a list of previous posts, determine if the new one is semantically similar "
-        "to any of the previous ones. Respond only with 'YES' or 'NO'.\n\n"
+        "You are an assistant that checks if a new social media post is reporting the same news as any recent posts. "
+        "Two posts are considered similar **only** if they are about the exact same event or news topic, "
+        "even if the wording is different. Do not consider general themes or opinions—focus only on whether "
+        "the actual subject of the news is the same.\n\n"
         f"New Post:\n{new_text}\n\n"
-        f"Previous Posts:\n" +
+        f"Recent Posts:\n" +
         "\n---\n".join(recent_texts) +
-        "\n\nIs the new post semantically similar to any of the previous posts?"
+        "\n\nIs the new post reporting the same news as any of the previous posts? Respond only with 'YES' or 'NO'."
     )
-
+ 
     response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
-    ) 
+    )
     result = response.choices[0].message.content.strip()
 
     return result.upper() == "YES"
+
 
 
 # 사용자별 트윗 처리 
@@ -329,7 +330,7 @@ def process_user(username, posted_tweets, num_posted):
         recent_posts = [p["content"] for p in posted_tweets[-10:]]
         if is_similar_to_recent(breaking_news, recent_posts, username): # except Donald Trump Tweet
             print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
-            continue
+            continue 
  
         tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
         final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
