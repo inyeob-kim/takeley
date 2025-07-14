@@ -376,26 +376,50 @@ def is_within_active_hours(start_time="16:00", end_time="10:00", test_mode=False
         # Window crosses midnight
         return now_kst >= start_time_obj or now_kst < end_time_obj
     
+from datetime import datetime, timedelta
+import pytz
+import os
+
+def parse_time_str(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        print(f"❌ 시간 파싱 오류: {s} -> {e}")
+        return None
+
 def generate_youtube_script():
     print("🎥 Generating YouTube script for today’s summary video...")
     try:
         posted_tweets = load_json(POSTED_TWEETS_FILE)
         kst = pytz.timezone("Asia/Seoul")
+        now_kst = datetime.now(kst)
 
-        # 현재 시각 (KST 기준)
-        end_time = datetime.now(kst).replace(tzinfo=None)
+        today_date = now_kst.date()
+        yesterday_date = today_date - timedelta(days=1)
 
-        # 새벽 5시 이전이면, 전날 18:00 ~ 오늘 05:00 기준
-        if end_time.hour < 5:
-            start_time = (end_time - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
-        else:
-            start_time = end_time.replace(hour=18, minute=0, second=0, microsecond=0)
+        # start_time: 어제 22:00
+        start_time = datetime.combine(yesterday_date, datetime.min.time(), tzinfo=kst).replace(hour=22)
+        # end_time: 오늘 06:00
+        end_time = datetime.combine(today_date, datetime.min.time(), tzinfo=kst).replace(hour=6)
 
-        # 해당 기간의 트윗 필터링
-        filtered_tweets = [
-            t for t in posted_tweets
-            if start_time.strftime("%Y-%m-%d %H:%M:%S") <= t["time"] <= end_time.strftime("%Y-%m-%d %H:%M:%S")
-        ]
+        # 비교할 때는 tzinfo 제거 (기존 코드 방식 유지)
+        start_time_naive = start_time.replace(tzinfo=None)
+        end_time_naive = end_time.replace(tzinfo=None)
+
+        print("filtered time range:") 
+        print("start_time =", start_time_naive)
+        print("end_time   =", end_time_naive)
+
+        filtered_tweets = []
+        for t in posted_tweets:
+            tweet_time = parse_time_str(t.get("time", ""))
+            if tweet_time is None:
+                continue
+            if start_time_naive <= tweet_time <= end_time_naive:
+                filtered_tweets.append(t) 
+
+        print("✅ total posted tweets len =", len(posted_tweets))
+        print("✅ filtered tweets len =", len(filtered_tweets))
 
         # 뉴스 내용 정리
         contents = "\n".join([f"- {t['content']}" for t in filtered_tweets])
@@ -422,7 +446,7 @@ def generate_youtube_script():
                 3. **전체 분량은 약 5분 분량의 유튜브 영상 스크립트로 구성**
 
                 ---
- 
+
                 🎬 유튜브 영상 포맷:
 
                 인트로 (5초):  
@@ -442,7 +466,7 @@ def generate_youtube_script():
 
                 아래는 오늘 들어온 뉴스입니다:  
                 {contents}
-            """ 
+            """
 
         # GPT 호출
         response = openai.chat.completions.create(
@@ -459,7 +483,7 @@ def generate_youtube_script():
         print(f"✅ YouTube script generated and saved to {filename}:\n")
         print(script)
 
-        # Send email automatically
+        # 이메일 자동 전송
         send_script_email(script)
 
         return script
@@ -467,7 +491,6 @@ def generate_youtube_script():
     except Exception as e:
         print(f"❌ Failed to generate YouTube script: {e}")
         return None
-
 
 
 def send_script_email(script_text):
@@ -487,7 +510,7 @@ def send_script_email(script_text):
         print("✅ Email sent successfully!")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
-
+ 
 def main_loop(test_mode=False):
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
     posted_tweets = load_json(POSTED_TWEETS_FILE)
@@ -506,6 +529,8 @@ def main_loop(test_mode=False):
     DAILY_REPORT_RESET_TIME = "05:00"
 
     total_num_posts_today = 0
+
+    is_daily_script_sent = False  # ✅ 6시 스크립트 전송 여부 플래그
 
     if test_mode:
         # Generate YouTube script immediately
@@ -561,11 +586,18 @@ def main_loop(test_mode=False):
             print(f"✅ Total number of posts: {total_num_posts_today}\n")
             wait_with_progress(next_user_delay)
 
+            # ✅ 매일 06:00 ~ 06:10 사이에 1회만 실행
             kst = pytz.timezone("Asia/Seoul")
             now_kst = datetime.now(kst)
+            now_time = now_kst.strftime("%H:%M")
 
-            if now_kst.strftime("%H:%M") == "05:00":
+            if "06:00" <= now_time < "06:20" and not is_daily_script_sent:
+                print("🕕 06:00~06:20 범위 진입 — 유튜브 스크립트 생성 및 이메일 전송")
                 generate_youtube_script()
+                is_daily_script_sent = True
+ 
+            elif now_time >= "06:20":
+                is_daily_script_sent = False
 
         else:
             print("🟨 No users in queue. Sleeping for 5 minutes...")
