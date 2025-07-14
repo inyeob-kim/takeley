@@ -19,7 +19,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
  
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "DeItaone", "BRICSinfo"]) 
+user_queue = deque(["Investingcom", "DeItaone", "BRICSinfo", "TheSonOfWalkley", "SawyerMerritt"]) 
 
 TWEET_LIMIT = 5
    
@@ -110,13 +110,11 @@ def rewrite_as_breaking_news(text, username, retry=3):
     7. 분위기와 맥락에 어울리는 **이모지 2~3개 자연스럽게 활용**  
     - 과도한 이모지 금지
 
-    8. **분석, 해석, 추측 일절 금지. 오직 사실만 전달**
+    8. **추측 일절 금지. 오직 객관적 분석 및 해석, 사실만 전달**
 
     9. **현재 미국 대통령은 도널드 트럼프입니다. (전 대통령 아님)**
 
     ---
-
-    트윗 원문 (작성자: @{username}):  
     \"{text}\"  
 
 
@@ -332,8 +330,10 @@ def process_user(username, posted_tweets, num_posted):
             print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
             continue 
  
-        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-        final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
+        # tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+        # final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
+
+        final_text = f"{breaking_news}\n" 
 
         success = post_to_twitter(final_text) 
         if success:
@@ -366,8 +366,100 @@ def is_within_active_hours(start_time="16:00", end_time="10:00", test_mode=False
     else:
         # Window crosses midnight
         return now_kst >= start_time_obj or now_kst < end_time_obj
+    
+def generate_youtube_script():
+    print("🎥 Generating YouTube script for today’s summary video...")
+    try:
+        posted_tweets = load_json(POSTED_TWEETS_FILE)
+        kst = pytz.timezone("Asia/Seoul")
 
-def main_loop():
+        # 현재 시각 (KST 기준)
+        end_time = datetime.now(kst).replace(tzinfo=None)
+
+        # 새벽 5시 이전이면, 전날 18:00 ~ 오늘 05:00 기준
+        if end_time.hour < 5:
+            start_time = (end_time - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
+        else:
+            start_time = end_time.replace(hour=18, minute=0, second=0, microsecond=0)
+
+        # 해당 기간의 트윗 필터링
+        filtered_tweets = [
+            t for t in posted_tweets
+            if start_time.strftime("%Y-%m-%d %H:%M:%S") <= t["time"] <= end_time.strftime("%Y-%m-%d %H:%M:%S")
+        ]
+
+        # 뉴스 내용 정리
+        contents = "\n".join([f"- {t['content']}" for t in filtered_tweets])
+
+        # OpenAI 프롬프트
+        prompt = f"""
+                당신은 ‘주식이 미쳤다 뉴스’라는 글로벌 금융 속보 채널의 유튜브 콘텐츠 기획자이자 대본 작성자입니다.
+
+                아래는 최근 12시간 동안 수집된 금융 뉴스 트윗 요약입니다.
+                이 중에서 **실제로 투자자에게 중요한 뉴스**만을 추려, 아래 포맷에 맞춰 **하루 1편 영상용 대본**을 작성하세요.
+
+                ⚠️ 중요 지침:
+
+                1. **투자자와 글로벌 금융 종사자가 관심 가질만한 뉴스만 반영**
+                    - 미국 경제지표 (CPI, PPI, 고용, 연준 관련)
+                    - 주요 기업 실적 (TSLA, NVDA, AAPL 등)
+                    - 금리 정책, 통화정책, 지정학 이슈
+                    - 산업 흐름 (AI, 반도체, 전기차, 원유 등)
+                    - 실질적 시장에 영향 주는 사건 중심 (루머/사견/광고 제외)
+
+                2. **뉴스 요약은 오로지 사실 중심**으로 작성하며 과장 금지  
+                    - 숫자/날짜/수치 누락 없이 정확히 사용
+
+                3. **전체 분량은 약 2분 분량의 유튜브 영상 스크립트로 구성**
+
+                ---
+
+                🎬 유튜브 영상 포맷:
+
+                인트로 (5초):  
+                “⚡ 글로벌 금융 속보 — 지금 바로 확인하세요!”
+
+                헤드라인 (30초):  
+                오늘의 핵심 키워드 3가지를 뽑아 간결하게 요약
+
+                본문 요약 (2분):  
+                각 뉴스에 대해 ‘무슨 일이 일어났고 왜 중요한지’를 설명  
+                투자자 입장에서 가장 중요한 맥락만 정리
+
+                클로징 (20초):  
+                내일 주목할 이벤트 1~2개 + 구독 유도 멘트
+
+                ---
+
+                아래는 오늘 들어온 뉴스입니다:  
+                {contents}
+            """ 
+
+        # GPT 호출
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        script = response.choices[0].message.content.strip()
+
+        # ✅ 저장
+        script_data = {
+            "timestamp": datetime.now(kst).strftime("%Y-%m-%d %H:%M:%S"),
+            "script": script
+        }
+        save_json(script_data, "youtube_script.json")
+
+        print("✅ YouTube script generated and saved to youtube_script.json:\n")
+        print(script)
+
+        return script
+
+    except Exception as e:
+        print(f"❌ Failed to generate YouTube script: {e}")
+        return None
+
+
+def main_loop(test_mode=False):
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
     posted_tweets = load_json(POSTED_TWEETS_FILE)
 
@@ -385,6 +477,12 @@ def main_loop():
     DAILY_REPORT_RESET_TIME = "05:00"
 
     total_num_posts_today = 0
+
+    if test_mode:
+        # Generate YouTube script immediately
+        generate_youtube_script()
+        print("✅ Test mode active: YouTube script generated immediately.")
+        return  # Optionally exit after test run
 
     while True: 
         
@@ -433,6 +531,13 @@ def main_loop():
             print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...")
             print(f"✅ Total number of posts: {total_num_posts_today}\n")
             wait_with_progress(next_user_delay)
+
+            kst = pytz.timezone("Asia/Seoul")
+            now_kst = datetime.now(kst)
+
+            if now_kst.strftime("%H:%M") == "05:00":
+                generate_youtube_script()
+
         else:
             print("🟨 No users in queue. Sleeping for 5 minutes...")
             wait_with_progress(300)
