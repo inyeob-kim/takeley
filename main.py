@@ -10,6 +10,10 @@ from datetime import datetime, timezone, timedelta
 import random
 import pytz
 from summary_report import post_summary_report, post_interim_report
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 # 🔧 Load environment variables 
 set_environment()
@@ -17,6 +21,11 @@ set_environment()
 # 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY") 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
+
+# email
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")  # Your sender email
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Your email app password or actual password
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")  # Destination email
  
 # 사용자 큐 설정
 user_queue = deque(["Investingcom", "DeItaone", "BRICSinfo", "TheSonOfWalkley", "SawyerMerritt"]) 
@@ -410,10 +419,10 @@ def generate_youtube_script():
                 2. **뉴스 요약은 오로지 사실 중심**으로 작성하며 과장 금지  
                     - 숫자/날짜/수치 누락 없이 정확히 사용
 
-                3. **전체 분량은 약 2분 분량의 유튜브 영상 스크립트로 구성**
+                3. **전체 분량은 약 5분 분량의 유튜브 영상 스크립트로 구성**
 
                 ---
-
+ 
                 🎬 유튜브 영상 포맷:
 
                 인트로 (5초):  
@@ -422,7 +431,7 @@ def generate_youtube_script():
                 헤드라인 (30초):  
                 오늘의 핵심 키워드 3가지를 뽑아 간결하게 요약
 
-                본문 요약 (2분):  
+                본문 요약 (4분):  
                 각 뉴스에 대해 ‘무슨 일이 일어났고 왜 중요한지’를 설명  
                 투자자 입장에서 가장 중요한 맥락만 정리
 
@@ -442,15 +451,16 @@ def generate_youtube_script():
         )
         script = response.choices[0].message.content.strip()
 
-        # ✅ 저장
-        script_data = {
-            "timestamp": datetime.now(kst).strftime("%Y-%m-%d %H:%M:%S"),
-            "script": script
-        }
-        save_json(script_data, "youtube_script.json")
+        # ✅ 저장 (.txt 파일로 저장)
+        filename = "youtube_script.txt"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(script)
 
-        print("✅ YouTube script generated and saved to youtube_script.json:\n")
+        print(f"✅ YouTube script generated and saved to {filename}:\n")
         print(script)
+
+        # Send email automatically
+        send_script_email(script)
 
         return script
 
@@ -458,6 +468,25 @@ def generate_youtube_script():
         print(f"❌ Failed to generate YouTube script: {e}")
         return None
 
+
+
+def send_script_email(script_text):
+    msg = MIMEMultipart()
+    msg["Subject"] = "오늘의 유튜브 요약 스크립트"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = EMAIL_RECEIVER
+
+    # Email body
+    body = f"안녕하세요,\n\n오늘 생성된 유튜브 대본입니다:\n\n{script_text}\n\n감사합니다."
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+        print("✅ Email sent successfully!")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
 
 def main_loop(test_mode=False):
     print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
