@@ -387,6 +387,10 @@ def parse_time_str(s):
         print(f"❌ 시간 파싱 오류: {s} -> {e}")
         return None
 
+from datetime import datetime, timedelta
+import pytz
+import openai
+
 def generate_youtube_script():
     print("🎥 Generating YouTube script for today’s summary video...")
     try:
@@ -406,7 +410,7 @@ def generate_youtube_script():
         start_time_naive = start_time.replace(tzinfo=None)
         end_time_naive = end_time.replace(tzinfo=None)
 
-        print("filtered time range:") 
+        print("filtered time range:")
         print("start_time =", start_time_naive)
         print("end_time   =", end_time_naive)
 
@@ -416,57 +420,50 @@ def generate_youtube_script():
             if tweet_time is None:
                 continue
             if start_time_naive <= tweet_time <= end_time_naive:
-                filtered_tweets.append(t) 
+                filtered_tweets.append(t)
 
         print("✅ total posted tweets len =", len(posted_tweets))
         print("✅ filtered tweets len =", len(filtered_tweets))
 
-        # 뉴스 내용 정리
+        if not filtered_tweets:
+            print("⚠️ No tweets found in the filtered time range.")
+            return None
+
+        # 뉴스 내용 정리 (원문)
         contents = "\n".join([f"- {t['content']}" for t in filtered_tweets])
 
-        # OpenAI 프롬프트
+        # OpenAI 프롬프트: 뉴스 헤드라인+속보 스타일 요약 요청
         prompt = f"""
-                당신은 ‘주식이 미쳤다 뉴스’라는 글로벌 금융 속보 채널의 유튜브 콘텐츠 기획자이자 대본 작성자입니다.
+            당신은 ‘주식이 미쳤다 뉴스’ 채널의 콘텐츠 작성자입니다.
+            아래는 최근 12시간 동안 수집된 글로벌 금융 뉴스 트윗 모음입니다.
 
-                아래는 최근 12시간 동안 수집된 금융 뉴스 트윗 요약입니다.
-                이 중에서 **실제로 투자자에게 중요한 뉴스**만을 추려, 아래 포맷에 맞춰 **하루 1편 영상용 대본**을 작성하세요.
+            이 중에서 실제로 투자자에게 중요한 뉴스만 선별하여  
+            각 트윗마다 다음 형식으로 정리해 주세요:
 
-                ⚠️ 중요 지침:
+            ⚠️ 출력 형식:
 
-                1. **투자자와 글로벌 금융 종사자가 관심 가질만한 뉴스만 반영**
-                    - 미국 경제지표 (CPI, PPI, 고용, 연준 관련)
-                    - 주요 기업 실적 (TSLA, NVDA, AAPL 등)
-                    - 금리 정책, 통화정책, 지정학 이슈
-                    - 산업 흐름 (AI, 반도체, 전기차, 원유 등)
-                    - 실질적 시장에 영향 주는 사건 중심 (루머/사견/광고 제외)
+            헤드라인: (30~40자 이내, 한 문장, 핵심 요약)  
+            본문: (속보 문체, 최대 80자 이내, 사실 중심 요약)
 
-                2. **뉴스 요약은 오로지 사실 중심**으로 작성하며 과장 금지  
-                    - 숫자/날짜/수치 누락 없이 정확히 사용
+            예시:
+            헤드라인: 테슬라, 예상 상회하는 2분기 실적 발표  
+            본문: 테슬라가 매출·순익 모두 시장 전망치를 상회하며 주가 상승세
 
-                3. **전체 분량은 약 5분 분량의 유튜브 영상 스크립트로 구성**
+            ⚠️ 작성 지침:
 
-                ---
-
-                🎬 유튜브 영상 포맷:
-
-                인트로 (5초):  
-                “⚡ 글로벌 금융 속보 — 지금 바로 확인하세요!”
-
-                헤드라인 (30초):  
-                오늘의 핵심 키워드 3가지를 뽑아 간결하게 요약
-
-                본문 요약 (4분):  
-                각 뉴스에 대해 ‘무슨 일이 일어났고 왜 중요한지’를 설명  
-                투자자 입장에서 가장 중요한 맥락만 정리
-
-                클로징 (20초):  
-                내일 주목할 이벤트 1~2개 + 구독 유도 멘트
-
-                ---
-
-                아래는 오늘 들어온 뉴스입니다:  
-                {contents}
-            """
+            1. 각 뉴스마다 1개의 헤드라인 + 1개의 본문으로 구성  
+            2. 투자자 입장에서 중요한 뉴스만 포함  
+                - 미국 경제지표 (CPI, 실업률, 연준)  
+                - 대형 기업 실적 발표 (예: TSLA, AAPL 등)  
+                - 글로벌 금리/통화정책 변화  
+                - 지정학 이슈, 산업 전환 (AI, 반도체, 전기차 등)  
+            3. 오직 사실 기반 문장만 작성 (추측/감정/광고/사견 금지)  
+            4. 각 뉴스는 줄바꿈으로 구분해서 나열
+ 
+            ---   
+            아래는 오늘 수집된 뉴스 트윗입니다:  
+            {contents}
+        """
 
         # GPT 호출
         response = openai.chat.completions.create(
@@ -475,12 +472,12 @@ def generate_youtube_script():
         )
         script = response.choices[0].message.content.strip()
 
-        # ✅ 저장 (.txt 파일로 저장)
-        filename = "youtube_script.txt"
+        # 요약 결과 저장 (.txt)
+        filename = "filtered_tweet_summaries.txt"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(script)
 
-        print(f"✅ YouTube script generated and saved to {filename}:\n")
+        print(f"✅ Summary file saved to {filename}:\n")
         print(script)
 
         # 이메일 자동 전송
@@ -489,8 +486,9 @@ def generate_youtube_script():
         return script
 
     except Exception as e:
-        print(f"❌ Failed to generate YouTube script: {e}")
+        print(f"❌ Failed to generate summary script: {e}")
         return None
+
 
 
 def send_script_email(script_text):
