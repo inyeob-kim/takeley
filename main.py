@@ -163,7 +163,7 @@ def rewrite_as_breaking_news(text, username, retry=3):
     for attempt in range(retry): 
         try:
             response = openai.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}]
             ) 
             result = response.choices[0].message.content.strip()
@@ -339,10 +339,10 @@ def process_user(username, posted_tweets, num_posted):
             print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
             continue 
  
-        # tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-        # final_text = f"{breaking_news}\n@{username}\n\n🔗 {tweet_url}"
+        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+        final_text = f"{breaking_news}\n@{username}\n\n출처: {tweet_url}"
 
-        final_text = f"{breaking_news}\n" 
+        # final_text = f"{breaking_news}\n" 
 
         success = post_to_twitter(final_text) 
         if success:
@@ -466,8 +466,8 @@ def generate_youtube_script():
         """
 
         # GPT 호출
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+        response = openai.chat.completions.create( 
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
         script = response.choices[0].message.content.strip()
