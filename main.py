@@ -28,7 +28,7 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Your email app password or actua
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")  # Destination email
  
 # 사용자 큐 설정
-user_queue = deque(["Investingcom", "DeItaone", "BRICSinfo", "TheSonOfWalkley", "SawyerMerritt"]) 
+user_queue = deque(["muskonomy", "Investingcom", "DeItaone", "BRICSinfo", "TheSonOfWalkley", "SawyerMerritt"]) 
 
 TWEET_LIMIT = 5
    
