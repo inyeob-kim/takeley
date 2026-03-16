@@ -14,6 +14,12 @@ from tqdm import tqdm
 
 from ai_processor import analyze_tweet_for_posting
 from config import set_environment
+from content_formatter import (
+    OPENING_PREFIXES,
+    assemble_final_post_text,
+    is_repetitive_line,
+    rebalance_format_type,
+)
 from fetcher import RATE_LIMIT, fetch_latest_tweets, fetch_user_id, validate_startup_auth
 from filters import is_duplicate, is_empty_tweet
 from poster import post_with_optional_image
@@ -60,7 +66,6 @@ TWEET_COUNT_STATE_FILE = "tweet_count_state.json"
 NEW_TWEET_RANGE = 20
 FETCH_SCAN_INTERVAL_SECONDS = 30
 FETCH_LIMIT_PER_USER = 5
-X_POST_MAX_LEN = 280
 
 TIER1_ACCOUNTS = ["Investingcom", "BRICSinfo", "DeItaone"]
 TIER2_ACCOUNTS = ["muskonomy", "SawyerMerritt", "TheSonOfWalkley"]
@@ -118,36 +123,52 @@ def parse_time_str(value: str):
         return None
 
 
-def compose_post_text(
-    summary: str,
-    question: str,
-    username: str,
-    tweet_url: str,
-    max_len: int = X_POST_MAX_LEN,
-) -> str:
-    source_block = f"@{username}\n\n출처: {tweet_url}"
-    summary = (summary or "").strip()
-    question = (question or "").strip()
+def _extract_opening_prefix(content: str) -> str:
+    text = (content or "").strip()
+    for prefix in OPENING_PREFIXES:
+        if text.startswith(prefix):
+            return prefix
+    return ""
 
-    if question:
-        body = f"{summary}\n\n{question}"
-    else:
-        body = summary
 
-    full_text = f"{body}\n\n{source_block}"
-    if len(full_text) <= max_len:
-        return full_text
+def _infer_format_type_from_content(content: str) -> str:
+    text = (content or "").strip()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    source_index = next((idx for idx, line in enumerate(lines) if line.startswith("@")), -1)
+    main_lines = lines[:source_index] if source_index > 0 else lines
 
-    # Keep attribution intact and trim body first.
-    allowed_body_len = max_len - len(f"\n\n{source_block}")
-    if allowed_body_len <= 0:
-        return source_block[:max_len]
+    has_implication = any(line.startswith("→") for line in main_lines)
+    if not has_implication:
+        return "news_only"
 
-    body = body[:allowed_body_len].rstrip()
-    if len(body) < len(f"{summary}\n\n{question}" if question else summary) and allowed_body_len >= 1:
-        body = body[:-1].rstrip() + "…"
+    implication_index = next((idx for idx, line in enumerate(main_lines) if line.startswith("→")), -1)
+    follow_lines = main_lines[implication_index + 1 :] if implication_index != -1 else []
+    if not follow_lines:
+        return "news_implication"
 
-    return f"{body}\n\n{source_block}"
+    engagement_line = follow_lines[0]
+    if "리포스트" in engagement_line or "공유" in engagement_line:
+        return "news_implication_repost"
+    return "news_implication_question"
+
+
+def _recent_values(posted_tweets: List[Dict], key: str, limit: int = 10) -> List[str]:
+    values = []
+    for item in posted_tweets[-limit:]:
+        value = str(item.get(key, "")).strip()
+        if value:
+            values.append(value)
+    return values
+
+
+def _recent_format_types(posted_tweets: List[Dict], limit: int = 60) -> List[str]:
+    result: List[str] = []
+    for item in posted_tweets[-limit:]:
+        fmt = str(item.get("format_type", "")).strip().lower()
+        if not fmt:
+            fmt = _infer_format_type_from_content(str(item.get("content", "")))
+        result.append(fmt)
+    return result
 
 
 def send_script_email(script_text: str) -> None:
@@ -267,7 +288,15 @@ def process_user(
     # - do NOT advance when temporary failures occur (AI/posting failures),
     #   so those tweets can be retried later and are not lost.
     tweets.sort(key=lambda item: item[0])
-    recent_posts = [item.get("content", "") for item in posted_tweets[-10:]]
+    recent_posts = _recent_values(posted_tweets, "content", limit=10)
+    recent_implications = _recent_values(posted_tweets, "implication", limit=12)
+    recent_engagements = _recent_values(posted_tweets, "engagement", limit=12)
+    recent_prefixes = [
+        value
+        for value in (_extract_opening_prefix(item.get("content", "")) for item in posted_tweets[-20:])
+        if value
+    ]
+    recent_format_types = _recent_format_types(posted_tweets, limit=60)
 
     for tweet_id, tweet_text in tweets:
         processed = False
@@ -279,36 +308,70 @@ def process_user(
             print(f"[FILTER] tweet_id={tweet_id} reason=empty")
             processed = True
         else:
-            ai_result = analyze_tweet_for_posting(tweet_text, username, recent_posts, retry=2)
+            ai_result = analyze_tweet_for_posting(
+                tweet_text,
+                username,
+                recent_posts,
+                recent_implications=recent_implications,
+                recent_engagements=recent_engagements,
+                retry=2,
+            )
             if not ai_result.get("ok"):
                 print(f"[AI] classification=error tweet_id={tweet_id} error={ai_result.get('error', 'unknown')}")
                 processed = False
             elif not ai_result.get("is_relevant", False):
                 print(f"[FILTER] tweet_id={tweet_id} reason={ai_result.get('skip_reason', 'irrelevant')}")
+                print(f"[AI] skip_reason={ai_result.get('skip_reason', 'irrelevant')}")
                 processed = True
             elif ai_result.get("is_similar", False):
                 print(f"[FILTER] tweet_id={tweet_id} reason=similarity")
                 processed = True
             else:
                 summary = ai_result.get("summary", "").strip()
+                implication = ai_result.get("implication", "").strip()
+                format_type = ai_result.get("format_type", "news_implication")
                 news_type = ai_result.get("news_type", "neutral")
-                engagement_type = ai_result.get("engagement_type", "none")
                 engagement = ai_result.get("engagement", "").strip()
                 if not summary:
                     print(f"[AI] classification=error tweet_id={tweet_id} error=empty_summary")
                     processed = False
                 else:
-                    print(f"[AI] classification=relevant tweet_id={tweet_id}")
-                    print(f"[AI] news_type={news_type} engagement_type={engagement_type}")
-                    if engagement:
-                        print("[AI] engagement added=true")
-                    else:
-                        print("[AI] engagement skipped")
+                    if is_repetitive_line(implication, recent_implications[-8:], max_recent_reuse=1):
+                        print("[AI] implication_dropped reason=repetition")
+                        implication = ""
+                    if is_repetitive_line(engagement, recent_engagements[-8:], max_recent_reuse=1):
+                        print("[AI] engagement_dropped reason=repetition")
+                        engagement = ""
+
+                    format_type = rebalance_format_type(
+                        suggested_format_type=format_type,
+                        news_type=news_type,
+                        has_implication=bool(implication),
+                        has_engagement=bool(engagement),
+                        recent_format_types=recent_format_types,
+                    )
+
                     tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-                    if engagement:
-                        final_text = compose_post_text(summary, engagement, username, tweet_url)
-                    else:
-                        final_text = compose_post_text(summary, "", username, tweet_url)
+                    final_text, normalized_format_type = assemble_final_post_text(
+                        format_type=format_type,
+                        summary=summary,
+                        implication=implication,
+                        engagement=engagement,
+                        username=username,
+                        tweet_url=tweet_url,
+                        recent_prefixes=recent_prefixes,
+                    )
+
+                    implication_added = "yes" if "\n\n→" in final_text else "no"
+                    engagement_added = "yes" if bool(engagement) and normalized_format_type in {
+                        "news_implication_question",
+                        "news_implication_repost",
+                    } else "no"
+                    print(f"[AI] classification=relevant tweet_id={tweet_id}")
+                    print(f"[AI] news_type={news_type}")
+                    print(f"[AI] format_type={normalized_format_type}")
+                    print(f"[AI] implication_added={implication_added}")
+                    print(f"[AI] engagement_added={engagement_added}")
                     success, mode = post_with_optional_image(
                         client_twitter,
                         api_v1,
@@ -317,17 +380,36 @@ def process_user(
                         tweet_id,
                     )
                     if success:
+                        stored_implication = implication if normalized_format_type != "news_only" else ""
+                        stored_engagement = (
+                            engagement
+                            if normalized_format_type in {"news_implication_question", "news_implication_repost"}
+                            else ""
+                        )
                         posted_tweets.append(
                             {
                                 "tweet_id": tweet_id,
                                 "content": summary,
+                                "implication": stored_implication,
+                                "engagement": stored_engagement,
+                                "format_type": normalized_format_type,
+                                "news_type": news_type,
                                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             }
                         )
                         posted_id_set.add(str(tweet_id))
                         recent_posts.append(summary)
+                        if stored_implication:
+                            recent_implications.append(stored_implication)
+                        if stored_engagement:
+                            recent_engagements.append(stored_engagement)
+                        recent_format_types.append(normalized_format_type)
+                        recent_prefix = _extract_opening_prefix(final_text)
+                        if recent_prefix:
+                            recent_prefixes.append(recent_prefix)
                         posted_count += 1
                         print(f"[POST] success tweet_id={tweet_id} mode={mode}")
+                        print(f"[POST] mode={mode}")
                         wait_with_progress(10)
                         processed = True
                     else:

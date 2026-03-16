@@ -4,24 +4,6 @@ from typing import Dict, List
 import openai
 
 
-FORBIDDEN_JARGON = (
-    "liquidity sweep",
-    "order block",
-    "order blocks",
-    "ict",
-    "institutional positioning",
-)
-
-
-DEFAULT_IMPLICATION_BY_TYPE = {
-    "macro": "→ 시장 불확실성이 확대될 수 있음",
-    "company": "→ 관련 종목 투자 심리에 영향을 줄 수 있음",
-    "market": "→ 단기 변동성이 커질 가능성",
-    "breaking": "→ 위험자산 선호 심리가 약해질 수 있음",
-    "neutral": "→ 투자 심리 방향을 확인할 필요가 있음",
-}
-
-
 def _extract_json(text: str) -> Dict:
     text = text.strip()
     if text.startswith("```"):
@@ -35,90 +17,85 @@ def _extract_json(text: str) -> Dict:
     return json.loads(text[start : end + 1])
 
 
-def _contains_forbidden_jargon(text: str) -> bool:
-    lowered = (text or "").lower()
-    return any(term in lowered for term in FORBIDDEN_JARGON)
-
-
-def _ensure_implication_line(summary: str, news_type: str) -> str:
-    summary = (summary or "").strip()
-    if not summary:
-        return summary
-    if "→" in summary:
-        return summary
-    implication = DEFAULT_IMPLICATION_BY_TYPE.get(news_type, DEFAULT_IMPLICATION_BY_TYPE["neutral"])
-    return f"{summary}\n{implication}"
-
-
-def analyze_tweet_for_posting(tweet_text: str, username: str, recent_posts: List[str], retry: int = 2) -> Dict:
+def analyze_tweet_for_posting(
+    tweet_text: str,
+    username: str,
+    recent_posts: List[str],
+    recent_implications: List[str] | None = None,
+    recent_engagements: List[str] | None = None,
+    retry: int = 2,
+) -> Dict:
     """
     Single-call AI pipeline (cost optimization):
     - relevance/ad filtering
     - similarity check against recent posts
-    - Korean breaking-news rewrite
+    - Korean investor-friendly rewrite
+    - implication/format/engagement generation
     """
+    recent_implications = recent_implications or []
+    recent_engagements = recent_engagements or []
     prompt = f"""
-You are the content creator for a Korean financial news account focused on:
-- US stocks
-- AI sector
-- Tesla
-- global macro news
-- market sentiment
-
-Your task is NOT to translate tweets.
-Your task is to convert raw market tweets into short Korean market news posts that add value for general investors.
+You are a strict financial news processor.
+You write Korean market updates for general investors.
 
 Task:
-1) Determine if the source tweet is relevant for investors.
-2) Check if it is reporting the same concrete event as recent posts.
-3) If relevant and not similar, write a concise Korean market-insight post.
-4) Classify accepted tweet into a news type.
-5) Optionally generate one discussion question (about 60% probability).
+1) Determine if this source tweet is relevant for investors.
+2) Check if it is reporting the same event as any recent posts.
+3) If relevant and not similar, write a concise Korean summary with a natural breaking header.
+4) Add a simple investor-friendly implication when appropriate.
+5) Choose one format type.
+6) Add one short engagement line only when appropriate.
 
 Return ONLY JSON with this schema:
 {{
   "is_relevant": true/false,
   "is_similar": true/false,
   "summary": "string",
+  "implication": "string",
+  "format_type": "news_only|news_implication|news_implication_question|news_implication_repost",
+  "engagement": "string",
   "news_type": "macro|company|market|breaking|neutral",
-  "engagement_type": "reply|none",
-  "engagement": "string or empty",
   "skip_reason": "duplicate_topic|advertisement|irrelevant|other|none"
 }}
 
-Summary format (STRICT):
-1) First line: breaking indicator with one emoji (e.g. "⚡ 속보", "📈 시장 속보")
-2) Next 1-2 lines: clear Korean summary of the news
-3) One implication line that starts with "→"
-   - Explain what the news might mean for investors in simple language
-   - Maximum one sentence
-   - Examples:
-     "→ 투자 심리가 위축될 수 있다는 신호"
-     "→ 단기 변동성이 커질 가능성"
-     "→ 기술주에 긍정적인 신호"
-     "→ 시장 불확실성이 확대될 수 있음"
-4) Optional hashtags (0-3) may be included at end of summary
+Rules:
+- Treat promotions, giveaways, pure links, and unrelated chatter as irrelevant.
+- Similar means same concrete event/news, not broad topic overlap.
+- If skipped, summary="", implication="", engagement="", format_type="news_only".
+- If accepted, summary must be Korean, factual, concise, and include key numbers/dates exactly.
+- Summary should start with one of these openers only when natural: "⚡ 속보", "📈 시장 속보", "🚨 긴급".
+- implication must be either empty or one short sentence that starts with "→".
+- implication must use simple investor language (sentiment, volatility, uncertainty, risk appetite, short-term pressure).
+- Avoid jargon like liquidity sweep, order block, ICT, institutional positioning, liquidity grab, smart money.
+- engagement must be either empty or one short Korean line.
+- Do not invent facts.
+- Keep numbers/dates exact when present.
+- Tone: fast, clear, investor-friendly, professional. Avoid meme-like or sensational tone.
 
-Critical language constraints:
-- Never use complex trading jargon, including:
-  "liquidity sweep", "order blocks", "ICT", "institutional positioning"
-- Prefer simple concepts:
-  investor sentiment, market volatility, risk appetite, short-term reaction, impact on stocks/market
-- Keep Korean clear and understandable for general investors
+News type definitions:
+- macro: CPI, inflation, jobs, rates, Fed, central bank, bonds, macro economy
+- company: Tesla, Nvidia, Apple, earnings, guidance, launches, company announcements
+- market: price action, broad market moves, futures, indexes, sector moves
+- breaking: war, geopolitical escalation, emergency policy, major shock events
+- neutral: relevant but not strong enough for engagement
 
-Question (engagement) rules:
-- engagement should be either empty or one short Korean discussion question
-- do not force question on every post (target around 60%)
-- avoid spammy bait and exaggerated hype
+Format rules (target mix, do not force):
+- news_implication: most common (about 40%)
+- news_implication_question: second most common (about 35%)
+- news_only: less common (about 15%)
+- news_implication_repost: rare (about 10%) and only for high-impact macro/breaking
+- Never force every post to end with a question.
 
-General rules:
-- Treat promotions, giveaways, pure links, and unrelated chatter as irrelevant
-- Similar means same concrete event/news, not broad topic overlap
-- If skipped, summary="", engagement="", engagement_type="none"
-- Do not invent facts
-- Keep numbers/dates exact when present
-- Keep professional tone and concise wording
-- Do NOT include source attribution in summary or engagement
+Format constraints:
+- news_only: summary only, implication="", engagement=""
+- news_implication: summary + implication, engagement=""
+- news_implication_question: summary + implication + short discussion question
+- news_implication_repost: summary + implication + short repost/share CTA
+- Follow CTA should be very rare; prefer discussion questions when engagement is needed.
+
+Recent wording to avoid repeating too often:
+- recent implications: {json.dumps(recent_implications[-8:], ensure_ascii=False)}
+- recent engagements: {json.dumps(recent_engagements[-8:], ensure_ascii=False)}
 
 Username: @{username}
 Source tweet:
@@ -138,36 +115,65 @@ Recent posts:
             )
             content = response.choices[0].message.content.strip()
             data = _extract_json(content)
+
             news_type = str(data.get("news_type", "neutral")).strip().lower()
             if news_type not in {"macro", "company", "market", "breaking", "neutral"}:
                 news_type = "neutral"
 
-            engagement_type = str(data.get("engagement_type", "none")).strip().lower()
-            if engagement_type not in {"reply", "none"}:
-                engagement_type = "none"
-
             summary = str(data.get("summary", "")).strip()
+            implication = str(data.get("implication", "")).strip()
+            format_type = str(data.get("format_type", "news_implication")).strip().lower()
             engagement = str(data.get("engagement", "")).strip()
+            if format_type not in {
+                "news_only",
+                "news_implication",
+                "news_implication_question",
+                "news_implication_repost",
+            }:
+                format_type = "news_implication"
+
+            # Implication must start with arrow when present.
+            if implication and not implication.startswith("→"):
+                implication = f"→ {implication.lstrip('- ').strip()}"
 
             # Guardrails: if skipped/irrelevant/similar, force no engagement payload.
             is_relevant = bool(data.get("is_relevant", False))
             is_similar = bool(data.get("is_similar", False))
             if (not is_relevant) or is_similar:
                 summary = ""
+                implication = ""
                 engagement = ""
-                engagement_type = "none"
+                format_type = "news_only"
             else:
-                summary = _ensure_implication_line(summary, news_type)
-                if _contains_forbidden_jargon(summary) or _contains_forbidden_jargon(engagement):
-                    raise ValueError("Forbidden jargon detected in generated text")
+                # Format hardening to keep assembly stable and avoid malformed payloads.
+                if format_type == "news_only":
+                    implication = ""
+                    engagement = ""
+                elif format_type == "news_implication":
+                    if not implication:
+                        format_type = "news_only"
+                    engagement = ""
+                elif format_type == "news_implication_question":
+                    if not implication:
+                        format_type = "news_only"
+                        engagement = ""
+                    elif not engagement:
+                        format_type = "news_implication"
+                elif format_type == "news_implication_repost":
+                    if not implication:
+                        format_type = "news_only"
+                        engagement = ""
+                    elif not engagement:
+                        format_type = "news_implication"
 
             return {
                 "ok": True,
                 "is_relevant": is_relevant,
                 "is_similar": is_similar,
                 "summary": summary,
+                "implication": implication,
+                "format_type": format_type,
                 "news_type": news_type,
-                "engagement_type": engagement_type,
                 "engagement": engagement,
                 "skip_reason": str(data.get("skip_reason", "other")).strip() or "other",
             }
@@ -179,8 +185,9 @@ Recent posts:
         "is_relevant": False,
         "is_similar": False,
         "summary": "",
+        "implication": "",
+        "format_type": "news_only",
         "news_type": "neutral",
-        "engagement_type": "none",
         "engagement": "",
         "skip_reason": "ai_error",
         "error": str(last_error) if last_error else "unknown",
