@@ -3,8 +3,13 @@ from dotenv import load_dotenv
 import logging
  
 logger = logging.getLogger(__name__)
+_ENV_LOADED = False
 
 def set_environment(): 
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+
     print("Setting Environment Variables...")
     # Load environment variables based on environment
 
@@ -33,6 +38,8 @@ def set_environment():
     TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
     if TWITTER_ACCESS_TOKEN_SECRET is None:
         raise ValueError("TWITTER_ACCESS_TOKEN_SECRET environment variable is not set")
+
+    _ENV_LOADED = True
 
 
     

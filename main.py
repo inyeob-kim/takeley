@@ -1,40 +1,44 @@
-import tweepy
-import openai
-import time
 import os
-import json
-from config import set_environment
-from tqdm import tqdm
-from collections import deque
-from datetime import datetime, timezone, timedelta
-import random
-import pytz
-from summary_report import post_summary_report, post_interim_report
 import smtplib
-from email.mime.text import MIMEText
+import sys
+import time
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Dict, List, Tuple
+from zoneinfo import ZoneInfo
+
+import openai
+import tweepy
+from tqdm import tqdm
+
+from ai_processor import analyze_tweet_for_posting
+from config import set_environment
+from fetcher import RATE_LIMIT, fetch_latest_tweets, fetch_user_id, validate_startup_auth
+from filters import is_duplicate, is_empty_tweet
+from poster import post_with_optional_image
+from scheduler import AccountScheduler
+from state_manager import (
+    build_posted_id_set,
+    load_json,
+    load_last_seen_id,
+    save_json,
+    save_last_seen_id,
+)
+from summary_report import post_interim_report, post_summary_report
 
 
-# 🔧 Load environment variables 
+# Load env once (config.py now guards against duplicate calls).
 set_environment()
 
-# 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY") 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
-# email
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")  # Your sender email
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Your email app password or actual password
-EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")  # Destination email
- 
-# 사용자 큐 설정
-user_queue = deque(["muskonomy", "Investingcom", "DeItaone", "BRICSinfo", "TheSonOfWalkley", "SawyerMerritt"]) 
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
 
-TWEET_LIMIT = 5
-   
-# Twitter Clients 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
-
 client_twitter = tweepy.Client( 
     consumer_key=os.getenv("TWITTER_API_KEY"),
     consumer_secret=os.getenv("TWITTER_API_SECRET"), 
@@ -42,462 +46,82 @@ client_twitter = tweepy.Client(
     access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 )
 
-CACHE_FILE = "tweets.json"
+auth_v1 = tweepy.OAuth1UserHandler(
+    os.getenv("TWITTER_API_KEY"),
+    os.getenv("TWITTER_API_SECRET"),
+    os.getenv("TWITTER_ACCESS_TOKEN"),
+    os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
+)
+api_v1 = tweepy.API(auth_v1)
+ 
 POSTED_TWEETS_FILE = "posted_tweets.json"
-USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
+USER_ID_FILE = "user_ids.json"
+TWEET_COUNT_STATE_FILE = "tweet_count_state.json"
+NEW_TWEET_RANGE = 20
+FETCH_SCAN_INTERVAL_SECONDS = 30
+FETCH_LIMIT_PER_USER = 5
 
-# File helpers
-def save_json(data, filename):
-    try: 
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"❌ Failed to save {filename}: {e}")
+TIER1_ACCOUNTS = ["Investingcom", "BRICSinfo", "DeItaone"]
+TIER2_ACCOUNTS = ["muskonomy", "SawyerMerritt", "TheSonOfWalkley"]
 
-def load_json(filename):
-    if not os.path.exists(filename):
-        return {}
-    try:
-        with open(filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"⚠️ Failed to load {filename}: {e}")
-        return {}
 
-def get_last_seen_file(username):
-    return f"{username}_last_seen_id.txt"
+def debug_env() -> None:
+    """
+    Print presence and short prefix of required env vars.
+    Never prints full secret values.
+    """
+    keys = [
+        "OPENAI_API_KEY",
+        "TWITTER_BEARER_TOKEN",
+        "TWITTER_API_KEY",
+        "TWITTER_API_SECRET",
+        "TWITTER_ACCESS_TOKEN",
+        "TWITTER_ACCESS_TOKEN_SECRET",
+        "EMAIL_ADDRESS",
+        "EMAIL_PASSWORD",
+        "EMAIL_RECEIVER",
+    ]
+    print("[ENV] Debug check start")
+    for key in keys:
+        value = os.getenv(key, "")
+        if value:
+            prefix = value[:4]
+            print(f"[ENV] {key}: present (prefix={prefix}...)")
+        else:
+            print(f"[ENV] {key}: missing")
 
-def save_last_seen_id(username, tweet_id):
-    filename = get_last_seen_file(username)
-    try:
-        with open(filename, "w") as f:
-            f.write(str(tweet_id))
-    except Exception as e:
-        print(f"❌ Failed to save last seen ID for {username}: {e}")
 
-def load_last_seen_id(username):
-    filename = get_last_seen_file(username)
-    if os.path.exists(filename):
-        try:
-            with open(filename, "r") as f:
-                return f.read().strip()
-        except Exception as e:
-            print(f"⚠️ Failed to read last seen ID for {username}: {e}")
-    return None
-
-def wait_with_progress(seconds): 
-    for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
+def wait_with_progress(seconds: int) -> None:
+    for _ in tqdm(range(seconds), desc=f"Waiting {seconds}s", unit="s"):
         time.sleep(1)
 
-def rewrite_as_breaking_news(text, username, retry=3):
 
-    prompt = f"""
-    당신은 '주식이 미쳤다 뉴스'라는 가상의 글로벌 금융 속보 매체의 기자입니다.
-
-    당신의 임무는 트위터 속보를 **한글로 번역해**, 아래 형식의 **시선을 끄는 실시간 속보 뉴스 템플릿**으로 작성하는 것입니다.
-
-    ⚠️ 중요 지침:
-
-    1. **첫 줄은 고정된 헤드라인 없이**, 핵심 사건을 요약한 강렬한 문장으로 시작  
-    - 예: "⚡ 속보: 파월, 금리 인하 시사…시장 기대감 폭발"
-
-    2. 핵심 인물 또는 기관 + 행동/사건 요약 → **무슨 일이 벌어졌는지 구체적으로 설명**
- 
-    3. **시간 흐름, 정보 흐름**에 따라 정돈된 문단 구성  
-    - 예: 사건 발생 → 영향 → 관련 배경
-
-    4. 일정, 실적, 출시 등 숫자나 날짜 정보는 **절대 요약하지 말고 원문 그대로 정확하게 번역**  
-    - ❌ 요약 예: "중요한 발표", "일정 공유"
-    - ✅ 바른 예: "로보택시, 8월 8일 공개 예정", "2분기 매출 2.45억 달러, 전년 대비 12% 증가"
-    - 🔥 반드시 **트윗 속 숫자와 표현을 한 글자도 빠짐없이** 반영할 것
-
-    5. URL 링크뿐인 트윗은 그대로 ⬇️⬇️⬇️ 리턴
-
-    6. 트윗이 특정 **상장 기업**과 직접적 관련 있을 경우, 본문 중 적절히 **티커 ($TSLA $NVDA)** 삽입  
-    - 무관하면 티커 생략
-
-    7. 분위기와 맥락에 어울리는 **이모지 2~3개 자연스럽게 활용**  
-    - 과도한 이모지 금지
-
-    8. **추측 일절 금지. 오직 객관적 분석 및 해석, 사실만 전달**
-
-    9. **현재 미국 대통령은 도널드 트럼프입니다. (전 대통령 아님)**
-
-    ---
-    \"{text}\"  
-
-
-    출력 형식 예시:
-
-    ⚡ 속보: JP모건 “경기침체 피할 수 없다” 경고  
-
-    글로벌 증시 일제히 하락세 📉  
-    美 채권 수익률 급락, 달러 강세 반전  
-    투자자들 안전자산 선호 심화  
-
-    $JPM $DIA  
-
-    #JP모건 #침체경고 #시장분석 #BreakingNews  
-
-
-    출력 형식:
-
-    티커 존재 시:  
-    [⚡ 속보: + 핵심 문장]  
-
-    [본문]  
-
-    $TSLA $NVDA (티커 여러 개 가능)  
-
-    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews  
-
-    티커 없을 시:  
-    [⚡ 속보: + 핵심 문장]  
-
-    [본문]  
-
-    #Hashtag1 #Hashtag2 #Hashtag3 #BreakingNews  
-    """
-
- 
-    for attempt in range(retry): 
-        try:
-            response = openai.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}]
-            ) 
-            result = response.choices[0].message.content.strip()
-
-            return result
-
-        except Exception as e:
-            print(f"⚠️ Rewriting failed (attempt {attempt+1}/{retry}): {e}")
-            time.sleep(2)
-
-    return f"번역 실패. 원문 그대로 전달:\n\n{text}"
-
-# 트윗 가져오기 (user_id를 미리 가져와서 사용)
-def fetch_user_id(username):
-    try:
-        user = client_twitter_read.get_user(username=username)
-        user_id = user.data.id
-        return user_id
-    except tweepy.TooManyRequests as e:
-        reset = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
-        wait_seconds = max(0, reset - int(time.time()))
-        print(f"🚫 Rate limit hit for @{username}. Skipping user. Retry after {wait_seconds}s.")
-        
-        # Convert to KST (UTC +9)
-        reset_time = datetime.fromtimestamp(reset, timezone.utc) + timedelta(hours=9)
-        reset_time_str = reset_time.strftime('%Y-%m-%d %H:%M:%S')
-        print(f"🕒 Rate limit will reset at: {reset_time_str} KST")
-        
-        return None
-    except tweepy.TweepyException as e:
-        print(f"❌ Failed to fetch user ID for @{username}: {e}")
-        return None
-
-def fetch_latest_tweets(username, limit):
-    try:
-        # 파일에서 user_id를 읽기
-        USER_IDS = load_json(USER_ID_FILE)
-
-        user_id = USER_IDS.get(username)  # 파일에서 가져온 user_id
-        if not user_id:
-            print(f"📊 Fetching UserID of Username: @{username}")
-            user_id = fetch_user_id(username)
-            if user_id:
-                USER_IDS[username] = user_id  # 새로운 user_id는 저장해서 나중에 사용
-                save_json(USER_IDS, USER_ID_FILE)
-
-        if not user_id:
-            return None  # user_id가 없으면 데이터가 없다고 처리
-     
-        since_id = load_last_seen_id(username)
-        params = {"id": user_id, "max_results": limit} 
-        if since_id: 
-            params["since_id"] = since_id
-
-        print(f"📊 Processing Username: @{username} / UserID: {user_id} / SinceID: {since_id}") 
-     
-        response = client_twitter_read.get_users_tweets(**params)
-        tweets_data = response.data or []
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{now}] 📊 @{username}: {len(tweets_data)} tweets fetched.")
-        tweets = [(tweet.id, tweet.text) for tweet in tweets_data]
-
-        if tweets_data:
-            latest_id = max(tweet.id for tweet in tweets_data)
-            save_last_seen_id(username, latest_id)
-
-        return tweets
-
-    except tweepy.TooManyRequests as e:
-        reset = int(e.response.headers.get("x-rate-limit-reset", time.time() + 60))
-        wait_seconds = max(0, reset - int(time.time()))
-        print(f"🚫 Rate limit hit for @{username}. Skipping user. Retry after {wait_seconds}s.")
-        
-        # Convert to KST (UTC +9)
-        reset_time = datetime.fromtimestamp(reset, timezone.utc) + timedelta(hours=9)
-        reset_time_str = reset_time.strftime('%Y-%m-%d %H:%M:%S')
-        print(f"🕒 Rate limit will reset at: {reset_time_str} KST")
-
-        return None  # ❗️None을 리턴해서 건너뛰도록
-    except Exception as e:
-        print(f"❌ Twitter fetch failed for {username}: {e}")
-        return None
-
-# 트윗 작성
-def post_to_twitter(text, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            client_twitter.create_tweet(text=text)
-            print("🐦 Posted to Twitter!")
-            return True
-        except Exception as e:
-            print(f"❌ Tweet post failed: {e}")
-            time.sleep(5)
-    return False
-
-def is_irrelevant_or_ad(tweet_text, username):
-
-    # skips checking similar post for TrumpDailyPosts.
-    if username == "TrumpDailyPosts":
-        return False
-
-    prompt = (
-        "You are a smart assistant that classifies tweets based on their relevance to financial investors.\n"
-        "If the tweet is promotional, advertising, or unrelated to finance, economics, political, or investment insights, respond with 'YES'.\n"
-        "Otherwise, respond with 'NO'.\n\n"
-        f"Tweet:\n{tweet_text}\n\n"
-        "Is this tweet irrelevant or promotional?"
-    )
-
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    result = response.choices[0].message.content.strip()
-
-    return result.upper() == "YES"
-
-
-def is_similar_to_recent(new_text, recent_texts, username):
-    # Skip checking for specific usernames
-    if username == "TrumpDailyPosts":
-        return False
-
-    prompt = (
-        "You are an assistant that checks if a new social media post is reporting the same news as any recent posts. "
-        "Two posts are considered similar **only** if they are about the exact same event or news topic, "
-        "even if the wording is different. Do not consider general themes or opinions—focus only on whether "
-        "the actual subject of the news is the same.\n\n"
-        f"New Post:\n{new_text}\n\n"
-        f"Recent Posts:\n" +
-        "\n---\n".join(recent_texts) +
-        "\n\nIs the new post reporting the same news as any of the previous posts? Respond only with 'YES' or 'NO'."
-    )
- 
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    result = response.choices[0].message.content.strip()
-
-    return result.upper() == "YES"
-
-
-
-# 사용자별 트윗 처리 
-def process_user(username, posted_tweets, num_posted):
-    tweets = fetch_latest_tweets(username, TWEET_LIMIT)
-    if tweets is None:
-        print(f"⏭️ @{username} skipped due to rate limit.\n")
-        return  # ❗️이 유저는 건너뜀
-
-    new_posts = []
-    for tweet_id, tweet_text in tweets:
-        if any(str(tweet['tweet_id']) == str(tweet_id) for tweet in posted_tweets):
-            continue
-
-        if not tweet_text.strip():
-            print(f"⚠️ Skipping @{username}'s tweet ({tweet_id}) due to empty text.")
-            continue 
-
-        # ❌ Skip if tweet is ad/promotional/unrelated except Donald Trump Tweet
-        if is_irrelevant_or_ad(tweet_text, username):
-            print(f"🧹 Skipping @{username}'s tweet ({tweet_id}) below — Reason: detected as irrelevant or ad.")
-            print(f"🧹 Skipped Tweet:\n{tweet_text} ")
-            continue
-
-        print(f"🧠 @{username}: {tweet_text}")
-        breaking_news = rewrite_as_breaking_news(tweet_text, username, retry=3)
-
-        # 🔍 Check for similarity in recent posts -> if similar tweet already posted -> skip posting
-        recent_posts = [p["content"] for p in posted_tweets[-10:]]
-        if is_similar_to_recent(breaking_news, recent_posts, username): # except Donald Trump Tweet
-            print(f"🛑 Skipping tweet ({tweet_id}) — similar content already posted.")
-            continue 
- 
-        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-        final_text = f"{breaking_news}\n@{username}\n\n출처: {tweet_url}"
-
-        # final_text = f"{breaking_news}\n" 
-
-        success = post_to_twitter(final_text) 
-        if success:
-            new_posts.append({
-                "tweet_id": tweet_id,
-                "content": breaking_news,
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }) 
-            wait_with_progress(10) 
-
-    posted_tweets.extend(new_posts)
-    num_posted = num_posted + 1
-    save_json(posted_tweets, POSTED_TWEETS_FILE)
-
-def is_within_active_hours(start_time="16:00", end_time="10:00", test_mode=False):
-
+def is_within_active_hours(start_time: str = "06:00", end_time: str = "23:00", test_mode: bool = False) -> bool:
     if test_mode:
         return True
 
-    # Get current time in KST
-    kst = pytz.timezone("Asia/Seoul")
-    now_kst = datetime.now(kst).time()
-
+    now_kst = datetime.now(ZoneInfo("Asia/Seoul")).time()
     start_time_obj = datetime.strptime(start_time, "%H:%M").time()
     end_time_obj = datetime.strptime(end_time, "%H:%M").time()
 
     if start_time_obj < end_time_obj:
-        # Window doesn't cross midnight
         return start_time_obj <= now_kst < end_time_obj
-    else:
-        # Window crosses midnight
         return now_kst >= start_time_obj or now_kst < end_time_obj
     
-from datetime import datetime, timedelta
-import pytz
-import os
 
-def parse_time_str(s):
+def parse_time_str(value: str):
     try:
-        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
     except Exception as e:
-        print(f"❌ 시간 파싱 오류: {s} -> {e}")
-        return None
-
-from datetime import datetime, timedelta
-import pytz
-import openai
-
-def generate_youtube_script():
-    print("🎥 Generating YouTube script for today’s summary video...")
-    try:
-        posted_tweets = load_json(POSTED_TWEETS_FILE)
-        kst = pytz.timezone("Asia/Seoul")
-        now_kst = datetime.now(kst)
-
-        today_date = now_kst.date()
-        yesterday_date = today_date - timedelta(days=1)
-
-        # start_time: 어제 22:00
-        start_time = datetime.combine(yesterday_date, datetime.min.time(), tzinfo=kst).replace(hour=22)
-        # end_time: 오늘 06:00
-        end_time = datetime.combine(today_date, datetime.min.time(), tzinfo=kst).replace(hour=6)
-
-        # 비교할 때는 tzinfo 제거 (기존 코드 방식 유지)
-        start_time_naive = start_time.replace(tzinfo=None)
-        end_time_naive = end_time.replace(tzinfo=None)
-
-        print("filtered time range:")
-        print("start_time =", start_time_naive)
-        print("end_time   =", end_time_naive)
-
-        filtered_tweets = []
-        for t in posted_tweets:
-            tweet_time = parse_time_str(t.get("time", ""))
-            if tweet_time is None:
-                continue
-            if start_time_naive <= tweet_time <= end_time_naive:
-                filtered_tweets.append(t)
-
-        print("✅ total posted tweets len =", len(posted_tweets))
-        print("✅ filtered tweets len =", len(filtered_tweets))
-
-        if not filtered_tweets:
-            print("⚠️ No tweets found in the filtered time range.")
-            return None
-
-        # 뉴스 내용 정리 (원문)
-        contents = "\n".join([f"- {t['content']}" for t in filtered_tweets])
-
-        # OpenAI 프롬프트: 뉴스 헤드라인+속보 스타일 요약 요청
-        prompt = f"""
-            당신은 ‘주식이 미쳤다 뉴스’ 채널의 콘텐츠 작성자입니다.
-            아래는 최근 12시간 동안 수집된 글로벌 금융 뉴스 트윗 모음입니다.
-
-            이 중에서 실제로 투자자에게 중요한 뉴스만 선별하여  
-            각 트윗마다 다음 형식으로 정리해 주세요:
-
-            ⚠️ 출력 형식:
-
-            헤드라인: (30~40자 이내, 한 문장, 핵심 요약)  
-            본문: (속보 문체, 최대 80자 이내, 사실 중심 요약)
-
-            예시:
-            헤드라인: 테슬라, 예상 상회하는 2분기 실적 발표  
-            본문: 테슬라가 매출·순익 모두 시장 전망치를 상회하며 주가 상승세
-
-            ⚠️ 작성 지침:
-
-            1. 각 뉴스마다 1개의 헤드라인 + 1개의 본문으로 구성  
-            2. 투자자 입장에서 중요한 뉴스만 포함  
-                - 미국 경제지표 (CPI, 실업률, 연준)  
-                - 대형 기업 실적 발표 (예: TSLA, AAPL 등)  
-                - 글로벌 금리/통화정책 변화  
-                - 지정학 이슈, 산업 전환 (AI, 반도체, 전기차 등)  
-            3. 오직 사실 기반 문장만 작성 (추측/감정/광고/사견 금지)  
-            4. 각 뉴스는 줄바꿈으로 구분해서 나열
- 
-            ---   
-            아래는 오늘 수집된 뉴스 트윗입니다:  
-            {contents}
-        """
-
-        # GPT 호출
-        response = openai.chat.completions.create( 
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        script = response.choices[0].message.content.strip()
-
-        # 요약 결과 저장 (.txt)
-        filename = "filtered_tweet_summaries.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(script)
-
-        print(f"✅ Summary file saved to {filename}:\n")
-        print(script)
-
-        # 이메일 자동 전송
-        send_script_email(script)
-
-        return script
-
-    except Exception as e:
-        print(f"❌ Failed to generate summary script: {e}")
+        print(f"[STATE] time_parse_failed value={value} error={e}")
         return None
 
 
-
-def send_script_email(script_text):
+def send_script_email(script_text: str) -> None:
     msg = MIMEMultipart()
     msg["Subject"] = "오늘의 유튜브 요약 스크립트"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = EMAIL_RECEIVER
-
-    # Email body
     body = f"안녕하세요,\n\n오늘 생성된 유튜브 대본입니다:\n\n{script_text}\n\n감사합니다."
     msg.attach(MIMEText(body, "plain"))
 
@@ -505,102 +129,282 @@ def send_script_email(script_text):
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
             smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             smtp.send_message(msg)
-        print("✅ Email sent successfully!")
+        print("[SCRIPT] email_sent=true")
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
- 
-def main_loop(test_mode=False):
-    print("\n🚀 [START] Serial Twitter Translator + Poster (1 user per minute)")
-    posted_tweets = load_json(POSTED_TWEETS_FILE)
+        print(f"[SCRIPT] email_sent=false error={e}")
 
-    tweet_count_state_file = "tweet_count_state.json"
-    tweet_count_state = load_json(tweet_count_state_file)
-    last_interim_count = tweet_count_state.get("last_interim_count", 0)
-    recent_tweets = []
 
-    ACTIVE_HOUR_START_TIME = "16:30"  
-    ACTIVE_HOUR_END_TIME = "8:00"  
+def generate_youtube_script() -> str | None:
+    print("[SCRIPT] generate_start=true")
+    try:
+        posted_tweets = load_json(POSTED_TWEETS_FILE, [])
+        kst = ZoneInfo("Asia/Seoul")
+        now_kst = datetime.now(kst)
+        today_date = now_kst.date()
+        yesterday_date = today_date - timedelta(days=1)
 
-    is_daily_report_posted = False 
-    DAILY_REPORT_POST_TIME_START = "16:30"
-    DAILY_REPORT_POST_TIME_END = "17:00"
-    DAILY_REPORT_RESET_TIME = "05:00"
+        start_time = datetime.combine(yesterday_date, datetime.min.time(), tzinfo=kst).replace(hour=22)
+        end_time = datetime.combine(today_date, datetime.min.time(), tzinfo=kst).replace(hour=6)
+        start_time_naive = start_time.replace(tzinfo=None)
+        end_time_naive = end_time.replace(tzinfo=None)
 
+        filtered_tweets = []
+        for item in posted_tweets:
+            tweet_time = parse_time_str(item.get("time", ""))
+            if tweet_time is None:
+                continue
+            if start_time_naive <= tweet_time <= end_time_naive:
+                filtered_tweets.append(item)
+
+        print(f"[SCRIPT] source_total={len(posted_tweets)} filtered={len(filtered_tweets)}")
+        if not filtered_tweets:
+            return None
+
+        contents = "\n".join([f"- {item['content']}" for item in filtered_tweets])
+        prompt = f"""
+            당신은 ‘주식이 미쳤다 뉴스’ 채널의 콘텐츠 작성자입니다.
+            아래는 최근 12시간 동안 수집된 글로벌 금융 뉴스 트윗 모음입니다.
+이 중에서 실제로 투자자에게 중요한 뉴스만 선별하여 각 트윗마다 아래 형식으로 작성하세요.
+
+헤드라인: (30~40자 이내, 한 문장)
+본문: (속보 문체, 최대 80자 이내, 사실 중심)
+
+규칙:
+1) 각 뉴스마다 1개의 헤드라인 + 1개의 본문
+2) 사실 기반, 추측/광고/사견 금지
+3) 각 뉴스는 줄바꿈으로 구분
+
+뉴스 트윗:
+            {contents}
+        """
+        response = openai.chat.completions.create( 
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        script = response.choices[0].message.content.strip()
+
+        filename = "filtered_tweet_summaries.txt"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(script)
+        print(f"[SCRIPT] saved=true file={filename}")
+        send_script_email(script)
+        return script
+    except Exception as e:
+        print(f"[SCRIPT] generate_failed error={e}")
+        return None
+
+
+def process_user(
+    username: str,
+    posted_tweets: List[Dict],
+    posted_id_set: set,
+    user_ids: Dict[str, int],
+) -> Tuple[int, str]:
+    posted_count = 0
+
+    user_id = user_ids.get(username)
+    if not user_id:
+        fetched_user_id, user_error = fetch_user_id(client_twitter_read, username)
+        if user_error:
+            print(f"[FETCH] user={username} stage=user_lookup status=failed category={user_error}")
+            return 0, user_error
+        user_id = fetched_user_id
+        user_ids[username] = int(user_id)
+        save_json(user_ids, USER_ID_FILE)
+
+    since_id = load_last_seen_id(username)
+    tweets, fetch_error = fetch_latest_tweets(
+        client_twitter_read,
+        int(user_id),
+        FETCH_LIMIT_PER_USER,
+        since_id=since_id,
+    )
+    if fetch_error:
+        print(f"[FETCH] user={username} status=failed category={fetch_error}")
+        return 0, fetch_error
+
+    tweets = tweets or []
+    print(f"[FETCH] user={username} new_tweets={len(tweets)} since_id={since_id}")
+    if not tweets:
+        return 0, "OK"
+
+    # Process from oldest -> newest.
+    # since_id policy:
+    # - advance only when a tweet is fully "processed" (filtered or posted)
+    # - do NOT advance when temporary failures occur (AI/posting failures),
+    #   so those tweets can be retried later and are not lost.
+    tweets.sort(key=lambda item: item[0])
+    recent_posts = [item.get("content", "") for item in posted_tweets[-10:]]
+
+    for tweet_id, tweet_text in tweets:
+        processed = False
+
+        if is_duplicate(tweet_id, posted_id_set):
+            print(f"[FILTER] tweet_id={tweet_id} reason=duplicate")
+            processed = True
+        elif is_empty_tweet(tweet_text):
+            print(f"[FILTER] tweet_id={tweet_id} reason=empty")
+            processed = True
+        else:
+            ai_result = analyze_tweet_for_posting(tweet_text, username, recent_posts, retry=2)
+            if not ai_result.get("ok"):
+                print(f"[AI] classification=error tweet_id={tweet_id} error={ai_result.get('error', 'unknown')}")
+                processed = False
+            elif not ai_result.get("is_relevant", False):
+                print(f"[FILTER] tweet_id={tweet_id} reason={ai_result.get('skip_reason', 'irrelevant')}")
+                processed = True
+            elif ai_result.get("is_similar", False):
+                print(f"[FILTER] tweet_id={tweet_id} reason=similarity")
+                processed = True
+            else:
+                summary = ai_result.get("summary", "").strip()
+                news_type = ai_result.get("news_type", "neutral")
+                engagement_type = ai_result.get("engagement_type", "none")
+                engagement = ai_result.get("engagement", "").strip()
+                if not summary:
+                    print(f"[AI] classification=error tweet_id={tweet_id} error=empty_summary")
+                    processed = False
+                else:
+                    print(f"[AI] classification=relevant tweet_id={tweet_id}")
+                    print(f"[AI] news_type={news_type} engagement_type={engagement_type}")
+                    if engagement:
+                        print("[AI] engagement added=true")
+                    else:
+                        print("[AI] engagement skipped")
+                    tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+                    if engagement:
+                        final_text = f"{summary}\n\n{engagement}\n\n@{username}\n\n출처: {tweet_url}"
+                    else:
+                        final_text = f"{summary}\n\n@{username}\n\n출처: {tweet_url}"
+                    success, mode = post_with_optional_image(
+                        client_twitter,
+                        api_v1,
+                        final_text,
+                        tweet_text,
+                        tweet_id,
+                    )
+                    if success:
+                        posted_tweets.append(
+                            {
+                                "tweet_id": tweet_id,
+                                "content": summary,
+                                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            }
+                        )
+                        posted_id_set.add(str(tweet_id))
+                        recent_posts.append(summary)
+                        posted_count += 1
+                        print(f"[POST] success tweet_id={tweet_id} mode={mode}")
+                        wait_with_progress(10)
+                        processed = True
+                    else:
+                        print(f"[POST] failed tweet_id={tweet_id} mode={mode}")
+                        processed = False
+
+        if processed:
+            save_last_seen_id(username, tweet_id)
+        else:
+            print(f"[STATE] since_id_not_advanced user={username} tweet_id={tweet_id} reason=temporary_failure")
+            break
+
+    if posted_count > 0:
+        save_json(posted_tweets, POSTED_TWEETS_FILE)
+    return posted_count, "OK"
+
+
+def check_and_run_daily_script(is_daily_script_sent: bool) -> bool:
+    now_time = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%H:%M")
+    if "06:00" <= now_time < "06:20" and not is_daily_script_sent:
+        print("[SCRIPT] window_open=true run_once=true")
+        generate_youtube_script()
+        return True
+    if now_time >= "06:20":
+        return False
+    return is_daily_script_sent
+
+
+def main_loop(test_mode: bool = False) -> None:
+    print("\n[START] Priority Twitter Translator + Poster")
+    posted_tweets = load_json(POSTED_TWEETS_FILE, [])
+    if not isinstance(posted_tweets, list):
+        posted_tweets = []
+    posted_id_set = build_posted_id_set(posted_tweets)
+
+    user_ids = load_json(USER_ID_FILE, {})
+    if not isinstance(user_ids, dict):
+        user_ids = {}
+
+    tweet_count_state = load_json(TWEET_COUNT_STATE_FILE, {})
+    if not isinstance(tweet_count_state, dict):
+        tweet_count_state = {}
+    last_interim_count = int(tweet_count_state.get("last_interim_count", 0))
+    recent_tweets: List[Dict] = []
+
+    is_daily_script_sent = False
     total_num_posts_today = 0
-
-    is_daily_script_sent = False  # ✅ 6시 스크립트 전송 여부 플래그
+    scheduler = AccountScheduler(TIER1_ACCOUNTS, TIER2_ACCOUNTS)
 
     if test_mode:
-        # Generate YouTube script immediately
         generate_youtube_script()
-        print("✅ Test mode active: YouTube script generated immediately.")
-        return  # Optionally exit after test run
+        print("[SCRIPT] test_mode_done=true")
+        return
 
     while True: 
-        
-        if not is_within_active_hours(ACTIVE_HOUR_START_TIME, ACTIVE_HOUR_END_TIME, test_mode=True): # if test_mode = True, it always returns True
-            active_hour_delay = 60 
-            print(f"🌙 Outside active hours ({ACTIVE_HOUR_START_TIME}pm - {ACTIVE_HOUR_END_TIME}am the next day). Sleeping for {active_hour_delay} seconds...")
-            wait_with_progress(active_hour_delay)
+        if not is_within_active_hours(start_time="06:00", end_time="23:00", test_mode=False):
+            print("[SCHED] outside_active_hours=true sleep=30")
+            is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
+            wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
             continue
 
-        if user_queue:
-            username = user_queue.popleft()
+        due_accounts = scheduler.due_accounts()
+        if not due_accounts:
+            print("[SCHED] due_accounts=0 sleep=30")
+            is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
+            wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
+            continue
+
+        print(f"[SCHED] due_accounts={len(due_accounts)} users={','.join(due_accounts)}")
+        for username in due_accounts:
             before_count = len(posted_tweets) 
-            process_user(username, posted_tweets, total_num_posts_today)
-            user_queue.append(username)
+            posted_count, status = process_user(username, posted_tweets, posted_id_set, user_ids)
+            total_num_posts_today += posted_count
 
             new_tweets_slice = posted_tweets[before_count:]
             recent_tweets.extend(new_tweets_slice)
 
             current_tweet_count = len(posted_tweets)
             new_tweets = current_tweet_count - last_interim_count 
-            print(f'📊 Keeping track number of new tweets.. : {new_tweets}')
-            new_tweet_range = 20 # when number of recent new tweets reaches 20
-            if new_tweets >= new_tweet_range: # every new_tweet_range tweets it gives interim report to users... 
-                print(f"📊 Posted {new_tweets} new tweets (total: {current_tweet_count}). Posting interim report...")
-                tweets_to_report = recent_tweets[-new_tweet_range:]
+            print(
+                f"[STATE] total_posts={total_num_posts_today} "
+                f"stored_posts={current_tweet_count} new_since_interim={new_tweets}"
+            )
+
+            if new_tweets >= NEW_TWEET_RANGE:
+                print(f"[REPORT] interim_trigger=true size={NEW_TWEET_RANGE}")
+                tweets_to_report = recent_tweets[-NEW_TWEET_RANGE:]
                 post_interim_report(new_tweets, tweets_to_report)
                 last_interim_count = current_tweet_count
                 tweet_count_state["last_interim_count"] = last_interim_count
-                save_json(tweet_count_state, tweet_count_state_file)
+                save_json(tweet_count_state, TWEET_COUNT_STATE_FILE)
                 recent_tweets.clear()
  
-            # now = datetime.now().strftime("%H:%M")
-            # if not is_daily_report_posted and "16:30" <= now < "17:00":
-            #     post_report_result = post_summary_report()
-            #     if post_report_result:
-            #         is_daily_report_posted = True
+            if status == RATE_LIMIT:
+                scheduler.mark_fetched(username, defer_minutes=15)
+                print(f"[RATE_LIMIT] user={username} pause_minutes=15")
+            else:
+                scheduler.mark_fetched(username)
 
-            # if now >= DAILY_REPORT_RESET_TIME and now < "05:10": 
-            #     print(f'🔄 Daily Report Flag Time Successfully Reset to {DAILY_REPORT_RESET_TIME}')
-            #     is_daily_report_posted = False
-
-            # print(f"✅ Daily Report Posted : {is_daily_report_posted}\n")
-
-            # next_user_delay = random.randint(60, 90) 
-            next_user_delay = 60  
-            print(f"✅ Done with @{username}. Waiting {next_user_delay}s before next user...")
-            print(f"✅ Total number of posts: {total_num_posts_today}\n")
-            wait_with_progress(next_user_delay)
-
-            # ✅ 매일 06:00 ~ 06:10 사이에 1회만 실행
-            kst = pytz.timezone("Asia/Seoul")
-            now_kst = datetime.now(kst)
-            now_time = now_kst.strftime("%H:%M")
-
-            if "06:00" <= now_time < "06:20" and not is_daily_script_sent:
-                print("🕕 06:00~06:20 범위 진입 — 유튜브 스크립트 생성 및 이메일 전송")
-                generate_youtube_script()
-                is_daily_script_sent = True
- 
-            elif now_time >= "06:20":
-                is_daily_script_sent = False
-
-        else:
-            print("🟨 No users in queue. Sleeping for 5 minutes...")
-            wait_with_progress(300)
+        is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
+        wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
-    main_loop()
+    debug_env()
+    ok, category, _ = validate_startup_auth(client_twitter_read, username="muskonomy")
+    if not ok:
+        print(f"[AUTH] startup_validation_failed category={category} action=exit")
+        sys.exit(1)
+
+    # Keep feature compatibility: summary report entry-point remains imported.
+    _ = post_summary_report
+    main_loop(test_mode=False)
