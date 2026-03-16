@@ -60,6 +60,7 @@ TWEET_COUNT_STATE_FILE = "tweet_count_state.json"
 NEW_TWEET_RANGE = 20
 FETCH_SCAN_INTERVAL_SECONDS = 30
 FETCH_LIMIT_PER_USER = 5
+X_POST_MAX_LEN = 280
 
 TIER1_ACCOUNTS = ["Investingcom", "BRICSinfo", "DeItaone"]
 TIER2_ACCOUNTS = ["muskonomy", "SawyerMerritt", "TheSonOfWalkley"]
@@ -115,6 +116,38 @@ def parse_time_str(value: str):
     except Exception as e:
         print(f"[STATE] time_parse_failed value={value} error={e}")
         return None
+
+
+def compose_post_text(
+    summary: str,
+    question: str,
+    username: str,
+    tweet_url: str,
+    max_len: int = X_POST_MAX_LEN,
+) -> str:
+    source_block = f"@{username}\n\n출처: {tweet_url}"
+    summary = (summary or "").strip()
+    question = (question or "").strip()
+
+    if question:
+        body = f"{summary}\n\n{question}"
+    else:
+        body = summary
+
+    full_text = f"{body}\n\n{source_block}"
+    if len(full_text) <= max_len:
+        return full_text
+
+    # Keep attribution intact and trim body first.
+    allowed_body_len = max_len - len(f"\n\n{source_block}")
+    if allowed_body_len <= 0:
+        return source_block[:max_len]
+
+    body = body[:allowed_body_len].rstrip()
+    if len(body) < len(f"{summary}\n\n{question}" if question else summary) and allowed_body_len >= 1:
+        body = body[:-1].rstrip() + "…"
+
+    return f"{body}\n\n{source_block}"
 
 
 def send_script_email(script_text: str) -> None:
@@ -273,9 +306,9 @@ def process_user(
                         print("[AI] engagement skipped")
                     tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
                     if engagement:
-                        final_text = f"{summary}\n\n{engagement}\n\n@{username}\n\n출처: {tweet_url}"
+                        final_text = compose_post_text(summary, engagement, username, tweet_url)
                     else:
-                        final_text = f"{summary}\n\n@{username}\n\n출처: {tweet_url}"
+                        final_text = compose_post_text(summary, "", username, tweet_url)
                     success, mode = post_with_optional_image(
                         client_twitter,
                         api_v1,
