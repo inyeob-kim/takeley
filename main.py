@@ -2,6 +2,8 @@ import os
 import smtplib
 import sys
 import time
+import hashlib
+import re
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -134,7 +136,14 @@ def _extract_opening_prefix(content: str) -> str:
 def _infer_format_type_from_content(content: str) -> str:
     text = (content or "").strip()
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    source_index = next((idx for idx, line in enumerate(lines) if line.startswith("@")), -1)
+    source_index = next(
+        (
+            idx
+            for idx, line in enumerate(lines)
+            if line.startswith("@") or line.startswith("출처 계정:") or line.startswith("출처:")
+        ),
+        -1,
+    )
     main_lines = lines[:source_index] if source_index > 0 else lines
 
     has_implication = any(line.startswith("→") for line in main_lines)
@@ -150,6 +159,11 @@ def _infer_format_type_from_content(content: str) -> str:
     if "리포스트" in engagement_line or "공유" in engagement_line:
         return "news_implication_repost"
     return "news_implication_question"
+
+
+def _build_text_fingerprint(text: str) -> str:
+    normalized = re.sub(r"\s+", " ", (text or "").strip())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
 
 
 def _recent_values(posted_tweets: List[Dict], key: str, limit: int = 10) -> List[str]:
@@ -372,6 +386,16 @@ def process_user(
                     print(f"[AI] format_type={normalized_format_type}")
                     print(f"[AI] implication_added={implication_added}")
                     print(f"[AI] engagement_added={engagement_added}")
+                    print(
+                        f"[POST_DIAG] stage=pre_post "
+                        f"tweet_id={tweet_id} "
+                        f"source_user={username} "
+                        f"text_len={len(final_text)} "
+                        f"line_count={len([line for line in final_text.splitlines() if line.strip()])} "
+                        f"mention_count={len(re.findall(r'(^|\\s)@[A-Za-z0-9_]{1,15}', final_text))} "
+                        f"url_count={len(re.findall(r'https?://\\S+', final_text))} "
+                        f"fingerprint={_build_text_fingerprint(final_text)}"
+                    )
                     success, mode = post_with_optional_image(
                         client_twitter,
                         api_v1,

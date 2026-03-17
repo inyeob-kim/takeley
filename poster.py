@@ -1,8 +1,10 @@
 import os
 import re
 import time
+import hashlib
+import json
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Tuple
 
 import requests
 import tweepy
@@ -17,6 +19,115 @@ HIGH_IMPACT_KEYWORDS = (
     "war",
     "rate hike",
 )
+
+
+def _build_text_fingerprint(text: str) -> str:
+    normalized = re.sub(r"\s+", " ", (text or "").strip())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+
+
+def _duplicate_estimate(text: str) -> float:
+    tokens = re.findall(r"\w+", (text or "").lower())
+    if not tokens:
+        return 0.0
+    unique_count = len(set(tokens))
+    return round(1.0 - (unique_count / len(tokens)), 3)
+
+
+def _safe_response_text(error: Exception, max_len: int = 500) -> str:
+    response = getattr(error, "response", None)
+    if not response:
+        return ""
+
+    text = ""
+    try:
+        text = (response.text or "").strip()
+    except Exception:
+        text = ""
+
+    if not text:
+        try:
+            text = json.dumps(response.json(), ensure_ascii=False)
+        except Exception:
+            text = ""
+
+    text = text.replace("\n", " ").replace("\r", " ")
+    return text[:max_len]
+
+
+def _safe_api_errors(error: Exception) -> str:
+    api_errors = getattr(error, "api_errors", None)
+    if not api_errors:
+        return ""
+    try:
+        return json.dumps(api_errors, ensure_ascii=False)
+    except Exception:
+        return str(api_errors)
+
+
+def _safe_attr_json(error: Exception, attr_name: str) -> str:
+    value = getattr(error, attr_name, None)
+    if value in (None, "", []):
+        return ""
+    try:
+        return json.dumps(value, ensure_ascii=False)
+    except Exception:
+        return str(value)
+
+
+def _safe_error_dict(error: Exception) -> str:
+    errors = getattr(error, "errors", None)
+    if not errors:
+        return ""
+    try:
+        return json.dumps(errors, ensure_ascii=False)
+    except Exception:
+        return str(errors)
+
+
+def _extract_request_id(error: Exception) -> str:
+    response = getattr(error, "response", None)
+    if not response:
+        return ""
+    headers = getattr(response, "headers", {}) or {}
+    return (
+        headers.get("x-request-id", "")
+        or headers.get("x-client-transaction-id", "")
+        or headers.get("x-response-time", "")
+    )
+
+
+def _extract_status_code(error: Exception) -> Any:
+    status_code = getattr(error, "status_code", None)
+    if status_code is not None:
+        return status_code
+    response = getattr(error, "response", None)
+    return getattr(response, "status_code", "unknown")
+
+
+def _log_post_failure(
+    *,
+    mode: str,
+    attempt: int,
+    max_retries: int,
+    text: str,
+    error: Exception,
+) -> None:
+    print(
+        f"[POST_DIAG] mode={mode} retry={attempt}/{max_retries} "
+        f"error_type={type(error).__name__} "
+        f"status_code={_extract_status_code(error)} "
+        f"text_len={len(text)} "
+        f"fingerprint={_build_text_fingerprint(text)} "
+        f"duplicate_estimate={_duplicate_estimate(text)} "
+        f"api_codes={_safe_attr_json(error, 'api_codes')} "
+        f"api_messages={_safe_attr_json(error, 'api_messages')} "
+        f"api_errors={_safe_api_errors(error)} "
+        f"errors={_safe_error_dict(error)} "
+        f"x_request_id={_extract_request_id(error)} "
+        f"response_body={_safe_response_text(error)} "
+        f"error={error}"
+    )
 
 
 def should_generate_image(source_text: str) -> bool:
@@ -69,7 +180,13 @@ def post_to_twitter(client_twitter: tweepy.Client, text: str, max_retries: int =
             print(f"[POST] success mode=text attempt={attempt + 1}")
             return True
         except Exception as e:
-            print(f"[POST] failed mode=text retry={attempt + 1}/{max_retries} error={e}")
+            _log_post_failure(
+                mode="text",
+                attempt=attempt + 1,
+                max_retries=max_retries,
+                text=text,
+                error=e,
+            )
             time.sleep(5)
     return False
 
@@ -92,7 +209,13 @@ def post_to_twitter_with_image(
             print(f"[POST] success mode=image attempt={attempt + 1}")
             return True
         except Exception as e:
-            print(f"[POST] failed mode=image retry={attempt + 1}/{max_retries} error={e}")
+            _log_post_failure(
+                mode="image",
+                attempt=attempt + 1,
+                max_retries=max_retries,
+                text=text,
+                error=e,
+            )
             time.sleep(5)
     return False
 

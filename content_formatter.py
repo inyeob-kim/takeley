@@ -1,3 +1,4 @@
+import re
 from typing import List, Tuple
 
 
@@ -17,6 +18,13 @@ def _clean_line(text: str) -> str:
 def _clean_summary(text: str) -> str:
     lines = [" ".join(line.strip().split()) for line in (text or "").splitlines() if line.strip()]
     return "\n".join(lines).strip()
+
+
+def _remove_at_mentions(text: str) -> str:
+    """
+    Remove @-mention syntax to comply with policy restrictions on unsolicited mentions.
+    """
+    return re.sub(r"(^|\s)@([A-Za-z0-9_]{1,15})", r"\1\2", text or "")
 
 
 def _select_opening(summary: str, recent_prefixes: List[str]) -> str:
@@ -85,8 +93,8 @@ def assemble_final_post_text(
     if normalized_type in {"news_implication_question", "news_implication_repost"} and engagement_line:
         lines.extend(["", engagement_line])
 
-    lines.extend(["", f"@{username}", "", f"출처: {tweet_url}"])
-    final_text = "\n".join(lines).strip()
+    lines.extend(["", f"출처 계정: {username}", "", f"출처: {tweet_url}"])
+    final_text = _remove_at_mentions("\n".join(lines).strip())
     return final_text, normalized_type
 
 
