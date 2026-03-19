@@ -1,12 +1,9 @@
 import os
-import smtplib
 import sys
 import time
 import hashlib
 import re
-from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from datetime import datetime
 from typing import Dict, List, Tuple
 from zoneinfo import ZoneInfo
 
@@ -33,7 +30,7 @@ from state_manager import (
     save_json,
     save_last_seen_id,
 )
-from summary_report import post_interim_report, post_summary_report
+from summary_report import post_interim_report
 
 
 # Load env once (config.py now guards against duplicate calls).
@@ -41,10 +38,6 @@ set_environment()
 
 openai.api_key = os.getenv("OPENAI_API_KEY") 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 client_twitter = tweepy.Client( 
@@ -69,8 +62,8 @@ NEW_TWEET_RANGE = 20
 FETCH_SCAN_INTERVAL_SECONDS = 30
 FETCH_LIMIT_PER_USER = 5
 
-TIER1_ACCOUNTS = ["Investingcom", "BRICSinfo", "DeItaone"]
-TIER2_ACCOUNTS = ["muskonomy", "SawyerMerritt", "TheSonOfWalkley"]
+TIER1_ACCOUNTS = ["Investingcom", "FirstSquawk", "DeItaone"]
+TIER2_ACCOUNTS = ["unusual_whales", "SawyerMerritt", "StockMKTNewz"]
 
 
 def debug_env() -> None:
@@ -85,9 +78,6 @@ def debug_env() -> None:
         "TWITTER_API_SECRET",
         "TWITTER_ACCESS_TOKEN",
         "TWITTER_ACCESS_TOKEN_SECRET",
-        "EMAIL_ADDRESS",
-        "EMAIL_PASSWORD",
-        "EMAIL_RECEIVER",
     ]
     print("[ENV] Debug check start")
     for key in keys:
@@ -116,14 +106,6 @@ def is_within_active_hours(start_time: str = "06:00", end_time: str = "23:00", t
         return start_time_obj <= now_kst < end_time_obj
         return now_kst >= start_time_obj or now_kst < end_time_obj
     
-
-def parse_time_str(value: str):
-    try:
-        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-    except Exception as e:
-        print(f"[STATE] time_parse_failed value={value} error={e}")
-        return None
-
 
 def _extract_opening_prefix(content: str) -> str:
     text = (content or "").strip()
@@ -183,83 +165,6 @@ def _recent_format_types(posted_tweets: List[Dict], limit: int = 60) -> List[str
             fmt = _infer_format_type_from_content(str(item.get("content", "")))
         result.append(fmt)
     return result
-
-
-def send_script_email(script_text: str) -> None:
-    msg = MIMEMultipart()
-    msg["Subject"] = "오늘의 유튜브 요약 스크립트"
-    msg["From"] = EMAIL_ADDRESS
-    msg["To"] = EMAIL_RECEIVER
-    body = f"안녕하세요,\n\n오늘 생성된 유튜브 대본입니다:\n\n{script_text}\n\n감사합니다."
-    msg.attach(MIMEText(body, "plain"))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            smtp.send_message(msg)
-        print("[SCRIPT] email_sent=true")
-    except Exception as e:
-        print(f"[SCRIPT] email_sent=false error={e}")
-
-
-def generate_youtube_script() -> str | None:
-    print("[SCRIPT] generate_start=true")
-    try:
-        posted_tweets = load_json(POSTED_TWEETS_FILE, [])
-        kst = ZoneInfo("Asia/Seoul")
-        now_kst = datetime.now(kst)
-        today_date = now_kst.date()
-        yesterday_date = today_date - timedelta(days=1)
-
-        start_time = datetime.combine(yesterday_date, datetime.min.time(), tzinfo=kst).replace(hour=22)
-        end_time = datetime.combine(today_date, datetime.min.time(), tzinfo=kst).replace(hour=6)
-        start_time_naive = start_time.replace(tzinfo=None)
-        end_time_naive = end_time.replace(tzinfo=None)
-
-        filtered_tweets = []
-        for item in posted_tweets:
-            tweet_time = parse_time_str(item.get("time", ""))
-            if tweet_time is None:
-                continue
-            if start_time_naive <= tweet_time <= end_time_naive:
-                filtered_tweets.append(item)
-
-        print(f"[SCRIPT] source_total={len(posted_tweets)} filtered={len(filtered_tweets)}")
-        if not filtered_tweets:
-            return None
-
-        contents = "\n".join([f"- {item['content']}" for item in filtered_tweets])
-        prompt = f"""
-            당신은 ‘주식이 미쳤다 뉴스’ 채널의 콘텐츠 작성자입니다.
-            아래는 최근 12시간 동안 수집된 글로벌 금융 뉴스 트윗 모음입니다.
-이 중에서 실제로 투자자에게 중요한 뉴스만 선별하여 각 트윗마다 아래 형식으로 작성하세요.
-
-헤드라인: (30~40자 이내, 한 문장)
-본문: (속보 문체, 최대 80자 이내, 사실 중심)
-
-규칙:
-1) 각 뉴스마다 1개의 헤드라인 + 1개의 본문
-2) 사실 기반, 추측/광고/사견 금지
-3) 각 뉴스는 줄바꿈으로 구분
-
-뉴스 트윗:
-            {contents}
-        """
-        response = openai.chat.completions.create( 
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        script = response.choices[0].message.content.strip()
-
-        filename = "filtered_tweet_summaries.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(script)
-        print(f"[SCRIPT] saved=true file={filename}")
-        send_script_email(script)
-        return script
-    except Exception as e:
-        print(f"[SCRIPT] generate_failed error={e}")
-        return None
 
 
 def process_user(
@@ -346,6 +251,7 @@ def process_user(
                 format_type = ai_result.get("format_type", "news_implication")
                 news_type = ai_result.get("news_type", "neutral")
                 engagement = ai_result.get("engagement", "").strip()
+                hashtags = ai_result.get("hashtags", "").strip()
                 if not summary:
                     print(f"[AI] classification=error tweet_id={tweet_id} error=empty_summary")
                     processed = False
@@ -371,7 +277,7 @@ def process_user(
                         summary=summary,
                         implication=implication,
                         engagement=engagement,
-                        username=username,
+                        hashtags=hashtags,
                         tweet_url=tweet_url,
                         recent_prefixes=recent_prefixes,
                     )
@@ -386,6 +292,7 @@ def process_user(
                     print(f"[AI] format_type={normalized_format_type}")
                     print(f"[AI] implication_added={implication_added}")
                     print(f"[AI] engagement_added={engagement_added}")
+                    print(f"[AI] hashtags={hashtags or 'none'}")
                     print(
                         f"[POST_DIAG] stage=pre_post "
                         f"tweet_id={tweet_id} "
@@ -416,6 +323,7 @@ def process_user(
                                 "content": summary,
                                 "implication": stored_implication,
                                 "engagement": stored_engagement,
+                                "hashtags": hashtags,
                                 "format_type": normalized_format_type,
                                 "news_type": news_type,
                                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -451,17 +359,6 @@ def process_user(
     return posted_count, "OK"
 
 
-def check_and_run_daily_script(is_daily_script_sent: bool) -> bool:
-    now_time = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%H:%M")
-    if "06:00" <= now_time < "06:20" and not is_daily_script_sent:
-        print("[SCRIPT] window_open=true run_once=true")
-        generate_youtube_script()
-        return True
-    if now_time >= "06:20":
-        return False
-    return is_daily_script_sent
-
-
 def main_loop(test_mode: bool = False) -> None:
     print("\n[START] Priority Twitter Translator + Poster")
     posted_tweets = load_json(POSTED_TWEETS_FILE, [])
@@ -479,26 +376,22 @@ def main_loop(test_mode: bool = False) -> None:
     last_interim_count = int(tweet_count_state.get("last_interim_count", 0))
     recent_tweets: List[Dict] = []
 
-    is_daily_script_sent = False
     total_num_posts_today = 0
     scheduler = AccountScheduler(TIER1_ACCOUNTS, TIER2_ACCOUNTS)
 
     if test_mode:
-        generate_youtube_script()
-        print("[SCRIPT] test_mode_done=true")
+        print("[MODE] test_mode=true no_special_script")
         return
 
     while True: 
         if not is_within_active_hours(start_time="06:00", end_time="23:00", test_mode=False):
             print("[SCHED] outside_active_hours=true sleep=30")
-            is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
             wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
             continue
 
         due_accounts = scheduler.due_accounts()
         if not due_accounts:
             print("[SCHED] due_accounts=0 sleep=30")
-            is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
             wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
             continue
 
@@ -533,7 +426,6 @@ def main_loop(test_mode: bool = False) -> None:
             else:
                 scheduler.mark_fetched(username)
 
-        is_daily_script_sent = check_and_run_daily_script(is_daily_script_sent)
         wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
 
 
@@ -543,7 +435,4 @@ if __name__ == "__main__":
     if not ok:
         print(f"[AUTH] startup_validation_failed category={category} action=exit")
         sys.exit(1)
-
-    # Keep feature compatibility: summary report entry-point remains imported.
-    _ = post_summary_report
     main_loop(test_mode=False)

@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict, List
 
 import openai
@@ -15,6 +16,31 @@ def _extract_json(text: str) -> Dict:
     if start == -1 or end == -1:
         raise ValueError("No JSON object found in AI response")
     return json.loads(text[start : end + 1])
+
+
+DISALLOWED_GENERIC_TAGS = {"#주식투자", "#경제", "#뉴스"}
+
+
+def _normalize_hashtags(raw: str, limit: int = 2) -> str:
+    tags = []
+    seen = set()
+    for token in str(raw or "").split():
+        if not token.startswith("#"):
+            continue
+        cleaned_body = re.sub(r"[^0-9A-Za-z가-힣_]", "", token[1:])
+        if not cleaned_body:
+            continue
+        tag = f"#{cleaned_body}"
+        lowered = tag.lower()
+        if lowered in seen:
+            continue
+        if tag in DISALLOWED_GENERIC_TAGS:
+            continue
+        seen.add(lowered)
+        tags.append(tag)
+        if len(tags) >= limit:
+            break
+    return " ".join(tags)
 
 
 def analyze_tweet_for_posting(
@@ -38,71 +64,181 @@ def analyze_tweet_for_posting(
 You are a strict financial news processor.
 You write Korean market updates for general investors.
 
-Task:
-1) Determine if this source tweet is relevant for investors.
-2) Check if it is reporting the same event as any recent posts.
-3) If relevant and not similar, write a concise Korean summary with a natural breaking header.
-4) Add a simple investor-friendly implication when appropriate.
-5) Choose one format type.
-6) Add one short engagement line only when appropriate.
+Your job:
+1) Decide whether the source tweet contains investor-relevant new information.
+2) Decide whether it is reporting the same concrete event as a recent post.
+3) If relevant and not similar, write a concise Korean market update.
+4) Add one high-quality investor implication only when the market link is clear.
+5) Choose exactly one format type.
+6) Add one short engagement line only when it is truly useful.
+7) Generate 0-2 hashtags under the hashtag rules.
 
-Return ONLY JSON with this schema:
+Return ONLY valid JSON with this schema:
 {{
-  "is_relevant": true/false,
-  "is_similar": true/false,
+  "is_relevant": true,
+  "is_similar": false,
   "summary": "string",
   "implication": "string",
   "format_type": "news_only|news_implication|news_implication_question|news_implication_repost",
   "engagement": "string",
+  "hashtags": "string",
   "news_type": "macro|company|market|breaking|neutral",
   "skip_reason": "duplicate_topic|advertisement|irrelevant|other|none"
 }}
 
-Rules:
-- Treat promotions, giveaways, pure links, and unrelated chatter as irrelevant.
-- Similar means same concrete event/news, not broad topic overlap.
-- If skipped, summary="", implication="", engagement="", format_type="news_only".
-- If accepted, summary must be Korean, factual, concise, and include key numbers/dates exactly.
-- Summary should start with one of these openers only when natural: "⚡ 속보", "📈 시장 속보", "🚨 긴급".
-- implication must be either empty or one short sentence that starts with "→".
-- implication must use simple investor language (sentiment, volatility, uncertainty, risk appetite, short-term pressure).
-- Avoid jargon like liquidity sweep, order block, ICT, institutional positioning, liquidity grab, smart money.
-- engagement must be either empty or one short Korean line.
-- Do not invent facts.
-- Keep numbers/dates exact when present.
-- Tone: fast, clear, investor-friendly, professional. Avoid meme-like or sensational tone.
+---
 
-News type definitions:
-- macro: CPI, inflation, jobs, rates, Fed, central bank, bonds, macro economy
-- company: Tesla, Nvidia, Apple, earnings, guidance, launches, company announcements
-- market: price action, broad market moves, futures, indexes, sector moves
-- breaking: war, geopolitical escalation, emergency policy, major shock events
-- neutral: relevant but not strong enough for engagement
+### Decision rules:
 
-Format rules (target mix, do not force):
-- news_implication: most common (about 40%)
-- news_implication_question: second most common (about 35%)
-- news_only: less common (about 15%)
-- news_implication_repost: rare (about 10%) and only for high-impact macro/breaking
-- Never force every post to end with a question.
+- Relevant = news that may affect stocks, sectors, indexes, rates, oil, bonds, FX, geopolitics, or investor sentiment.
+- Irrelevant = promotions, giveaways, referrals, jokes, opinions, vague reactions, or no new factual info.
+- Treat speculative / rumor-like tweets conservatively.
+- If the tweet is mainly opinion, hype, or speculation without a clear factual development, treat it conservatively.
+- Prefer factual developments over commentary.
+- If a claim appears second-hand or unverified, do not overstate certainty.
+- If the source tweet contains vague claims without a concrete update, set is_relevant=false unless clear investor relevance exists.
 
-Format constraints:
-- news_only: summary only, implication="", engagement=""
-- news_implication: summary + implication, engagement=""
-- news_implication_question: summary + implication + short discussion question
-- news_implication_repost: summary + implication + short repost/share CTA
-- Follow CTA should be very rare; prefer discussion questions when engagement is needed.
+- Similar = same event, same actor, same core action, same meaning (even if wording differs).
+- Not similar = new numbers, new timing, new official statement, or meaningful escalation.
 
-Recent wording to avoid repeating too often:
-- recent implications: {json.dumps(recent_implications[-8:], ensure_ascii=False)}
-- recent engagements: {json.dumps(recent_engagements[-8:], ensure_ascii=False)}
+---
+
+### Output rules:
+
+- JSON only. No markdown. No explanation.
+- If skipped:
+  - summary=""
+  - implication=""
+  - engagement=""
+  - format_type="news_only"
+  - skip_reason must be set
+
+- If accepted:
+  - skip_reason="none"
+
+---
+
+### Summary rules:
+
+- Korean only
+- Factual, concise, natural
+- Include key numbers/dates exactly if present
+- Do NOT invent facts
+- Write like a fast Korean market desk update, not a literal translation.
+- Prefer tight phrasing over direct translation.
+- Remove filler/reporting verbs when unnecessary.
+- Avoid awkward endings like repeated "라고 밝혔다", "라고 말했다" unless truly needed for attribution.
+
+- Use header ONLY when natural:
+  - 🚨 긴급 → war, escalation, emergency
+  - ⚡ 속보 → important fresh update
+  - 📈 시장 속보 → market moves
+
+- Avoid unnecessary wording like:
+  - "라고 밝혔습니다" (remove filler)
+  - keep sentences tight
+
+---
+
+### Implication rules (CRITICAL):
+
+- Must start with "→" or be empty
+- MUST explain WHY this matters (not just that it matters)
+- MUST be specific and differentiated
+- MUST avoid generic phrases:
+  - "긍정적인 영향"
+  - "부정적인 영향"
+  - "변동성 확대"
+  - "불확실성 증가"
+  unless absolutely necessary
+
+- Write like a "핵심 해석" (insight), not a generic comment
+
+Use category-based reasoning:
+
+Company news:
+- re-rating
+- growth expectations
+- business model shift
+- competitive positioning
+
+Macro news:
+- rate path expectation
+- liquidity / tightening / easing
+- risk sentiment shift
+
+Geopolitical / breaking:
+- oil sensitivity
+- safe-haven demand
+- short-term risk-off
+
+AI / tech:
+- narrative strength
+- demand expectations
+- sector momentum
+
+- Prefer styles like:
+  - "재평가 가능성"
+  - "기대감 재점화"
+  - "성장 스토리 강화"
+  - "금리 민감도 확대"
+
+- Do NOT repeat recent implication styles
+
+- If the market implication is weak, obvious, repetitive, or not clearly connected, leave implication empty.
+- Prefer specific interpretation over generic sentiment language.
+- Do not force implication for every accepted post.
+- If no strong insight → implication = ""
+
+---
+
+### Engagement rules:
+
+- Optional, 1 short Korean line only
+- Use only when meaningful discussion possible
+- Avoid repetitive patterns
+- Prefer empty for routine news
+
+---
+
+### Format rules:
+
+- news_implication (default)
+- news_implication_question (when discussion value exists)
+- news_only (low-impact)
+- news_implication_repost (rare, only for major breaking)
+
+---
+
+### Hashtag rules:
+
+- 0-2 tags only
+- "#태그1 #태그2"
+
+Priority:
+1. specific topic tag
+2. one base tag if needed:
+   - macro: #Fed #금리 #인플레이션
+   - company: company name
+   - market: #코스피 #코스닥 #증시
+
+- Avoid generic tags
+- Can be "" if not needed
+
+---
+
+Recent implication examples to avoid repeating:
+{recent_implications}
+
+Recent engagement examples to avoid repeating:
+{recent_engagements}
 
 Username: @{username}
 Source tweet:
 \"\"\"{tweet_text}\"\"\"
 
 Recent posts:
-{json.dumps(recent_posts[-10:], ensure_ascii=False)}
+{recent_posts}
 """
 
     last_error = None
@@ -124,6 +260,7 @@ Recent posts:
             implication = str(data.get("implication", "")).strip()
             format_type = str(data.get("format_type", "news_implication")).strip().lower()
             engagement = str(data.get("engagement", "")).strip()
+            hashtags = _normalize_hashtags(str(data.get("hashtags", "")).strip(), limit=2)
             if format_type not in {
                 "news_only",
                 "news_implication",
@@ -143,6 +280,7 @@ Recent posts:
                 summary = ""
                 implication = ""
                 engagement = ""
+                hashtags = ""
                 format_type = "news_only"
             else:
                 # Format hardening to keep assembly stable and avoid malformed payloads.
@@ -175,6 +313,7 @@ Recent posts:
                 "format_type": format_type,
                 "news_type": news_type,
                 "engagement": engagement,
+                "hashtags": hashtags,
                 "skip_reason": str(data.get("skip_reason", "other")).strip() or "other",
             }
         except Exception as e:
@@ -189,6 +328,7 @@ Recent posts:
         "format_type": "news_only",
         "news_type": "neutral",
         "engagement": "",
+        "hashtags": "",
         "skip_reason": "ai_error",
         "error": str(last_error) if last_error else "unknown",
     }

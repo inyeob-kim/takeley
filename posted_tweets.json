@@ -68322,5 +68322,1315 @@
     "format_type": "news_implication",
     "news_type": "company",
     "time": "2026-03-16 21:09:09"
+  },
+  {
+    "tweet_id": 2034055746837418446,
+    "content": "🚨 긴급: 이란의 집속탄이 이스라엘 중앙 주거 지역에서 공중 폭발했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 중동 지역의 긴장이 높아지면 시장의 불확실성이 증가할 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:03:30"
+  },
+  {
+    "tweet_id": 2034064781661864156,
+    "content": "🚨 긴급: 이란의 미사일 공격으로 이스라엘 중앙에서 두 명이 사망했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "→ 이란과 이스라엘 간의 갈등이 심화될 경우, 지역 안보에 대한 우려가 커질 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:03:44"
+  },
+  {
+    "tweet_id": 2034066848098976076,
+    "content": "🚨 긴급: 이란은 미국-이스라엘 미사일이 부셰르 원자력 발전소에 고립되었다고 발표했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 이란과의 갈등이 심화될 경우, 지역 안보에 대한 우려가 커질 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:03:58"
+  },
+  {
+    "tweet_id": 2034113763402510619,
+    "content": "🚨 긴급: 이란 혁명수비대(IRGC)는 보안 책임자 알리 라리자니의 사망에 대해 미국과 이스라엘에 \"확실한 복수\"를 다짐했습니다.",
+    "implication": "→ 중동 지역의 긴장이 더욱 고조될 가능성이 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:04:12"
+  },
+  {
+    "tweet_id": 2033994768913461478,
+    "content": "🚨 긴급: 미국 국방부는 이란을 타격하기 위해 사용한 자살 드론을 대량 생산할 계획이라고 월스트리트 저널이 보도했습니다. 이는 중동 지역의 군사적 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 증가하면 시장의 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:04:29"
+  },
+  {
+    "tweet_id": 2033998286902735078,
+    "content": "⚡ 속보: 엔비디아 CEO는 이스라엘에 100% 헌신하며, 오랫동안 직원들이 이곳에 있을 것이라고 밝혔습니다. 이는 엔비디아의 중동 지역에 대한 지속적인 투자 의지를 나타냅니다.",
+    "implication": "→ 엔비디아의 이스라엘 투자 확대는 기술주에 대한 긍정적인 신호가 될 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 14:04:44"
+  },
+  {
+    "tweet_id": 2034000257323843698,
+    "content": "🚨 긴급: 바그다드 공항 근처의 미국 외교 시설이 드론 공격을 받았습니다. 보안 소식통에 따르면, 이 사건은 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 증가하면 시장의 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:04:58"
+  },
+  {
+    "tweet_id": 2034002773209972782,
+    "content": "🚨 긴급: 러시아가 이란에 업그레이드된 드론 기술을 공급하여 미국 군대를 겨냥하도록 지원하고 있다고 월스트리트 저널이 보도했습니다. 이는 중동 지역의 군사적 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:05:11"
+  },
+  {
+    "tweet_id": 2034006487710748876,
+    "content": "⚡ 속보: 미국이 이란 전쟁 중 베네수엘라의 석유 생산을 늘리기 위해 제재를 완화할 계획입니다. 이는 글로벌 석유 공급에 영향을 미칠 수 있습니다.",
+    "implication": "→ 석유 공급 증가가 원유 가격에 하방 압력을 줄 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 14:05:26"
+  },
+  {
+    "tweet_id": 2034039299700576682,
+    "content": "⚡ 속보: 미국이 이란 전쟁 중 베네수엘라의 석유 생산을 늘리기 위해 제재를 완화할 계획입니다. 이는 글로벌 석유 공급에 영향을 미칠 수 있습니다.",
+    "implication": "→ 베네수엘라의 석유 생산 증가가 원유 가격에 하방 압력을 줄 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 14:05:44"
+  },
+  {
+    "tweet_id": 2034039504147718475,
+    "content": "⚡ 속보: 엔비디아 CEO는 이스라엘에 100% 헌신하며, 오랫동안 직원들이 이곳에 있을 것이라고 밝혔습니다. 이는 엔비디아의 중동 지역에 대한 지속적인 투자 의지를 나타냅니다.",
+    "implication": "→ 엔비디아의 이스라엘에 대한 헌신은 기술주에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 14:05:59"
+  },
+  {
+    "tweet_id": 2034088964575961519,
+    "content": "📈 시장 속보: 스타링크가 아랍에미리트(UAE)에서 서비스 제공을 시작했습니다. 이는 해당 지역의 인터넷 접근성을 크게 향상시킬 것으로 기대됩니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:06:20"
+  },
+  {
+    "tweet_id": 2034112016621703574,
+    "content": "📈 시장 속보: 삼성전자는 2027년 하반기부터 텍사스의 새로운 공장에서 테슬라의 칩 대량 생산을 시작할 것으로 예상한다고 밝혔습니다. 삼성전자 파운드리 사업부의 한진만 사장이 주주총회에서 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:06:38"
+  },
+  {
+    "tweet_id": 2033899455544512720,
+    "content": "🚨 긴급: 테슬라($TSLA)와 LG가 43억 달러 규모의 LFP 배터리 공장 건설 계약을 체결했습니다. 이는 전기차 배터리 생산에 큰 영향을 미칠 것으로 예상됩니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:06:56"
+  },
+  {
+    "tweet_id": 2033927633843409122,
+    "content": "🚨 긴급: 테슬라($TSLA)의 로봇택시가 달라스에서 '테스트 중'인 모습이 포착되었습니다. 로봇택시 서비스가 더 많은 도시로 확장될 예정입니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:07:09"
+  },
+  {
+    "tweet_id": 2033936806614384892,
+    "content": "⚡ 속보: STIFEL이 테슬라($TSLA)의 목표 주가를 508달러로 재확인하며 '매수' 등급을 유지했습니다. 로봇택시에 대한 긍정적인 전망을 내놓았습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:07:23"
+  },
+  {
+    "tweet_id": 2033942296320737529,
+    "content": "🚨 긴급: 테슬라($TSLA)의 로봇택시가 라스베가스에서 곧 출시될 것으로 보입니다. 주차장에 로봇택시가 가득 차 있는 모습이 포착되었습니다.",
+    "implication": "→ 로봇택시 서비스의 출시는 테슬라 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 14:07:38"
+  },
+  {
+    "tweet_id": 2033960624019874055,
+    "content": "🚨 긴급: 엔비디아($NVDA)는 자유 현금 흐름의 50%를 주주에게 환원할 계획이라고 발표했습니다. 이는 자사주 매입과 배당금 형태로 이루어질 예정입니다.",
+    "implication": "→ 엔비디아의 주주 환원 계획은 투자자들에게 긍정적인 신호로 작용할 수 있습니다.",
+    "engagement": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 14:07:51"
+  },
+  {
+    "tweet_id": 2034112072418791489,
+    "content": "🚨 긴급: 스페이스X가 10,000개의 스타링크 위성을 궤도로 발사했습니다. 이는 민간 기업으로서는 최초로 이루어진 성과로, 세계 최대의 위성 네트워크를 구축하고 있습니다. 스타링크는 현재 160개 이상의 국가에서 서비스를 제공하고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:08:07"
+  },
+  {
+    "tweet_id": 2034117750499774612,
+    "content": "📈 시장 속보: 삼성전자가 2027년 하반기부터 텍사스의 새로운 공장에서 테슬라의 AI 칩 대량 생산을 시작할 예정입니다. 삼성전자 파운드리 사업부의 한진만 사장이 확인했습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 14:08:23"
+  },
+  {
+    "tweet_id": 2034139492928352374,
+    "content": "🚨 긴급: 이스라엘 공습으로 레바논 베이루트의 건물이 붕괴되었습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 14:28:38"
+  },
+  {
+    "tweet_id": 2034138321304359220,
+    "content": "🚨 긴급: 미국의 민간 신용 부실률이 2025년에 9.2%로 사상 최고치를 기록했습니다. 이는 경제 전반에 부정적인 신호로 해석될 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 14:28:52"
+  },
+  {
+    "tweet_id": 2034147954496254153,
+    "content": "🚨 긴급: 이란이 이스라엘을 향해 또 다른 미사일 공격을 감행했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 15:02:33"
+  },
+  {
+    "tweet_id": 2034149681412858183,
+    "content": "🚨 긴급: 리비아 국영 석유공사(NOC)는 파이프라인 누수로 인한 화재 사건을 보고했습니다. 이 사건은 석유 생산에 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 15:08:53"
+  },
+  {
+    "tweet_id": 2034155170825728204,
+    "content": "🚨 긴급: 러시아의 푸틴 대통령 특별 특사 키릴 드미트리예프는 \"NATO 동맹국들은 우크라이나를 지원하지만, 미국은 아니다\"라고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 15:30:15"
+  },
+  {
+    "tweet_id": 2034156427657547938,
+    "content": "🚨 긴급: 테슬라가 대량 생산을 위한 Semi 트럭 생산직을 모집하고 있습니다. 이는 테슬라의 생산 확대 의지를 보여주는 긍정적인 신호입니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 15:46:30"
+  },
+  {
+    "tweet_id": 2034156909620826284,
+    "content": "⚡ 속보: 테슬라의 로봇택시 출시가 곧 이루어질 것으로 보입니다. 이는 투자자들에게 긍정적인 신호가 될 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 15:46:45"
+  },
+  {
+    "tweet_id": 2034166553382449483,
+    "content": "🚨 긴급: 이란 외무장관 아라크치가 미국이 이스라엘, 특히 네타냐후에 의해 전쟁에 끌려들어갔다고 발언했습니다. 이는 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 16:15:12"
+  },
+  {
+    "tweet_id": 2034168022974533957,
+    "content": "🚨 긴급: 니키타 비어는 X에서 스팸이 더 이상 수익을 내지 못할 것이라고 밝혔습니다. 향후 30일 내에 스팸으로 인한 수익이 감소할 것으로 예상됩니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "neutral",
+    "time": "2026-03-18 16:23:02"
+  },
+  {
+    "tweet_id": 2034182825570656452,
+    "content": "🚨 긴급: 이란이 고위 보안 책임자 알리 라리자니의 암살에 대한 \"결정적인\" 보복을 준비하고 있다고 발표했습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 것으로 예상됩니다.",
+    "implication": "",
+    "engagement": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 17:22:15"
+  },
+  {
+    "tweet_id": 2034193589886971905,
+    "content": "🚨 긴급: 터키가 인치르리크 공군 기지가 위치한 남부 지방에 NATO의 또 다른 패트리엇 미사일 방어 시스템을 배치한다고 발표했습니다. 이는 지역 안보에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#NATO #터키",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 18:04:05"
+  },
+  {
+    "tweet_id": 2034193700155183153,
+    "content": "⚡ 속보: 제롬 파월 연준 의장이 수요일 FOMC 기자회견에서 어떤 발언을 할지에 대한 관심이 집중되고 있습니다. 이는 미국 증시에 큰 영향을 미칠 것으로 예상됩니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#Fed #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 18:04:24"
+  },
+  {
+    "tweet_id": 2034196411000979967,
+    "content": "🚨 긴급: 터키가 4개의 원자력 발전소 건설을 위한 협상을 진행 중입니다. 이는 터키의 에너지 자립을 강화할 수 있는 중요한 프로젝트입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#터키 #원자력발전소",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 18:16:07"
+  },
+  {
+    "tweet_id": 2034202315532423492,
+    "content": "🚨 긴급: 호르무즈 해협을 통과한 선박 수가 급감했습니다. 전쟁이 시작된 2월 28일 이후 108척이 통과했으나, 3월 2일 이후에는 단 38척만이 통과했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#호르무즈해협 #중동긴장",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 18:37:32"
+  },
+  {
+    "tweet_id": 2034203006233698606,
+    "content": "🚨 긴급: 이란이 4명의 미국 스파이와 111개의 미국-이스라엘 세포를 체포했습니다. 이는 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #중동긴장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 18:40:48"
+  },
+  {
+    "tweet_id": 2034205781441065167,
+    "content": "🚨 긴급: 크렘린은 이란 전쟁으로 인해 가스 시장이 혼란에 빠졌다고 발표했습니다. 이는 에너지 가격에 큰 영향을 미칠 수 있습니다.",
+    "implication": "→ 에너지 가격의 변동성이 커질 것으로 예상됩니다.",
+    "engagement": "",
+    "hashtags": "#가스시장 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 18:53:09"
+  },
+  {
+    "tweet_id": 2034205843646746630,
+    "content": "🚨 긴급: 크렘린은 유럽과의 가스 대화 신호가 없다고 밝혔으며, 러시아의 유럽 가스 시장 퇴출을 고려하고 있다고 전했습니다. 이는 에너지 시장에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "→ 에너지 가격의 변동성이 커질 것으로 예상됩니다.",
+    "engagement": "",
+    "hashtags": "#에너지 #가스",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 18:53:25"
+  },
+  {
+    "tweet_id": 2034206168894074927,
+    "content": "📈 시장 속보: 엔비디아 CEO 젠슨 황이 OpenClaw가 차세대 ChatGPT가 될 것이라고 발표했습니다. AI 에이전트는 미래의 핵심 기술로 자리잡을 것으로 보입니다.",
+    "implication": "→ AI 기술에 대한 투자 관심이 높아질 것으로 예상됩니다.",
+    "engagement": "",
+    "hashtags": "#엔비디아AI",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 18:53:41"
+  },
+  {
+    "tweet_id": 2034206532426985958,
+    "content": "⚡ 속보: 중국이 중동 전쟁이 계속됨에 따라 상업용 원유 비축량을 방출할 준비를 하고 있습니다. FGE NexantECA에 따르면, 향후 4~6주 동안 하루 최대 100만 배럴의 원유가 방출될 수 있습니다.",
+    "implication": "→ 원유 공급 증가로 인해 국제 유가에 하락 압력이 있을 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #중국",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 18:56:56"
+  },
+  {
+    "tweet_id": 2034208340352413753,
+    "content": "📈 시장 속보: 아시아 태평양 시장이 상승세를 보이며, 한국의 코스피 지수가 5% 급등했습니다. 이는 국제 유가 하락에 따른 긍정적인 반응으로 해석됩니다.",
+    "implication": "→ 한국 시장에 긍정적인 투자 심리가 확산될 것으로 보입니다.",
+    "engagement": "",
+    "hashtags": "#코스피",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 19:03:13"
+  },
+  {
+    "tweet_id": 2034208712399753705,
+    "content": "⚡ 속보: 이란 갈등이 계속되는 가운데, 원유 가격이 하락하고 있습니다. 이는 시장에 큰 영향을 미칠 수 있습니다.",
+    "implication": "→ 원유 가격 하락은 한국 시장에 긍정적인 영향을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유가격 #코스피",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 19:03:27"
+  },
+  {
+    "tweet_id": 2034209294602629549,
+    "content": "⚡ 속보: 중국이 미국의 이란 전쟁을 분석하여 군사적 교훈을 얻고 있으며, 전략적 균형이 중국 쪽으로 기울고 있다고 서방 관계자들이 전했습니다.",
+    "implication": "→ 미국과 중국 간의 군사적 긴장이 높아질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중국 #미국전쟁",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 19:36:04"
+  },
+  {
+    "tweet_id": 2034212160159576317,
+    "content": "🚨 긴급: 이스라엘 국방부 장관 카츠가 이란 정보부 장관 카티브가 밤사이에 사망했다고 발표했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시킬 것으로 예상됩니다.",
+    "implication": "→ 중동 지역의 불안정성이 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 19:36:20"
+  },
+  {
+    "tweet_id": 2034212935111700642,
+    "content": "📈 시장 속보: 시티그룹이 마이크로스트레티지($MSTR)의 목표 주가를 325달러에서 260달러로 하향 조정했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#마이크로스트레티지 #주가하락",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-18 19:36:33"
+  },
+  {
+    "tweet_id": 2034214572396020165,
+    "content": "⚡ 속보: 사우디 아라비아의 라스 타누라 정유공장이 3월 13일 드론 공격으로 인한 가동 중단 후 재가동되었습니다. 이 정유공장은 3월 2일에 가동이 중단되었습니다.",
+    "implication": "→ 원유 공급이 정상화되면서 국제 유가에 안정세가 나타날 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #사우디아라비아",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 19:36:48"
+  },
+  {
+    "tweet_id": 2034209263623500050,
+    "content": "📈 시장 속보: 유럽 주식이 중앙은행 회의를 앞두고 전역에서 상승세를 보이고 있으며, 유로 스톡스 50 지수가 1% 급등했습니다.",
+    "implication": "→ 유럽 중앙은행의 정책 결정이 한국 시장에도 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#유럽증시 #코스피",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 19:37:01"
+  },
+  {
+    "tweet_id": 2034211143896408316,
+    "content": "📈 시장 속보: 미국 주식 선물이 상승세를 보이며 개장할 것으로 예상되며, VIX 지수는 하락하고 있습니다. 이는 투자자들이 연준의 결정과 파월 의장의 발언을 대비하고 있음을 나타냅니다.",
+    "implication": "→ 연준의 결정에 따라 시장 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#연준 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 19:37:17"
+  },
+  {
+    "tweet_id": 2034212857349345532,
+    "content": "⚡ 속보: 중국이 아랍에미리트(UAE)의 주권과 안보를 강력히 지지하며, 민간 시설에 대한 공격을 비난했습니다.",
+    "implication": "→ 중동 지역의 긴장감이 높아짐에 따라 투자자들은 불확실성을 고려해야 할 것입니다.",
+    "engagement": "",
+    "hashtags": "#중국 #UAE",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 19:39:08"
+  },
+  {
+    "tweet_id": 2034217005960581317,
+    "content": "🚨 긴급: 이스라엘이 이란 정보부 장관 에스마일 카티브를 사살했다고 발표했습니다. 이 사건은 중동 지역의 긴장을 더욱 고조시킬 것으로 예상됩니다.",
+    "implication": "→ 이란과 이스라엘 간의 갈등이 심화됨에 따라 중동 지역의 불안정성이 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동갈등 #이스라엘",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 19:39:22"
+  },
+  {
+    "tweet_id": 2034220358006452480,
+    "content": "📈 시장 속보: 팀 쿡이 애플의 50주년 기념 행사 참석을 위해 중국 청두를 방문했습니다. 이번 방문은 애플이 규제 당국과의 협상 후 앱 스토어 수수료를 25%로 인하한 직후 이루어졌습니다. 이는 베이징의 압력이 커지는 가운데 발생한 변화입니다.",
+    "implication": "→ 애플의 수수료 인하는 중국 시장에서의 경쟁력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#애플 #팀쿡",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 19:49:13"
+  },
+  {
+    "tweet_id": 2034222985150611563,
+    "content": "📈 시장 속보: 메이시스(Macy's)가 4분기 매출 76억 4천만 달러를 기록하며 예상치인 76억 2천만 달러를 초과했습니다. 조정된 주당순이익(EPS)은 1.67달러로 예상치 1.53달러를 상회했으며, 순이익은 5억 7천만 달러로 집계되었습니다. 동기 대비 매장 매출은 1.8% 증가했습니다. 이번 실적은 3억 2천 8백만 달러의 세전 법적 합의 이익에 의해 증가했습니다.",
+    "implication": "→ 메이시스의 긍정적인 실적 발표는 소비자 신뢰 회복의 신호일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#메이시스 #소비자신뢰",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 20:01:35"
+  },
+  {
+    "tweet_id": 2034229894767407514,
+    "content": "🚨 긴급: 이란이 남부 파르스 가스전의 일부가 공격받았다고 발표했습니다. 이란 국영 방송이 보도한 내용입니다.",
+    "implication": "→ 중동 지역의 긴장이 높아짐에 따라 에너지 시장에 불안정성이 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동긴장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 20:36:52"
+  },
+  {
+    "tweet_id": 2034230463477293355,
+    "content": "📈 시장 속보: 로젠블라트가 엔비디아($NVDA)의 목표 주가를 300달러에서 325달러로 상향 조정했습니다.",
+    "implication": "→ 엔비디아에 대한 긍정적인 전망이 투자자들의 관심을 끌 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#엔비디아AI",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-18 20:37:06"
+  },
+  {
+    "tweet_id": 2034230617798222051,
+    "content": "📈 시장 속보: 브렌트유가 배럴당 101달러를 초과하며, 하루 동안 0.25% 상승했습니다.",
+    "implication": "→ 유가 상승은 에너지 관련 주식에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#브렌트유 #유가",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 20:37:21"
+  },
+  {
+    "tweet_id": 2034231672191737865,
+    "content": "📈 시장 속보: 유럽연합(EU)이 미국과 중국에 맞서기 위해 스타트업 지원을 위한 'EU INC.' 계획을 발표했습니다. 이 계획은 유럽의 혁신 생태계를 강화하고 글로벌 경쟁력을 높이기 위한 전략으로, 스타트업에 대한 자금 지원과 규제 완화를 포함합니다.",
+    "implication": "→ 유럽의 스타트업 생태계가 활성화되면 투자 기회가 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#EU스타트업 #유럽연합",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:37:35"
+  },
+  {
+    "tweet_id": 2034229149229875567,
+    "content": "📈 시장 속보: 오늘은 연방준비제도(Fed)의 FOMC 회의가 열리는 날입니다. 투자자들은 금리 결정과 관련된 발언에 주목하고 있습니다.",
+    "implication": "→ 금리 결정에 따라 시장 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#FOMC #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:37:52"
+  },
+  {
+    "tweet_id": 2034232443255873560,
+    "content": "📈 시장 속보: 이란과 중국 간의 최근 대화에서 이란의 석유 공급이 소폭 증가했다고 보도되었습니다. 이는 이란의 석유 수출에 긍정적인 영향을 미칠 수 있습니다.",
+    "implication": "→ 이란의 석유 공급 증가가 에너지 시장에 영향을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란석유 #중국",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:41:14"
+  },
+  {
+    "tweet_id": 2034233769826070963,
+    "content": "⚡ 속보: 새로운 연구에 따르면 AI가 미국의 93% 직무 작업을 자동화할 수 있으며, 이는 4.5조 달러의 노동 비용 절감을 가져올 수 있다고 합니다. 연구진은 1,000개의 직무에서 18,000개 이상의 작업을 분석했습니다.",
+    "implication": "→ AI의 발전은 노동 시장에 큰 변화를 가져올 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#AI #노동시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:44:30"
+  },
+  {
+    "tweet_id": 2034234323092599075,
+    "content": "🚨 긴급: 이란의 남부 파르스 가스전은 카타르와 공유되는 세계 최대의 가스전으로, 터키로의 파이프라인 가스 공급의 주요 원천입니다. 이 흐름에 차질이 생길 경우, 앙카라는 이미 긴축된 글로벌 시장에서 추가적인 스팟 LNG를 찾을 수밖에 없을 것입니다.",
+    "implication": "→ 이란의 가스 공급 차질은 에너지 시장의 불안정성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란가스 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:44:45"
+  },
+  {
+    "tweet_id": 2034236326128525341,
+    "content": "🚨 긴급: 이란 아사루예 정유소의 일부 탱크와 가스 시설이 공격을 받았다는 보도가 나왔습니다. 이란의 Fars 뉴스에 따르면, 이번 사건은 이란의 에너지 공급에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "→ 이란의 에너지 시설에 대한 공격은 글로벌 에너지 시장에 불안정성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #에너지",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 20:54:05"
+  },
+  {
+    "tweet_id": 2034236576167780357,
+    "content": "⚡ 속보: 사우디 아라비아의 아람코 라스 타누라 정유소가 운영을 재개했습니다.",
+    "implication": "→ 사우디의 정유소 운영 재개는 유가 안정에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#사우디아라비아 #원유",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 20:55:22"
+  },
+  {
+    "tweet_id": 2034245016290201666,
+    "content": "📈 시장 속보: 스팟 실버 가격이 온스당 78달러 이하로 떨어지며, 하루 동안 1.53% 하락했습니다.",
+    "implication": "→ 실버 가격 하락은 관련 자산에 대한 투자 심리를 약화시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#은 #금속시장",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 21:36:58"
+  },
+  {
+    "tweet_id": 2034245127720366166,
+    "content": "🚨 긴급: 이란 국영 방송에 따르면, 남부 파르스 가스전의 3, 4, 5, 6단계가 공격을 받았습니다. 이란의 남부 파르스 가스전은 세계 최대의 가스전으로, 이란의 에너지 공급에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "→ 이란의 에너지 공급 차질은 글로벌 에너지 시장에 불안정성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #에너지",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 21:37:11"
+  },
+  {
+    "tweet_id": 2034246045857722840,
+    "content": "📈 시장 속보: 미국 2월 생산자 물가가 전월 대비 0.7% 상승했으며, 예상치인 0.3%를 크게 초과했습니다. 연간 기준으로는 3.4% 상승하여 예상치인 3.0%를 초과했습니다.",
+    "implication": "→ 이러한 생산자 물가 상승은 금리 인상 압력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:37:26"
+  },
+  {
+    "tweet_id": 2034246983347552559,
+    "content": "📈 시장 속보: 워런은 트럼프가 연방준비제도(Fed)의 금리 인하를 방해하고 있다고 주장했습니다. 이는 금리 정책에 대한 불확실성을 증가시킬 수 있습니다.",
+    "implication": "→ 금리 인하에 대한 기대가 줄어들면서 시장의 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #Fed",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:37:40"
+  },
+  {
+    "tweet_id": 2034247375418524064,
+    "content": "📈 시장 속보: 2월 도매 물가가 3.4% 상승하며 1년 만에 가장 큰 증가폭을 기록했습니다. 이는 예상치인 3.0%를 초과한 수치입니다.",
+    "implication": "→ 생산자 물가 상승은 금리 인상 압력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:37:53"
+  },
+  {
+    "tweet_id": 2034245129519747310,
+    "content": "🚨 긴급: 이스라엘이 이란의 최대 천연가스 처리 시설을 공격했다고 발표했습니다. 이란의 에너지 공급에 중대한 영향을 미칠 수 있는 사건입니다.",
+    "implication": "→ 이란의 에너지 공급 차질은 글로벌 에너지 시장에 불안정성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #천연가스",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 21:38:10"
+  },
+  {
+    "tweet_id": 2034246464655016002,
+    "content": "📈 시장 속보: 미국 2월 생산자 물가(PPI)가 전년 대비 3.4% 상승하여 예상치인 2.9%를 초과했습니다. 이는 2025년 1월 이후 가장 높은 수치입니다.",
+    "implication": "→ 높은 생산자 물가는 금리 인상 압력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#PPI #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:38:24"
+  },
+  {
+    "tweet_id": 2034246680535605736,
+    "content": "🚨 긴급: 미국 2월 핵심 생산자 물가(PPI)가 전년 대비 3.9% 상승했습니다. 이는 예상치인 3.7%를 초과하며, 2023년 2월 이후 가장 높은 수치입니다.",
+    "implication": "→ 높은 생산자 물가는 금리 인상 압력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#PPI #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:38:38"
+  },
+  {
+    "tweet_id": 2034247421656502695,
+    "content": "📈 시장 속보: 미국의 2월 생산자 물가(PPI)가 전월 대비 0.7% 상승하며 예상치를 크게 초과했습니다. 연간 기준으로는 3.4% 상승하여 예상치인 3.0%를 초과했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#PPI #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 21:38:51"
+  },
+  {
+    "tweet_id": 2034248363999109463,
+    "content": "📈 시장 속보: 트레이더들이 2026년 연방준비제도(Fed)의 금리 인하 가능성을 더욱 낮추고 있습니다. 이는 금리 정책에 대한 시장의 기대가 변화하고 있음을 나타냅니다.",
+    "implication": "→ 금리 인하 기대가 줄어들면서 시장의 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #Fed",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 21:41:12"
+  },
+  {
+    "tweet_id": 2034248585022206450,
+    "content": "⚡ 속보: 스팟 금 가격이 2% 이상 하락하여 온스당 4,900달러 이하로 거래되고 있으며, 최근 2.5% 하락했습니다.",
+    "implication": "→ 금 가격 하락은 안전 자산에 대한 수요 감소를 나타낼 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금 #스팟금",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 21:42:25"
+  },
+  {
+    "tweet_id": 2034248783953858620,
+    "content": "📈 시장 속보: 스팟 실버 가격이 온스당 78달러 아래로 하락하며, 하루 동안 2.3% 감소했습니다.",
+    "implication": "→ 실버 가격 하락은 투자자들에게 단기적인 압박을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#은 #금리",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 21:42:40"
+  },
+  {
+    "tweet_id": 2034249493357400364,
+    "content": "🚨 긴급: 이란이 에너지 인프라 공격에 대한 보복을 예고했습니다. 이는 중동 지역의 에너지 공급에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #에너지",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 21:44:56"
+  },
+  {
+    "tweet_id": 2034250157055701443,
+    "content": "🚨 긴급: 이란 외무장관은 미국이 이스라엘 총리 네타냐후에 의해 \"전쟁에 끌려들었다\"고 발언했습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 수 있는 발언입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #이스라엘",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 21:49:42"
+  },
+  {
+    "tweet_id": 2034251361898942774,
+    "content": "⚡ 속보: 오늘 시장은 변동성이 클 것으로 예상됩니다. 특히 S&P 500 ETF($SPY)의 가격 움직임에 주목해야 합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-18 21:52:26"
+  },
+  {
+    "tweet_id": 2034252938344808934,
+    "content": "🚨 긴급: 이란 혁명수비대가 걸프 지역의 여러 에너지 시설에 대한 대피 경고를 발령했습니다. 이는 에너지 공급에 중대한 영향을 미칠 수 있는 상황입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #에너지",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:00:46"
+  },
+  {
+    "tweet_id": 2034253270906986577,
+    "content": "🚨 긴급: 이란이 걸프 지역의 일부 에너지 시설을 정당한 공격 목표로 지정했습니다. 이란의 타스님 통신은 사우디, UAE, 카타르의 시설 목록을 발표했습니다.",
+    "implication": "→ 중동 지역의 긴장 고조는 에너지 시장에 불확실성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:01:03"
+  },
+  {
+    "tweet_id": 2034253789369135561,
+    "content": "📈 시장 속보: 연방준비제도(Fed)는 오늘 금리를 인하하지 않기로 결정했습니다. 이는 중동 갈등의 여파를 고려한 것으로, 금리 정책에 대한 시장의 불확실성이 지속될 것으로 보입니다.",
+    "implication": "→ 금리 인하 기대가 줄어들면서 시장의 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #Fed",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-18 22:01:54"
+  },
+  {
+    "tweet_id": 2034253681848144038,
+    "content": "🚨 긴급: 중국 군이 EU 및 NATO와의 대화를 준비하고 있으며, 이란 전쟁이 글로벌 안보 상황을 재편하고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중국군사 #글로벌안보",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:04:43"
+  },
+  {
+    "tweet_id": 2034254034433982898,
+    "content": "📈 시장 속보: 스팟 실버 가격이 4% 하락하여 온스당 76.16달러로 거래되고 있습니다. 이는 최근 가격 하락세가 지속되고 있음을 나타냅니다.",
+    "implication": "→ 실버 가격 하락은 투자자들에게 단기적인 압박을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#실버 #금속시장",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-18 22:04:58"
+  },
+  {
+    "tweet_id": 2034254259944894515,
+    "content": "🚨 긴급: 카타르 외무부 대변인은 이란의 남부 파르스 가스전과 관련된 시설에 대한 이스라엘의 공격이 현재 지역의 군사적 긴장 속에서 위험하고 무책임한 조치라고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:05:15"
+  },
+  {
+    "tweet_id": 2034254449472864741,
+    "content": "🚨 긴급: 카타르 외무부 대변인은 에너지 인프라를 겨냥한 공격이 글로벌 에너지 안보, 지역 주민, 환경에 위협이 된다고 경고했습니다.",
+    "implication": "→ 에너지 인프라에 대한 공격은 시장의 불확실성을 증가시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#에너지안보 #중동갈등",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:05:29"
+  },
+  {
+    "tweet_id": 2034257350736199955,
+    "content": "🚨 긴급: 호르무즈 해협 재개방은 NATO 국가들에게 미국보다 더 큰 혜택을 줄 것으로 보입니다. 이는 중동 지역의 에너지 공급망에 중요한 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#호르무즈 #NATO",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:37:27"
+  },
+  {
+    "tweet_id": 2034260325831201278,
+    "content": "🚨 긴급: 이란의 핵 연료 확보가 테이블 위에 올라왔다는 발언이 나왔습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 수 있는 가능성을 내포하고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란핵 #중동긴장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:37:40"
+  },
+  {
+    "tweet_id": 2034262364686569943,
+    "content": "🚨 긴급: 이스라엘 방위군(IDF)이 이란에서 발사된 미사일을 탐지하고 이를 요격하기 위해 작업 중입니다. 이란의 군사적 행동은 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지안보",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:37:55"
+  },
+  {
+    "tweet_id": 2034256107749670967,
+    "content": "🚨 긴급: 이스라엘이 이란의 최대 가스 처리 시설을 공격하면서 에너지 가격이 다시 급등하고 있습니다. 브렌트유 가격은 4.4% 상승하여 배럴당 108달러에 도달했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#에너지 #브렌트유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:38:09"
+  },
+  {
+    "tweet_id": 2034258609014526371,
+    "content": "📈 시장 속보: 미국 도매 물가가 2월에 0.7% 상승하여 예상보다 큰 증가폭을 기록했습니다. 이는 인플레이션 압력이 여전히 존재함을 시사합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#인플레이션 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:38:22"
+  },
+  {
+    "tweet_id": 2034259701165121925,
+    "content": "⚡ 속보: 오늘 연방준비제도(Fed)의 금리 결정과 파월 의장의 발언에 대한 시장 반응을 예측하는 트윗이 올라왔습니다. 투자자들은 단어 하나로 반응을 예측해보라는 요청을 받고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#Fed #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:38:39"
+  },
+  {
+    "tweet_id": 2034262869273883072,
+    "content": "🚨 긴급: 러시아 외무부 대변인은 북극 지역에서 서방이 러시아의 안보에 위협을 초래하고 있다고 경고했습니다. 이는 글로벌 안보 상황에 중대한 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#글로벌안보 #에너지시장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:41:26"
+  },
+  {
+    "tweet_id": 2034263245490376869,
+    "content": "🚨 긴급: 트럼프 행정부가 수요일에 존스 법(Jones Act) 해운 규제의 면제를 발표할 것으로 예상되고 있습니다. 이는 미국 내 해운업계에 큰 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#존스법 #해운업",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:41:42"
+  },
+  {
+    "tweet_id": 2034263931477234103,
+    "content": "🚨 긴급: 이란 테헤란에서 이스라엘의 공습으로 사망한 보안 책임자 알리 라리자니와 바지드 사령관 골람레자 솔레이마니의 대규모 장례 행렬이 진행되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #이스라엘",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:43:36"
+  },
+  {
+    "tweet_id": 2034264399322436050,
+    "content": "🚨 긴급: 트럼프 전 대통령이 높은 연료 가격을 억제하기 위해 존스 법(Jones Act)을 면제한다고 발표했습니다. 이는 미국 내 연료 공급에 긍정적인 영향을 미칠 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#연료가격 #트럼프",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:45:22"
+  },
+  {
+    "tweet_id": 2034264887807954964,
+    "content": "📈 시장 속보: 캐나다 중앙은행이 기준 금리를 2.25%로 유지했습니다. 이는 시장 예상과 일치하는 결정입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#캐나다금리 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:48:40"
+  },
+  {
+    "tweet_id": 2034265456048005618,
+    "content": "🚨 긴급: 아람코가 이란의 경고에 따라 샘레프 정유소를 대피했습니다. 이란의 군사적 긴장이 고조됨에 따라 중동 지역의 에너지 공급에 대한 우려가 커지고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지공급",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:48:54"
+  },
+  {
+    "tweet_id": 2034266293503701304,
+    "content": "🚨 긴급: 브렌트유 선물 가격이 5% 상승하여 배럴당 108.66달러에 도달했습니다. 이는 이란이 중동 에너지 시설에 대한 공격을 위협하면서 발생한 것입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#브렌트유 #에너지가격",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-18 22:52:11"
+  },
+  {
+    "tweet_id": 2034267530026471916,
+    "content": "🚨 긴급: 러시아 외무부 대변인은 호르무즈 해협의 해상 교통 복구 문제 해결은 협상 테이블에 있다고 밝혔습니다. 이는 중동 지역의 긴장 완화에 중요한 의미를 가질 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#호르무즈 #에너지",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-18 22:58:37"
+  },
+  {
+    "tweet_id": 2034354537792684124,
+    "content": "🚨 긴급: 카타르가 이란의 공격으로 세계 최대 액화천연가스(LNG) 수출 시설인 라스 라판에서 광범위한 피해가 발생했다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#LNG #중동에너지",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:26:33"
+  },
+  {
+    "tweet_id": 2034361134891843664,
+    "content": "🚨 긴급: 이란의 드론 및 미사일 공격으로 인해 미국과 동맹국의 레이더 사이트 10곳 이상이 피해를 입었다고 ABC가 보도했습니다. 이는 전쟁 시작 이후 발생한 사건입니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 고조되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:26:48"
+  },
+  {
+    "tweet_id": 2034369749124030966,
+    "content": "🚨 긴급: 이란의 클러스터 폭탄이 이스라엘 남부에 떨어지는 모습이 포착되었습니다. 이란과 이스라엘 간의 군사적 긴장이 고조되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #이스라엘",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:27:02"
+  },
+  {
+    "tweet_id": 2034373812519633039,
+    "content": "🚨 긴급: 카타르가 이란 군사 및 보안 외교관을 추방하고 24시간 이내에 출국할 것을 명령했습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 심화되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:27:16"
+  },
+  {
+    "tweet_id": 2034379759606518065,
+    "content": "🚨 긴급: 트럼프 전 대통령이 이란의 에너지 시설에 대한 추가 공격을 원하지 않는다고 밝혔습니다. 이는 이스라엘의 주요 가스전 공격 이후의 결정으로, 에너지 시장에 영향을 미칠 수 있습니다.",
+    "implication": "→ 이란과의 긴장이 완화될 경우 에너지 가격에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#에너지 #중동긴장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:27:30"
+  },
+  {
+    "tweet_id": 2034366290794537356,
+    "content": "📈 시장 속보: 트레이더들이 연준의 금리 인하 시점을 2027년 4월로 미루고 있다는 선물 가격이 나타났습니다. 이는 금리 인하 기대감이 지연되고 있음을 시사합니다.",
+    "implication": "→ 금리 인하 기대가 늦춰지면서 시장의 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #Fed",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:27:46"
+  },
+  {
+    "tweet_id": 2034368638094913903,
+    "content": "🚨 긴급: 이스라엘 군이 '첫 번째'로 북부 이란의 목표를 타격하기 시작했다고 발표했습니다. 이란과의 군사적 긴장이 고조되고 있는 상황입니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 심화되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #이스라엘",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:28:01"
+  },
+  {
+    "tweet_id": 2034368744252944571,
+    "content": "🚨 긴급: 이란은 미국과 이스라엘의 공격이 길란의 세관 및 항구를 목표로 했다고 밝혔습니다. 이란의 군사적 긴장이 계속되고 있으며, 이는 중동 지역의 에너지 공급에 추가적인 우려를 불러일으킬 수 있습니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 고조되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:28:15"
+  },
+  {
+    "tweet_id": 2034341714316407101,
+    "content": "📈 시장 속보: 제롬 파월 연준 의장은 인플레이션 진전이 없으면 금리 인하를 보지 못할 것이라고 밝혔습니다. 이는 향후 금리 정책에 중요한 영향을 미칠 수 있습니다.",
+    "implication": "→ 금리 인하 기대가 지연되면서 시장의 변동성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #Fed",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:28:32"
+  },
+  {
+    "tweet_id": 2034364765615579364,
+    "content": "📈 시장 속보: 제롬 파월 연준 의장은 신규 일자리의 브레이크이븐 금리가 매우 낮다고 언급했습니다. 또한, 경제 성장은 견조하며 인플레이션은 주로 상품에서 과도하게 발생하고 있다고 밝혔습니다.",
+    "implication": "→ 경제 성장에 대한 긍정적인 신호가 있지만, 인플레이션 우려가 여전히 존재합니다.",
+    "engagement": "",
+    "hashtags": "#금리 #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:28:45"
+  },
+  {
+    "tweet_id": 2034367669609046342,
+    "content": "📈 시장 속보: 다우지수가 750포인트 이상 하락하며 마감했으며, VIX 지수는 급등했습니다. 이는 연준의 금리 결정과 파월 의장의 발언 이후 주식 시장의 하락을 반영합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#다우지수 #증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 06:29:00"
+  },
+  {
+    "tweet_id": 2034367983930183915,
+    "content": "🚨 긴급: S&P 500 지수의 연준 금리 결정일인 수요일의 히트 맵이 공개되었습니다. 이는 투자자들에게 중요한 시장 신호를 제공할 수 있습니다.",
+    "implication": "→ 연준의 금리 결정이 시장에 미치는 영향을 주의 깊게 살펴봐야 합니다.",
+    "engagement": "",
+    "hashtags": "#SP500 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:29:14"
+  },
+  {
+    "tweet_id": 2034371921614078164,
+    "content": "📈 시장 속보: 마이크론의 매출이 거의 3배 증가하며 예상치를 초과했습니다. 메모리 수요가 급증하고 있습니다.",
+    "implication": "→ 메모리 반도체 시장의 강세가 지속될 가능성이 높습니다.",
+    "engagement": "",
+    "hashtags": "#마이크론 #반도체",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 06:29:28"
+  },
+  {
+    "tweet_id": 2034325630708257055,
+    "content": "📈 시장 속보: 모건 스탠리는 최근 기가 텍사스 방문 후 @Tesla의 자율 로보택시 출시 진행 상황에 대해 더 낙관적이라고 밝혔습니다. 특히 픽업 및 하차 관련 엣지 케이스 해결에 대한 진전을 주목하고 있습니다.",
+    "implication": "→ 테슬라의 기술 발전이 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #로보택시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 06:29:44"
+  },
+  {
+    "tweet_id": 2034351302306619576,
+    "content": "⚡ 속보: 전 세계 전기차 채택 증가로 지난해 하루 230만 배럴의 석유 소비가 줄어들었습니다. 2030년까지는 하루 525만 배럴로 증가할 것으로 예상됩니다. 전기차는 점점 더 가솔린 차량과 가격 경쟁력을 갖추고 있습니다.",
+    "implication": "→ 전기차 시장의 성장으로 에너지 수요 변화가 예상되며, 이는 석유 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#전기차 #석유소비",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 06:29:58"
+  },
+  {
+    "tweet_id": 2034321017875939646,
+    "content": "🚨 긴급: 우버 공동 창립자인 트래비스 칼라닉은 테슬라가 '물리적 AI의 구글'이라고 언급했습니다. 그는 테슬라가 AI와 제조 분야에서 지배적이라고 강조했습니다.",
+    "implication": "→ 테슬라의 AI 기술 발전이 향후 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #AI",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 06:30:30"
+  },
+  {
+    "tweet_id": 2034294455847813305,
+    "content": "📈 시장 속보: 테슬라의 새로운 로드스터가 20만 달러 이상의 하이퍼카로 출시될 예정이며, 성능이 뛰어날 것으로 예상됩니다. 이는 소비자들에게 '반값'으로 느껴질 수 있지만, 실제로는 고가의 차량입니다.",
+    "implication": "→ 테슬라의 고성능 차량 출시가 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #전기차",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 06:30:50"
+  },
+  {
+    "tweet_id": 2034384468526448838,
+    "content": "🚨 긴급: 오만 외무장관은 미국이 이란과의 전쟁에 휘말린 것이 \"가장 큰 오산\"이라고 언급했습니다. 그는 \"이 전쟁은 미국의 전쟁이 아니며, 이스라엘과 미국이 원하는 것을 얻을 가능성은 없다\"고 강조했습니다.",
+    "implication": "→ 중동 지역의 긴장이 고조되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #에너지",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:43:42"
+  },
+  {
+    "tweet_id": 2034386932000555081,
+    "content": "🚨 긴급: 이란이 이스라엘을 향해 새로운 미사일 공격을 시작했습니다. 이는 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "→ 중동 지역의 긴장이 고조되면서 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #이스라엘",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 06:53:01"
+  },
+  {
+    "tweet_id": 2034394130420281855,
+    "content": "🚨 긴급: 아랍에미리트(UAE)가 이란의 공격 이후 하브샨 가스 시설의 운영을 중단했습니다. 이란의 공격은 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "→ 에너지 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 07:30:53"
+  },
+  {
+    "tweet_id": 2034397112494891123,
+    "content": "🚨 긴급: 도널드 트럼프 전 대통령이 이란의 에너지 시설에 대한 추가 공격을 원하지 않는다고 WSJ이 보도했습니다. 이는 중동 지역의 긴장 완화 가능성을 시사합니다.",
+    "implication": "→ 중동 지역의 긴장이 완화될 경우 에너지 시장에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장완화 #에너지시장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 07:31:08"
+  },
+  {
+    "tweet_id": 2034399433693995009,
+    "content": "🚨 긴급: 이란이 자국의 에너지 시설이 다시 공격받을 경우 걸프 지역 에너지 인프라를 파괴하겠다고 위협했습니다. 이는 중동 지역의 긴장을 더욱 고조시키고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 07:40:32"
+  },
+  {
+    "tweet_id": 2034398969107808692,
+    "content": "🚨 긴급: 카타르 외무부는 이란 군사 및 보안 담당 공관원을 비인도적 인물로 선언했습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 07:40:46"
+  },
+  {
+    "tweet_id": 2034402760779563063,
+    "content": "🚨 긴급: 세계보건기구(WHO) 관계자들이 미국-이스라엘 전쟁이 이란과 격화될 경우 최악의 핵 위협 시나리오에 대비하고 있다고 밝혔습니다.",
+    "implication": "→ 중동 지역의 긴장이 고조되면서 글로벌 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #WHO",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 07:56:08"
+  },
+  {
+    "tweet_id": 2034416297254019560,
+    "content": "📈 시장 속보: 스페이스X가 지난해 미국 정부에 400억 달러 이상의 비용 절감을 가져다주었다고 펜타곤이 발표했습니다. 스페이스X는 최저 가격과 최고의 제품을 제공하며 정부 계약을 따내고 있습니다.",
+    "implication": "→ 스페이스X의 성장은 정부 계약 수익을 통해 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#스페이스X #우주산업",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 09:05:21"
+  },
+  {
+    "tweet_id": 2034408005345890592,
+    "content": "📈 시장 속보: 어제 베이징에서 사이버트럭이 목격되었습니다. 이는 테슬라의 전기차 라인업에 대한 관심을 더욱 높일 것으로 예상됩니다.",
+    "implication": "→ 테슬라의 사이버트럭 출시가 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #사이버트럭",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 09:05:38"
+  },
+  {
+    "tweet_id": 2034416562472431922,
+    "content": "🚨 긴급: 사우디 아라비아 외무장관이 이란에 대해 이웃 국가에 대한 공격이 결과를 초래할 것이라고 경고했습니다.",
+    "implication": "→ 중동 지역의 긴장이 고조되면서 글로벌 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #사우디아라비아",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 09:08:04"
+  },
+  {
+    "tweet_id": 2034420445013758359,
+    "content": "🚨 긴급: 사우디 아라비아가 이란의 위협에 대응하기 위해 걸프 국가들과 협력하고 있다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동긴장 #에너지시장",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 09:08:18"
+  },
+  {
+    "tweet_id": 2034427156881645885,
+    "content": "🚨 긴급: 미국이 이란 전쟁을 강화하기 위해 '수천 명'의 군대를 배치하는 방안을 검토하고 있다고 로이터가 보도했습니다.",
+    "implication": "→ 중동 지역의 군사적 긴장이 고조되면서 글로벌 시장에 불확실성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동긴장 #군사적긴장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 09:32:44"
+  },
+  {
+    "tweet_id": 2034428403416453628,
+    "content": "📈 시장 속보: 테슬라의 완전 자율주행(FSD) 기술이 차량 안전성을 높이고 있으며, 앞으로는 FSD와 같은 고급 자율주행 시스템이 없는 차량을 원하지 않는 시대가 올 것이라는 전망이 나왔습니다.",
+    "implication": "→ 테슬라의 자율주행 기술 발전은 향후 차량 수요에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #자율주행",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 09:43:00"
+  },
+  {
+    "tweet_id": 2034434073284817159,
+    "content": "🚨 긴급: 사우디 아라비아가 이란에 대한 군사 행동 권리를 보유하고 있다고 발표했습니다. 이는 중동 지역의 긴장을 더욱 고조시킬 수 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #긴장",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 09:59:58"
+  },
+  {
+    "tweet_id": 2034434921050038325,
+    "content": "⚡ 속보: 미국 상무부 장관 하워드 루트닉이 테슬라와 일론 머스크를 방문했습니다. 이는 테슬라의 정부와의 관계 강화에 긍정적인 영향을 미칠 수 있습니다.",
+    "implication": "→ 테슬라의 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #증시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 10:04:16"
+  },
+  {
+    "tweet_id": 2034440739934097408,
+    "content": "⚡ 속보: 테슬라의 AI5가 회사의 AI 목표를 위한 견고한 기반을 마련할 것이라는 전망이 나왔습니다. 소프트웨어와 하드웨어를 모두 제어하는 점이 큰 장점으로 평가받고 있습니다.",
+    "implication": "→ 테슬라의 AI 기술 발전이 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 10:28:53"
+  },
+  {
+    "tweet_id": 2034444071821873369,
+    "content": "📈 시장 속보: 일론 머스크가 엔비디아와 젠슨 황을 높이 평가하며, 스페이스X와 테슬라의 AI 기술 발전에 대한 기대감을 나타냈습니다.",
+    "implication": "→ 테슬라와 스페이스X의 AI 기술 발전이 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #스페이스X",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 10:45:19"
+  },
+  {
+    "tweet_id": 2034444222187598148,
+    "content": "⚡ 속보: 일론 머스크가 테슬라의 AI5가 회사의 AI 목표를 위한 견고한 기반을 마련할 것이라고 밝혔습니다. 이는 소프트웨어와 하드웨어를 모두 제어하는 점에서 큰 장점으로 평가받고 있습니다.",
+    "implication": "→ 테슬라의 AI 기술 발전이 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 10:45:34"
+  },
+  {
+    "tweet_id": 2034445173707477089,
+    "content": "⚡ 속보: 일론 머스크가 완전 자율주행(FSD) V14.3 버전이 몇 주 내에 출시될 것이라고 밝혔습니다. 현재 테스트 중입니다.",
+    "implication": "→ 테슬라의 FSD 기술 발전이 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 10:45:48"
+  },
+  {
+    "tweet_id": 2034446900565270766,
+    "content": "⚡ 속보: 유엔 핵 감시 기구 수장이 이란에 대한 공습이 이란의 핵 프로그램을 종료시키지는 않을 것이라고 밝혔습니다.",
+    "implication": "→ 이란의 핵 프로그램 지속 가능성은 중동 지역의 불확실성을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #핵문제",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 10:49:42"
   }
 ]

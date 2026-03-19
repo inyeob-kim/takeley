@@ -1,11 +1,10 @@
 import openai
 import tweepy
-import openai
 import os
-import json
+import random
+import re
+from difflib import SequenceMatcher
 from config import set_environment
-from tqdm import tqdm
-from datetime import datetime, timedelta, time  # Add 'time' here
 
  
 
@@ -14,10 +13,6 @@ set_environment()
  
 # 🔑 API Keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
-TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-
-# Twitter Clients
-client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
 
 client_twitter = tweepy.Client( 
     consumer_key=os.getenv("TWITTER_API_KEY"),
@@ -26,173 +21,168 @@ client_twitter = tweepy.Client(
     access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 )
 
-CACHE_FILE = "tweets.json"
-POSTED_TWEETS_FILE = "posted_tweets.json"
-USER_ID_FILE = "user_ids.json"  # 파일로 저장할 user_id 파일
+INTERIM_KEYWORDS = ("fed", "inflation", "oil", "ai", "war", "earnings")
 
-def filter_tweets_by_time(tweets):
-    filtered_tweets = []
-
-    for tweet in tweets: 
-        tweet_time = datetime.strptime(tweet['time'], "%Y-%m-%d %H:%M:%S").time()
-
-        evening_start = time(16, 30)  # 16:30 PM  
-        early_morning_end = time(5, 0)  # 5:00 AM
-
-        if tweet_time >= evening_start or tweet_time < early_morning_end:
-            filtered_tweets.append(tweet)
-
-    return filtered_tweets
-
-def summarize_tweets(tweets):
-    """
-    Summarizes tweets into a clear, structured daily report for investors with light emojis and analysis.
-    """
-    tweet_texts = [tweet['content'] for tweet in tweets]
-    combined_text = " ".join(tweet_texts)
-
-    prompt = f"""
-        📰 **데일리 투자 리포트** 
-
-        너는 월가의 투자 전문가로서, 어제 하루 동안 발생한 글로벌 금융 및 경제 뉴스를 분석해주는 역할을 맡고 있어.
-
-        아래 트윗 내용을 바탕으로 투자자들이 쉽게 이해할 수 있도록 정리해줘:
-        - 각 트윗의 핵심을 주제별로 구분하여 정리 (예: 금리, 주식시장 등)
-        - **트윗 내용에 따라 주제 수는 유동적으로 판단**
-        - 각 항목은 2~5문장 정도로 명확하고 자세하게 분석해서 설명
-        - 너무 많은 이모지 ❌ / 각 주제 앞에 어울리는 이모지 ✅ (예: 📈 시장, 🏦 금리, ⚠️ 리스크, 💬 정책 등)
-        - **출력은 반드시 한글로**, 명확하고 전문적인 어조로
-        - 마지막에는 "🔮 인사이트" 섹션을 만들어 향후 예상되는 이슈나 주목할 점을 요약
-
-        다음은 어제의 트윗 뉴스입니다:
-        {combined_text}
-
-        이 내용을 바탕으로, 아래 형식으로 리포트를 작성해주세요:
+def _clean_news_text(text: str) -> str:
+    text = re.sub(r"https?://\S+", "", text or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
-        출력 형식:
-
-        📌 데일리 투자 리포트 
-        1. [주제명] 이모지 + 제목  
-        - 요약된 내용
-
-        ...
-
-        🔮 인사이트
-        - 예상되는 시장 반응 및 주의할 이슈 요약
+def _keyword_score(text: str) -> int:
+    lowered = (text or "").lower()
+    return sum(1 for keyword in INTERIM_KEYWORDS if keyword in lowered)
 
 
-        투자자들이 이 정보를 바탕으로 전략을 세울 수 있도록 도와주세요. 
-    """
+def _is_similar_text(a: str, b: str, threshold: float = 0.9) -> bool:
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    return SequenceMatcher(None, a, b).ratio() >= threshold
 
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        summary = response.choices[0].message.content.strip()
-        print(f"📢 Final Summary:\n{summary}")
-        return summary
-    except Exception as e:
-        print(f"❌ Failed to summarize tweets: {e}")
-        return "뉴스 요약 실패"
-    
+
+def _prepare_interim_inputs(recent_tweets, max_items: int = 20):
+    base_items = []
+    for item in recent_tweets[-max_items:]:
+        content = _clean_news_text(str(item.get("content", "")))
+        if content:
+            base_items.append(content)
+
+    if not base_items:
+        return []
+
+    # Prioritize market-moving keyword hits first, then preserve recency among ties.
+    indexed = list(enumerate(base_items))
+    indexed.sort(key=lambda pair: (_keyword_score(pair[1]), pair[0]), reverse=True)
+
+    deduped = []
+    for _, text in indexed:
+        if any(_is_similar_text(text, existing) for existing in deduped):
+            continue
+        deduped.append(text)
+        if len(deduped) >= max_items:
+            break
+    return deduped
+
+
+def _pick_interim_header() -> str:
+    return "📈 장중 핵심 3줄" if random.random() < 0.7 else "📊 오늘 시장 핵심"
+
+
+def _build_interim_prompt(news_items, header: str, strict_mode: bool = False) -> str:
+    strict_block = """
+If the draft may exceed the limit, you must:
+- keep the same format
+- compress wording only
+- remove weak modifiers
+- do not add explanation
+- target under 240 characters total
+""".strip() if strict_mode else ""
+
+    return f"""
+You are a financial news summarizer for retail investors.
+Write a short Korean market brief for X.
+
+Task:
+- Extract ONLY the 3 most important market-driving themes from the input news
+- The 3 lines should reflect the dominant market themes, not just any 3 headlines
+- Prefer themes that explain today's market tone over isolated company updates
+- If multiple inputs are about the same theme, merge them into one broader market-driving topic
+- Merge similar topics
+- Ignore minor, repetitive, or low-impact headlines
+- Prioritize themes that can move rates, oil, AI, geopolitics, major tech, or broad risk sentiment
+
+Output format (strict):
+{header}
+1. [핵심 이슈 1]
+2. [핵심 이슈 2]
+3. [핵심 이슈 3]
+
+→ [시장 한 줄 해석]
+
+Rules:
+- Korean only
+- No extra explanation
+- No emojis except the header
+- Keep each numbered line concise and natural
+- Keep total output under 280 characters
+- Make the final line useful for investors
+- The final line must describe the market tone or pressure point for investors
+- The final line must explain what is driving sentiment, not simply restate the 3 headlines
+- Avoid vague wording like "영향이 있을 수 있음", "변동성 확대", "불확실성 증가" unless unavoidable
+
+Preferred final-line styles:
+- 위험자산 선호 회복 시도
+- 유가 변수 재부각
+- 금리 경계감이 시장 상단 제약
+- AI 기대가 기술주 심리 지지
+- 지정학 리스크가 투자심리 압박
+- 관망 심리가 강한 장세
+
+{strict_block}
+
+Input news:
+{chr(10).join(f"- {item}" for item in news_items)}
+""".strip()
+
+
+def _safe_truncate_report(text: str, max_len: int = 280) -> str:
+    if len(text) <= max_len:
+        return text
+
+    hard_cut = text[:max_len].rstrip()
+
+    # Prefer cutting at line boundaries first to keep the 3-line structure readable.
+    line_cut = hard_cut.rfind("\n")
+    if line_cut >= 0:
+        candidate = hard_cut[:line_cut].rstrip()
+        if candidate:
+            return candidate
+
+    # Fallback: cut at punctuation boundary.
+    punctuation_cut = max(hard_cut.rfind("."), hard_cut.rfind("!"), hard_cut.rfind("?"), hard_cut.rfind("다"))
+    if punctuation_cut > 0:
+        return hard_cut[: punctuation_cut + 1].rstrip()
+
+    return hard_cut
+
+
 def post_interim_report(tweet_count, recent_tweets):
+    news_items = _prepare_interim_inputs(recent_tweets, max_items=20)
+    if not news_items:
+        print("[REPORT] interim_skipped reason=no_valid_input")
+        return
 
-    tweet_texts = [tweet['content'] for tweet in recent_tweets]
-    combined_text = " ".join(tweet_texts)
-
-    prompt = f"""
-    📢 중간 뉴스 리포트
-
-    너는 월가의 투자 전문가로, 최근 {tweet_count}개의 금융 및 경제 뉴스 트윗을 분석해 투자자들에게 빠르게 전달하는 역할을 맡고 있어.
-
-    아래 트윗 내용을 바탕으로 투자자들이 이해하기 쉽게 정리해줘:
-
-    - **트윗 내용에 따라 주제 수는 유동적으로 판단** (최소 2개 이상, 트윗의 내용이 전부 다를 시, {tweet_count}개까지도 가능)
-    - 각 주제는 2~3문장으로 간결하고 핵심적으로 설명
-    - **각 주제 앞에는 관련 이모지 1개만 사용** (예: 📈 시장, 🏦 금리, ⚠️ 리스크)
-    - 비슷한 주제는 하나로 묶어 요약 가능
-    - **출력은 반드시 한글로**, 명확하고 전문적인 어조로
-
-    최근 트윗:
-    {combined_text}
-
-    출력 형식:
-    📢 중간 뉴스 리포트
-
-    1. [주제] 이모지 + 제목  
-    - 내용  
-
-    2. [주제] 이모지 + 제목  
-    - 내용  
-
-    3. [주제] 이모지 + 제목  
-    - 내용  
-
-    ...
-
-    """
-
+    header = _pick_interim_header()
+    prompt = _build_interim_prompt(news_items, header=header, strict_mode=False)
+    report_text = ""
     try:
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
         report_text = response.choices[0].message.content.strip()
+        print(f"[REPORT] interim_generated length={len(report_text)} retry=0")
+
+        if len(report_text) > 280:
+            retry_prompt = _build_interim_prompt(news_items, header=header, strict_mode=True)
+            print("[REPORT] interim_retry reason=length_exceeded")
+            retry_response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": retry_prompt}]
+            )
+            report_text = retry_response.choices[0].message.content.strip()
+            print(f"[REPORT] interim_generated length={len(report_text)} retry=1")
+
+        if len(report_text) > 280:
+            report_text = _safe_truncate_report(report_text, max_len=280)
+            print(f"[REPORT] interim_truncated final_length={len(report_text)}")
+
         client_twitter.create_tweet(text=report_text)
-        print(f"Interim report posted for {tweet_count} tweets:\n{report_text}")
-        print(f'📊📌 Interim Report Posted for {tweet_count}!!')
+        print(f"[REPORT] interim_posted tweets={tweet_count} final_length={len(report_text)}")
+        print(f"[REPORT] interim_text={report_text}")
     except Exception as e:
         print(f"❌ Failed to post interim report: {e}") 
-
-
-# 트윗 작성
-def post_to_twitter(text, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            client_twitter.create_tweet(text=text)
-            print(f'📌📌📌📌📌 Daily Report Posted!! 📌📌📌📌📌')
-            return True
-        except Exception as e:
-            print(f"❌ Tweet post failed: {e}")
-            time.sleep(5)
-    return False
-
-def load_json(filename):
-    if not os.path.exists(filename):
-        return {}
-    try:
-        with open(filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"⚠️ Failed to load {filename}: {e}")
-        return {}
-    
-def wait_with_progress(seconds): 
-    for _ in tqdm(range(seconds), desc=f"⏳ Waiting {seconds}s", unit="s"):
-        time.sleep(1)
-
-def post_summary_report():
-    """ Posts the summary of tweets filtered from the past day (e.g., between 16:30 and 05:00). """
-    print(f"🕒 Attempting to post summary at runtime: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-
-    posted_tweets = load_json(POSTED_TWEETS_FILE)
-    filtered_tweets = filter_tweets_by_time(posted_tweets)  # e.g., from 16:30 to 05:00 next day
-
-    if not filtered_tweets:
-        print(f'⚠️ There are NO filtered tweets to post Daily Report!')
-        return False
-
-    summary = summarize_tweets(filtered_tweets)
-    success = post_to_twitter(summary)
-
-    if success:
-        print(f"🐦 Summary posted to Twitter!")
-        return True
-    else: 
-        print(f"❌ Failed to post the summary.")
-        return False
-
 
 

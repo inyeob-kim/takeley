@@ -20,6 +20,26 @@ def _clean_summary(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+def _clean_hashtags(text: str, limit: int = 2) -> str:
+    tokens = []
+    seen = set()
+    for token in (text or "").split():
+        if not token.startswith("#"):
+            continue
+        cleaned_body = re.sub(r"[^0-9A-Za-z가-힣_]", "", token[1:])
+        if not cleaned_body:
+            continue
+        normalized = f"#{cleaned_body}"
+        lowered = normalized.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        tokens.append(normalized)
+        if len(tokens) >= limit:
+            break
+    return " ".join(tokens)
+
+
 def _remove_at_mentions(text: str) -> str:
     """
     Remove @-mention syntax to comply with policy restrictions on unsolicited mentions.
@@ -45,7 +65,7 @@ def assemble_final_post_text(
     summary: str,
     implication: str,
     engagement: str,
-    username: str,
+    hashtags: str,
     tweet_url: str,
     recent_prefixes: List[str] | None = None,
 ) -> Tuple[str, str]:
@@ -68,6 +88,7 @@ def assemble_final_post_text(
     summary_line = _select_opening(_clean_summary(summary), recent_prefixes)
     implication_line = _clean_line(implication)
     engagement_line = _clean_line(engagement)
+    hashtag_line = _clean_hashtags(hashtags, limit=2)
 
     if implication_line and not implication_line.startswith("→"):
         implication_line = f"→ {implication_line.lstrip('- ').strip()}"
@@ -92,8 +113,11 @@ def assemble_final_post_text(
         lines.extend(["", implication_line])
     if normalized_type in {"news_implication_question", "news_implication_repost"} and engagement_line:
         lines.extend(["", engagement_line])
+    if hashtag_line:
+        lines.extend(["", hashtag_line])
 
-    lines.extend(["", f"출처 계정: {username}", "", f"출처: {tweet_url}"])
+    if tweet_url:
+        lines.extend(["", tweet_url.strip()])
     final_text = _remove_at_mentions("\n".join(lines).strip())
     return final_text, normalized_type
 
