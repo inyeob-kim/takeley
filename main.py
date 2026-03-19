@@ -128,11 +128,18 @@ def _infer_format_type_from_content(content: str) -> str:
     )
     main_lines = lines[:source_index] if source_index > 0 else lines
 
-    has_implication = any(line.startswith("→") for line in main_lines)
+    has_implication = any(line.startswith("👉") or line.startswith("→") for line in main_lines)
     if not has_implication:
         return "news_only"
 
-    implication_index = next((idx for idx, line in enumerate(main_lines) if line.startswith("→")), -1)
+    implication_index = next(
+        (
+            idx
+            for idx, line in enumerate(main_lines)
+            if line.startswith("👉") or line.startswith("→")
+        ),
+        -1,
+    )
     follow_lines = main_lines[implication_index + 1 :] if implication_index != -1 else []
     if not follow_lines:
         return "news_implication"
@@ -282,7 +289,7 @@ def process_user(
                         recent_prefixes=recent_prefixes,
                     )
 
-                    implication_added = "yes" if "\n\n→" in final_text else "no"
+                    implication_added = "yes" if ("\n\n👉" in final_text or "\n\n→" in final_text) else "no"
                     engagement_added = "yes" if bool(engagement) and normalized_format_type in {
                         "news_implication_question",
                         "news_implication_repost",

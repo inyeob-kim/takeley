@@ -69632,5 +69632,105 @@
     "format_type": "news_implication",
     "news_type": "macro",
     "time": "2026-03-19 10:49:42"
+  },
+  {
+    "tweet_id": 2034451854197940328,
+    "content": "트럼프가 이란의 주요 남파르스 가스전이 이스라엘의 공격을 받았다고 언급했습니다.",
+    "implication": "→ 이란의 에너지 자원에 대한 공격은 중동 지역의 긴장을 더욱 고조시켜 글로벌 에너지 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 11:15:28"
+  },
+  {
+    "tweet_id": 2034451956497047987,
+    "content": "트럼프가 카타르가 공격에 전혀 관여하지 않았다고 밝혔습니다.",
+    "implication": "→ 이란과의 긴장 상황에서 카타르의 입장이 명확해지면서 중동 지역의 정치적 안정성에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #정치",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:15:41"
+  },
+  {
+    "tweet_id": 2034452541749289414,
+    "content": "트럼프가 이란의 공격에 대해 카타르를 방어할 것이라고 밝혔습니다. 이는 중동 지역의 긴장 상황을 더욱 고조시킬 수 있습니다.",
+    "implication": "→ 미국의 군사적 개입 가능성이 커지면서 중동 지역의 정치적 불안정성이 확대될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #정치적불안정성",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 11:15:56"
+  },
+  {
+    "tweet_id": 2034452676222882228,
+    "content": "카타르 라스 라판 산업 지역에서 발생한 두 건의 화재가 완전히 진압되었으며, 부상자는 없다고 내무부가 발표했습니다.",
+    "implication": "→ 카타르의 산업 안전성이 확인되면서 에너지 및 화학 산업에 대한 투자 신뢰가 강화될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#카타르 #산업안전",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 11:16:09"
+  },
+  {
+    "tweet_id": 2034452794946752774,
+    "content": "트럼프가 카타르의 LNG에 대한 추가 공격 시 미국이 대응할 것이라고 밝혔습니다. 이는 중동 지역의 에너지 시장에 영향을 미칠 수 있습니다.",
+    "implication": "→ 카타르의 LNG 시설에 대한 공격 가능성이 높아지면서 글로벌 에너지 공급망의 불안정성이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#카타르 #LNG",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:16:22"
+  },
+  {
+    "tweet_id": 2034450017747116167,
+    "content": "테슬라가 플로리다 올랜도에서 로봇택시 서비스 테스트를 시작했습니다. 새로운 모델 Y 차량이 카메라 세척기와 함께 발견되었습니다.",
+    "implication": "→ 테슬라의 로봇택시 서비스 테스트는 자율주행 기술의 상용화 가능성을 높이며, 향후 수익원 다각화에 기여할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #증시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 11:16:38"
+  },
+  {
+    "tweet_id": 2034418712384856141,
+    "content": "미국 국방부가 이란 전쟁 자금으로 2000억 달러 이상의 요청을 백악관에 승인 요청한 것으로 보도되었습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란전쟁 #중동정세",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:16:53"
+  },
+  {
+    "tweet_id": 2034419076651708589,
+    "content": "트럼프 대통령이 이란과의 전쟁이 '매우 완전하다'고 언급하며 일정보다 앞서가고 있다고 밝혔습니다.",
+    "implication": "→ 이란과의 군사적 긴장이 완화될 경우, 중동 지역의 정치적 안정성이 높아져 에너지 시장에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란전쟁 #중동정세",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:17:16"
+  },
+  {
+    "tweet_id": 2034442480993657220,
+    "content": "미국 당국이 이란이 해외에서 '슬리퍼 셀'을 활성화할 준비를 하고 있다는 경고를 법 집행 기관에 배포했습니다.",
+    "implication": "→ 이란의 군사적 활동 증가 가능성은 중동 지역의 정치적 불안정성을 높여 글로벌 에너지 시장에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:17:36"
+  },
+  {
+    "tweet_id": 2034449275577414079,
+    "content": "미국 국가안보 당국의 신호에 따르면 이란과의 갈등이 예상보다 훨씬 더 오랜 기간 지속될 가능성이 제기되었습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:17:49"
   }
 ]

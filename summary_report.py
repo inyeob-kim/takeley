@@ -99,7 +99,7 @@ Output format (strict):
 2. [핵심 이슈 2]
 3. [핵심 이슈 3]
 
-→ [시장 한 줄 해석]
+👉 [시장 한 줄 해석]
 
 Rules:
 - Korean only

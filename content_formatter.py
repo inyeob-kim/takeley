@@ -90,8 +90,14 @@ def assemble_final_post_text(
     engagement_line = _clean_line(engagement)
     hashtag_line = _clean_hashtags(hashtags, limit=2)
 
-    if implication_line and not implication_line.startswith("→"):
-        implication_line = f"→ {implication_line.lstrip('- ').strip()}"
+    if implication_line:
+        cleaned_implication = implication_line.lstrip("- ").strip()
+        if cleaned_implication.startswith("→"):
+            cleaned_implication = cleaned_implication[1:].strip()
+        if cleaned_implication.startswith("👉"):
+            implication_line = f"👉 {cleaned_implication[1:].strip()}".strip()
+        else:
+            implication_line = f"👉 {cleaned_implication}".strip()
 
     # Normalize malformed AI output while preserving stable posting behavior.
     if normalized_type == "news_only":

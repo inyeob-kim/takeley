@@ -142,7 +142,7 @@ Return ONLY valid JSON with this schema:
 
 ### Implication rules (CRITICAL):
 
-- Must start with "→" or be empty
+- Must start with "👉" or be empty
 - MUST explain WHY this matters (not just that it matters)
 - MUST be specific and differentiated
 - MUST avoid generic phrases:
@@ -188,7 +188,7 @@ AI / tech:
 - If the market implication is weak, obvious, repetitive, or not clearly connected, leave implication empty.
 - Prefer specific interpretation over generic sentiment language.
 - Do not force implication for every accepted post.
-- If no strong insight → implication = ""
+- If no strong insight 👉 implication = ""
 
 ---
 
@@ -269,9 +269,15 @@ Recent posts:
             }:
                 format_type = "news_implication"
 
-            # Implication must start with arrow when present.
-            if implication and not implication.startswith("→"):
-                implication = f"→ {implication.lstrip('- ').strip()}"
+            # Implication must start with the configured marker when present.
+            if implication:
+                cleaned_implication = implication.lstrip("- ").strip()
+                if cleaned_implication.startswith("→"):
+                    cleaned_implication = cleaned_implication[1:].strip()
+                if cleaned_implication.startswith("👉"):
+                    implication = f"👉 {cleaned_implication[1:].strip()}".strip()
+                else:
+                    implication = f"👉 {cleaned_implication}".strip()
 
             # Guardrails: if skipped/irrelevant/similar, force no engagement payload.
             is_relevant = bool(data.get("is_relevant", False))
