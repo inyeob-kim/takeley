@@ -90,13 +90,24 @@ Return ONLY valid JSON with this schema:
 
 ### Decision rules:
 
-- Relevant = news that may affect stocks, sectors, indexes, rates, oil, bonds, FX, geopolitics, or investor sentiment.
-- Irrelevant = promotions, giveaways, referrals, jokes, opinions, vague reactions, or no new factual info.
+- Relevant = direct market-moving news likely to affect major indexes, rates/Fed path/bonds/dollar, oil/commodities, major sectors, mega-cap stocks, or broad risk sentiment.
+- Irrelevant = interesting but not directly market-moving, vague commentary, second-order political chatter without clear market impact, minor company chatter, soft opinion/hype/rumor/narrative-only posts, or repeated incremental updates with no new market consequence.
 - Treat speculative / rumor-like tweets conservatively.
 - If the tweet is mainly opinion, hype, or speculation without a clear factual development, treat it conservatively.
 - Prefer factual developments over commentary.
 - If a claim appears second-hand or unverified, do not overstate certainty.
 - If the source tweet contains vague claims without a concrete update, set is_relevant=false unless clear investor relevance exists.
+- Prefer directly market-moving news over broadly relevant news.
+- If market impact is indirect, weak, or unclear, set is_relevant=false.
+- For company news, be selective unless it concerns mega-cap names, major earnings, guidance, official launches, major regulatory events, or material business updates.
+- For geopolitical news, require clear escalation/de-escalation, oil relevance, sanctions, military action, or policy action.
+- For macro news, prioritize rates, inflation, jobs, central banks, yields, currencies, and broad risk sentiment.
+- If in doubt, skip.
+
+Source-aware stricter rules by username:
+- High-frequency wire accounts (@FirstSquawk, @DeItaone, @Investingcom): accept only clearly market-moving macro/breaking/market or major company headlines.
+- Tesla-focused accounts (@SawyerMerritt, @muskonomy, @tslaming): accept only direct Tesla/Musk/xAI/FSD/Robotaxi/Optimus/earnings/guidance/launch/regulatory/production/delivery/major partnership updates.
+- For those source groups, skip weak commentary, vague politics, recycled narratives, and minor follow-up remarks.
 
 - Similar = same event, same actor, same core action, same meaning (even if wording differs).
 - Not similar = new numbers, new timing, new official statement, or meaningful escalation.

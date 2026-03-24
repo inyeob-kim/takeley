@@ -69732,5 +69732,2255 @@
     "format_type": "news_only",
     "news_type": "macro",
     "time": "2026-03-19 11:17:49"
+  },
+  {
+    "tweet_id": 2034455138358939796,
+    "content": "홍콩 증시가 하락세를 보이며, 연준이 이란 갈등이 인플레이션 전망에 악영향을 미칠 수 있다고 경고했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:21:38"
+  },
+  {
+    "tweet_id": 2034455193174282737,
+    "content": "중동 은행들이 이란의 위협 속에서 홍콩을 '안전한 피난처'로 주목하고 있다고 InvestHK의 수장이 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#홍콩 #금융시장",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:24:55"
+  },
+  {
+    "tweet_id": 2034455353136693730,
+    "content": "뉴질랜드 달러가 0.51% 상승하여 0.5826달러에 거래되고 있습니다.",
+    "implication": "👉 뉴질랜드 달러의 상승은 글로벌 투자자들 사이에서 리스크 선호가 증가하고 있음을 나타내며, 이는 아시아 태평양 지역 통화에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#뉴질랜드달러 #환율",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:25:13"
+  },
+  {
+    "tweet_id": 2034457187024875785,
+    "content": "말레이시아 링깃이 미국 달러에 대해 0.5% 하락하여 3.932로 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#말레이시아 #환율",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:31:30"
+  },
+  {
+    "tweet_id": 2034458952327676201,
+    "content": "호주 리나스 희토류가 방산 필수 광물인 사마륨 생산을 시작했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#리나스 #희토류",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 11:37:46"
+  },
+  {
+    "tweet_id": 2034460095812366741,
+    "content": "바그다드 공항 인근에서 미국 군 기지에 대한 공격이 발생했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #안전자산",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 11:44:02"
+  },
+  {
+    "tweet_id": 2034461286541754504,
+    "content": "한국의 특별대표가 아제르바이잔을 방문하여 한국-중앙아시아 정상 회담을 준비하고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#한국외교 #중앙아시아",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:47:17"
+  },
+  {
+    "tweet_id": 2034462861733609856,
+    "content": "일본은행의 다카타 총재가 가격 안정 목표가 대체로 달성되었다고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:53:33"
+  },
+  {
+    "tweet_id": 2034462946081059059,
+    "content": "일본은행이 2% 인플레이션 목표를 유지하기 위해 필요시 정책을 조정할 것이라고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:53:47"
+  },
+  {
+    "tweet_id": 2034463034958299179,
+    "content": "일본은행의 다카타 고위 관계자가 해외 요인에 의한 가격 상승이 일본 내 물가를 끌어올릴 수 있다고 경고했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:54:00"
+  },
+  {
+    "tweet_id": 2034463144819741145,
+    "content": "일본은행이 중동 긴장 속에서 시장의 변동성이 커지고 있다고 언급했습니다.",
+    "implication": "👉 중동 지역의 불안정성이 일본 시장에 영향을 미치고 있으며, 이는 일본 엔화와 관련 자산의 변동성을 확대할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본은행 #시장변동성",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 11:54:13"
+  },
+  {
+    "tweet_id": 2034463309664244065,
+    "content": "일본은행의 정책 발표 이후 USD/JPY가 0.15% 하락하여 159.64에 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#USDJPY #엔화",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:57:31"
+  },
+  {
+    "tweet_id": 2034463407936872510,
+    "content": "일본은행의 다카타 총재가 기본 CPI 성장률이 가격 안정 목표를 대부분 충족했다고 밝혔으며, 이는 가격 전망을 높이는 것에 반대하는 입장을 취했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #CPI",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:57:47"
+  },
+  {
+    "tweet_id": 2034463494385566028,
+    "content": "일본은행은 핵심 인플레이션이 일시적으로 2% 이하로 떨어졌다가, 유가 상승으로 다시 상승할 것이라고 예상했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:58:01"
+  },
+  {
+    "tweet_id": 2034463599285117326,
+    "content": "일본은행은 일본 경제의 위험 요소가 중동 긴장, 유가, 금융 시장 및 통화 발전에서 비롯된다고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #중동긴장",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 11:58:15"
+  },
+  {
+    "tweet_id": 2034464107253113310,
+    "content": "워싱턴 포스트에 따르면, 마르코 루비오와 펜타곤 수장이 거주하는 군 기지 상공에서 정체불명의 드론이 목격되었습니다.",
+    "implication": "👉 군사적 긴장이 고조되면서 방산 관련 주식에 대한 투자자들의 관심이 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#드론 #군사",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 11:58:27"
+  },
+  {
+    "tweet_id": 2034473219923825066,
+    "content": "일본 니케이 지수가 일본은행의 결정 이후 2.68% 하락하며 미미한 움직임을 보였습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#니케이 #증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 12:56:51"
+  },
+  {
+    "tweet_id": 2034474667961159720,
+    "content": "태국 바트가 달러당 32.76으로 하락하며 2025년 10월 이후 최저치를 기록했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#태국 #환율",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 12:57:05"
+  },
+  {
+    "tweet_id": 2034475450526060571,
+    "content": "카타르 당국이 이스라엘 공습에 대한 미국의 인식에 대해 미국 고위 관계자들과 접촉했다고 Axios가 보도했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #글로벌시장",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 12:57:20"
+  },
+  {
+    "tweet_id": 2034477195692048538,
+    "content": "카타르 라스 라판 동쪽 4해리에서 사건이 발생했다고 UKMTO가 보고했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #원유",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 12:57:34"
+  },
+  {
+    "tweet_id": 2034473863216574860,
+    "content": "테슬라가 텍사스 오스틴에서 칩 제조 프로젝트인 테라팹을 위한 채용을 시작했습니다.",
+    "implication": "👉 테슬라의 새로운 제조 시설 구축은 미국 내 반도체 공급망 강화에 기여할 것으로 보이며, 이는 관련 주식에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #반도체",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 12:57:53"
+  },
+  {
+    "tweet_id": 2034478935615144077,
+    "content": "펜타곤이 이란 전쟁을 위한 2000억 달러의 자금 요청을 백악관에 승인 요청한 것으로 보도되었습니다.",
+    "implication": "👉 이란 전쟁에 대한 자금 요청은 군사적 긴장을 고조시킬 수 있으며, 이는 원유 가격 상승과 관련 자산의 변동성을 증가시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란전쟁 #군사적긴장",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 12:58:15"
+  },
+  {
+    "tweet_id": 2034480273136705605,
+    "content": "이스라엘이 이란의 미사일을 요격했다고 보고했습니다.",
+    "implication": "👉 중동 지역의 군사적 긴장이 고조되면서 원유 가격 상승 압력이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이스라엘 #중동",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 13:04:05"
+  },
+  {
+    "tweet_id": 2034482516258931083,
+    "content": "이란의 공습으로 카타르의 주요 가스 허브에 광범위한 피해가 발생했습니다.",
+    "implication": "👉 중동 지역의 에너지 공급 불안정성이 커지면서 원유 및 가스 가격 상승 압력이 증가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #원유",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 13:10:21"
+  },
+  {
+    "tweet_id": 2034482886280409465,
+    "content": "이란이 시위 중 경찰을 살해한 혐의로 세 명을 처형했다고 Fars 통신이 보도했습니다.",
+    "implication": "👉 이란 내 정치적 긴장이 고조되면서 중동 지역의 불안정성이 증가할 수 있으며, 이는 원유 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 13:13:38"
+  },
+  {
+    "tweet_id": 2034486700307791956,
+    "content": "중국 규제 당국이 전기차 기업들과 접촉했다고 산업부가 확인했습니다.",
+    "implication": "👉 중국의 전기차 산업에 대한 규제 완화 가능성이 제기되며, 이는 관련 기업들의 성장 기대감을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#전기차 #중국",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 13:29:10"
+  },
+  {
+    "tweet_id": 2034487018844225670,
+    "content": "중국 산업부가 자동차 금융 규제 검토에 나선다고 발표했습니다.",
+    "implication": "👉 중국의 자동차 금융 규제 변화는 국내외 자동차 제조업체들에게 새로운 기회를 제공할 수 있으며, 관련 주식에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중국 #자동차",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 13:29:24"
+  },
+  {
+    "tweet_id": 2034487232820908247,
+    "content": "산업부가 최근 회의에 17개 주요 자동차 제조업체가 참여했다고 보고했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#자동차 #산업부",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 13:29:38"
+  },
+  {
+    "tweet_id": 2034488434333815156,
+    "content": "아스트라제네카가 상하이에 세포 치료 제조 및 혁신 허브를 계획하고 있다고 발표했습니다.",
+    "implication": "👉 아스트라제네카의 새로운 제조 허브 설립은 아시아 시장에서의 경쟁력을 강화할 수 있으며, 이는 관련 생명과학 주식에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#아스트라제네카 #생명과학",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 13:36:00"
+  },
+  {
+    "tweet_id": 2034488698553954381,
+    "content": "일본 1월 용량 활용률이 전월 1.3%에서 2.9%로 증가했습니다.",
+    "implication": "👉 일본의 생산성 증가가 아시아 경제 회복에 긍정적인 신호로 작용할 수 있으며, 이는 한국 수출 기업에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본경제 #아시아시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 13:36:13"
+  },
+  {
+    "tweet_id": 2034488779478798380,
+    "content": "일본의 1월 산업 생산이 전년 대비 0.7% 증가하여 이전의 2.3%에서 감소했습니다.",
+    "implication": "👉 일본의 산업 생산 감소는 아시아 경제 회복에 대한 우려를 불러일으킬 수 있으며, 이는 한국 수출 기업에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본 #산업생산",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 13:36:27"
+  },
+  {
+    "tweet_id": 2034488795090112774,
+    "content": "일본 1월 산업 생산이 전월 대비 4.3% 증가하여 이전의 2.2%에서 크게 상승했습니다.",
+    "implication": "👉 일본의 산업 생산 증가가 아시아 경제 회복에 긍정적인 신호로 작용할 수 있으며, 이는 한국 수출 기업에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본 #산업생산",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 13:36:42"
+  },
+  {
+    "tweet_id": 2034493142213492783,
+    "content": "카타르의 여러 액화천연가스(LNG) 플랜트가 미사일 공격을 받았다고 회사가 발표했습니다.",
+    "implication": "👉 카타르의 LNG 생산 차질이 글로벌 에너지 공급에 영향을 미칠 수 있으며, 이는 원유 및 가스 가격 상승 압력으로 이어질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#LNG #에너지",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 13:55:28"
+  },
+  {
+    "tweet_id": 2034493335235428432,
+    "content": "카타르 에너지가 공격으로 인한 대형 화재와 광범위한 피해를 보고했습니다.",
+    "implication": "👉 카타르의 에너지 공급 차질 우려가 커지면서 글로벌 에너지 시장에 불안정성을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#카타르 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 13:55:42"
+  },
+  {
+    "tweet_id": 2034493829471191553,
+    "content": "이란이 1월 시위 중 미국과 이스라엘과의 협력 혐의로 세 명을 처형했다고 사법 뉴스 매체가 보도했습니다.",
+    "implication": "👉 이란 내 정치적 긴장이 고조되면서 중동 지역의 불안정성이 증가할 수 있으며, 이는 원유 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 13:55:55"
+  },
+  {
+    "tweet_id": 2034494406951366833,
+    "content": "캄보디아가 에너지 위기를 극복하기 위해 싱가포르와 말레이시아로부터 연료 수입을 증가시키고 있다고 보도되었습니다.",
+    "implication": "👉 캄보디아의 연료 수입 증가가 아시아 지역의 에너지 수급에 영향을 미칠 수 있으며, 이는 한국 기업들의 에너지 관련 수출 기회에 긍정적인 영향을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#캄보디아 #에너지",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 13:59:10"
+  },
+  {
+    "tweet_id": 2034495496149168347,
+    "content": "미국이 호르무즈 해협에서의 해상 호위 작전을 정부 보험과 연계하는 방안을 검토 중이라고 FT가 보도했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#호르무즈 #원유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 14:02:27"
+  },
+  {
+    "tweet_id": 2034495995913089374,
+    "content": "무라타가 미국-중국의 희토류 공급망 분리를 시작했다고 FT가 보도했습니다.",
+    "implication": "👉 이는 글로벌 전자 부품 공급망의 재편성을 촉진할 수 있으며, 관련 기업들의 전략적 변화가 예상됩니다.",
+    "engagement": "",
+    "hashtags": "#희토류 #무라타",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 14:05:43"
+  },
+  {
+    "tweet_id": 2034496419676004417,
+    "content": "브렌트유가 배럴당 112달러를 초과하며 4% 이상 상승했습니다. 이는 걸프 지역 에너지 자산에 대한 공격으로 인한 것입니다.",
+    "implication": "👉 에너지 자산에 대한 공격은 글로벌 원유 공급에 불안정을 초래할 수 있으며, 이는 한국의 에너지 관련 기업들에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:05:58"
+  },
+  {
+    "tweet_id": 2034497640487067806,
+    "content": "혼다 모터가 인도 제2공장에서 150억 루피를 투자해 새로운 오토바이 라인을 계획하고 있습니다.",
+    "implication": "👉 혼다의 인도 시장 확장은 아시아 지역에서의 성장 가능성을 높이며, 이는 관련 자동차 부품 기업에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#혼다 #자동차",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 14:12:13"
+  },
+  {
+    "tweet_id": 2034498190180008182,
+    "content": "크렘린은 미국과 우크라이나와의 삼자 회담이 일시 중단되었지만, 투자 및 경제 논의는 계속될 것이라고 밝혔습니다.",
+    "implication": "👉 이러한 지속적인 경제 논의는 투자자들에게 러시아와의 경제 관계에 대한 불확실성을 줄일 수 있는 신호로 작용할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#러시아 #경제논의",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:15:30"
+  },
+  {
+    "tweet_id": 2034498675158946055,
+    "content": "일본 전력 유틸리티 그룹의 수장이 이란 상황에 대응하여 안정적인 LNG 공급을 보장하기 위한 국가적 노력에 참여할 것임을 시사했습니다.",
+    "implication": "👉 일본의 LNG 공급 안정화 노력은 아시아 에너지 시장의 불확실성을 줄일 수 있으며, 이는 한국의 에너지 관련 기업들에게 긍정적인 기회를 제공할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#LNG #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:15:44"
+  },
+  {
+    "tweet_id": 2034499437473722477,
+    "content": "미국 정부가 중동 상황을 주시하고 있으며, 레바논에 있는 미국인들에게 상업 항공편을 통한 출국을 권고하고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #안전자산",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 14:18:58"
+  },
+  {
+    "tweet_id": 2034500074537910549,
+    "content": "태국 의회가 차기 총리를 선출하기 위한 투표를 시작했습니다.",
+    "implication": "👉 태국의 정치적 안정성이 향후 경제 정책에 영향을 미칠 수 있으며, 이는 한국 기업들의 투자 결정에 중요한 요소가 될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#태국 #정치",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:22:14"
+  },
+  {
+    "tweet_id": 2034501733230039530,
+    "content": "JP 모건이 리버티 미디어의 목표 주가를 122달러에서 115달러로 하향 조정했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#리버티미디어 #증시",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 14:28:30"
+  },
+  {
+    "tweet_id": 2034500365497053266,
+    "content": "마이크론(Micron)이 2022년 동기 대비 23.9억 달러의 매출을 기록했다고 발표했습니다. 이는 3.8억 달러에서 크게 증가한 수치입니다.",
+    "implication": "👉 마이크론의 매출 급증은 반도체 수요 회복을 나타내며, 관련 기업들의 성장 기대감을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#마이크론 #반도체",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 14:29:15"
+  },
+  {
+    "tweet_id": 2034503206084956280,
+    "content": "미국이 이란의 가스전 공격 계획에 대해 이스라엘로부터 정보를 받았다고 AP가 보도했습니다.",
+    "implication": "👉 이란의 군사적 행동 가능성이 높아지면서 중동 지역의 긴장이 고조될 수 있으며, 이는 원유 시장에 불안정을 초래할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:35:01"
+  },
+  {
+    "tweet_id": 2034503608205505012,
+    "content": "이스라엘 군이 이란 고위 관리에 대한 '제거 작전'을 지속할 것이라고 발표했습니다.",
+    "implication": "👉 이란과의 군사적 긴장이 고조되면서 중동 지역의 불안정성이 증가할 수 있으며, 이는 원유 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이스라엘 #이란",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 14:35:14"
+  },
+  {
+    "tweet_id": 2034504014327320851,
+    "content": "카타르 가스 시설에서 발생한 화재가 진화되었으며, 민간 방어 당국이 이를 확인했습니다.",
+    "implication": "👉 카타르의 가스 생산 안정성이 확보되면서 글로벌 에너지 시장의 불안정성이 완화될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#카타르 #에너지",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 14:38:31"
+  },
+  {
+    "tweet_id": 2034504235639885944,
+    "content": "UAE가 미사일 위협에 대응하기 위해 공중 방어 시스템을 가동 중입니다.",
+    "implication": "👉 중동 지역의 군사적 긴장은 원유 시장에 불안정을 초래할 수 있으며, 이는 한국의 에너지 관련 기업들에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#UAE #원유",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 14:38:46"
+  },
+  {
+    "tweet_id": 2034504901972336766,
+    "content": "미국 8개 주가 테그나와 넥스타의 합병을 차단하기 위해 소송을 제기했습니다. 캘리포니아 법무부가 발표했습니다.",
+    "implication": "👉 이 합병이 진행되지 않을 경우, 미디어 산업 내 경쟁 구도가 변화할 수 있으며, 이는 관련 기업들의 주가에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 14:41:32"
+  },
+  {
+    "tweet_id": 2034504809907118553,
+    "content": "이스라엘이 카스피해에서 이란 해군 미사일 보트를 타격했습니다.",
+    "implication": "👉 이란과의 군사적 긴장이 고조됨에 따라 중동 지역의 불안정성이 증가할 수 있으며, 이는 원유 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이스라엘 #이란",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 14:42:20"
+  },
+  {
+    "tweet_id": 2034505516215333061,
+    "content": "재무장관 베센트가 3월 25일 FSOC 회의를 주재할 예정입니다.",
+    "implication": "👉 FSOC 회의는 금융 정책 및 규제 방향에 대한 중요한 논의가 이루어지는 자리로, 향후 금융 시장에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:42:33"
+  },
+  {
+    "tweet_id": 2034506329524740436,
+    "content": "일본 전력 유틸리티 그룹 수장이 이란 위기가 장기화될 경우 열병합 발전소의 안정적인 운영에 위협이 될 수 있다고 경고했습니다.",
+    "implication": "👉 이란 위기의 장기화는 일본의 에너지 공급망에 불안정을 초래할 수 있으며, 이는 한국의 에너지 관련 기업들에게도 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란위기 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:47:55"
+  },
+  {
+    "tweet_id": 2034506372616986782,
+    "content": "일본 전력 유틸리티 수장이 이란 위기가 장기화될 경우 에너지 믹스 재조정 가능성을 언급했습니다.",
+    "implication": "👉 이란의 군사적 긴장이 지속될 경우, 일본의 에너지 정책 변화가 아시아 에너지 시장에 영향을 미칠 수 있으며, 이는 한국의 에너지 관련 기업들에게도 중요한 변수로 작용할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:48:09"
+  },
+  {
+    "tweet_id": 2034506677358150018,
+    "content": "카타르가 라스 라판의 두 개 화재를 완전히 진압했다고 발표했습니다. 이는 가스 생산에 긍정적인 영향을 미칠 것으로 예상됩니다.",
+    "implication": "👉 카타르의 가스 생산 안정성이 확보되면서 글로벌 에너지 시장의 불안정성이 완화될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#카타르 #에너지",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 14:49:23"
+  },
+  {
+    "tweet_id": 2034507819530195070,
+    "content": "일본 전력 유틸리티 수장이 변화하는 글로벌 상황 속에서 원자력 발전의 중요성이 증가할 것이라고 언급했습니다.",
+    "implication": "👉 일본의 원자력 발전 확대는 아시아 에너지 시장의 구조 변화에 기여할 수 있으며, 이는 한국의 에너지 관련 기업들에게도 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:51:37"
+  },
+  {
+    "tweet_id": 2034508328194466152,
+    "content": "아마존이 3월 19일 영국에서 Alexa+를 출시하며 조기 접근 롤아웃을 시작합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#아마존 #스마트홈",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 14:54:52"
+  },
+  {
+    "tweet_id": 2034509540578971752,
+    "content": "이스라엘 고위 관계자가 전쟁이 새로운 국면으로 접어들었으며, 앞으로 몇 주간 지속될 수 있다고 밝혔습니다.",
+    "implication": "👉 이란과의 갈등이 장기화될 경우, 중동 지역의 불안정성이 확대되며 이는 원유 가격에 상승 압력을 가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #전쟁",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:58:08"
+  },
+  {
+    "tweet_id": 2034509645113409804,
+    "content": "이란이 이스라엘의 가스 필드 공격에 대한 보복으로 '새로운 긴장 고조'를 위협했습니다.",
+    "implication": "👉 이란의 군사적 긴장은 중동 지역의 불안정성을 증가시킬 수 있으며, 이는 원유 가격에 상승 압력을 가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #중동",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 14:59:23"
+  },
+  {
+    "tweet_id": 2034509833034977526,
+    "content": "가스 가격이 2022년 이후 최고 수준에 도달했습니다.",
+    "implication": "👉 가스 가격 상승은 에너지 관련 기업들의 수익성에 긍정적인 영향을 미칠 수 있으며, 이는 관련 주식의 재평가를 촉발할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#가스 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 14:59:37"
+  },
+  {
+    "tweet_id": 2034512996207378839,
+    "content": "구글과 독모리스가 디지털 건강 동반자 플랫폼을 공동 개발하기로 협력합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#구글 #디지털헬스",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 15:13:58"
+  },
+  {
+    "tweet_id": 2034513020769239090,
+    "content": "이란의 유엔 대사가 UAE가 미국의 이란 공격에 대한 책임이 있다고 주장하며, 공격이 UAE 영토에서 이루어졌다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#이란 #UAE",
+    "format_type": "news_only",
+    "news_type": "neutral",
+    "time": "2026-03-19 15:14:13"
+  },
+  {
+    "tweet_id": 2034513142546592107,
+    "content": "일본은행이 금리 정책 회의에서 엔화가 달러당 160엔으로 약세를 보일 가능성이 있다고 보도되었습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#엔화 #일본은행",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:14:26"
+  },
+  {
+    "tweet_id": 2034514140522319933,
+    "content": "트럼프 전 대통령이 이란의 공격에 대한 미국의 무관심을 언급하며, 이스라엘의 남부 파르스 지역에 대한 추가 공격이 없을 것이라고 밝혔습니다. 또한, 카타르의 LNG가 다시 공격받을 경우 미국이 보복할 것이라고 경고했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중동 #에너지",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:18:12"
+  },
+  {
+    "tweet_id": 2034517734894301517,
+    "content": "EU가 터키의 SEPA 단일 결제 시스템 가입을 제안했다고 밝혔습니다. 이는 유럽 연합과 터키 간의 통합을 촉진할 것으로 기대됩니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#EU #터키",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:33:07"
+  },
+  {
+    "tweet_id": 2034518530868293981,
+    "content": "일본은행 총재 우에다, 일본 경제가 여전히 약점이 남아있지만 점진적으로 개선되고 있다고 언급.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본경제 #코스피",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:36:23"
+  },
+  {
+    "tweet_id": 2034519229287010638,
+    "content": "일본은행 총재 우에다가 중동 상황에 따른 글로벌 시장의 변동성 속에서 원유 가격이 급등했다고 언급했습니다.",
+    "implication": "👉 원유 가격 상승은 한국의 에너지 관련 기업들에게 수익성 개선의 기회를 제공할 수 있으며, 이는 관련 주식의 재평가를 촉발할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 15:36:37"
+  },
+  {
+    "tweet_id": 2034519873284682046,
+    "content": "일본은행 총재 우에다가 일본의 기초 인플레이션이 예측 기간 후반에 가격 목표에 맞춰 움직일 것이라고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:39:53"
+  },
+  {
+    "tweet_id": 2034520074045002051,
+    "content": "일본은행 총재 우에다가 경제 및 물가 추세가 예상과 일치할 경우 추가 금리 인상을 시사했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:40:07"
+  },
+  {
+    "tweet_id": 2034520972167151981,
+    "content": "일본은행 총재 우에다가 높은 유가가 인플레이션 기대치와 기초 인플레이션을 모두 증가시킬 수 있다고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #인플레이션",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:43:21"
+  },
+  {
+    "tweet_id": 2034522437115867160,
+    "content": "금 가격이 1% 이상 하락하여 온스당 4,768.19달러에 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금 #증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 15:49:40"
+  },
+  {
+    "tweet_id": 2034524900111831544,
+    "content": "일본은행 총재 우에다가 4월 회의의 주요 초점은 중간 인플레이션 전망 수정 여부라고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 15:58:58"
+  },
+  {
+    "tweet_id": 2034526840459784418,
+    "content": "유럽의 가스 가격이 카타르 LNG 공장 피해로 27% 급등했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#가스 #에너지",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 16:08:19"
+  },
+  {
+    "tweet_id": 2034526870805569539,
+    "content": "중국 외교부가 이란 고위 관리의 살해 명령에 대한 네타냐후의 발언에 충격을 받았다고 밝혔습니다.",
+    "implication": "👉 중동 지역의 긴장이 고조되면서 한국 기업들의 대중국 및 이란 관련 사업에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중국 #중동",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 16:08:34"
+  },
+  {
+    "tweet_id": 2034526894285316467,
+    "content": "일본은행 총재 우에다가 중소기업의 임금 상승세가 과거보다 나아질 것이라는 초기 정보를 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본경제 #임금상승",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 16:08:49"
+  },
+  {
+    "tweet_id": 2034527442824769728,
+    "content": "사우디 국방부는 리야드 및 동부 지역에서 6개의 드론을 요격하고 파괴했다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_only",
+    "news_type": "neutral",
+    "time": "2026-03-19 16:12:05"
+  },
+  {
+    "tweet_id": 2034527631513932073,
+    "content": "중국 외교부는 미국의 대만 관련 정보 보고서에 대해 대만 문제 해결은 중국의 고유한 사안이라고 밝혔습니다.",
+    "implication": "👉 미국과 중국 간의 긴장이 고조되면서 아시아 시장의 변동성이 증가할 수 있으며, 이는 한국 기업들의 대중국 수출에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중국 #대만",
+    "format_type": "news_implication",
+    "news_type": "neutral",
+    "time": "2026-03-19 16:12:19"
+  },
+  {
+    "tweet_id": 2034527740477710564,
+    "content": "중국 외교부가 미국의 대만 관련 정보 보고서에 대해 제로섬 사고방식을 버릴 것을 촉구했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#중국 #대만",
+    "format_type": "news_only",
+    "news_type": "neutral",
+    "time": "2026-03-19 16:12:35"
+  },
+  {
+    "tweet_id": 2034528031503695881,
+    "content": "트레이더들이 유럽중앙은행(ECB)의 금리 인상 가능성을 높게 보고 있으며, 연말까지 59bp의 금리 인상을 가격에 반영하고 있습니다.",
+    "implication": "👉 ECB의 금리 인상 기대감은 유럽 경제에 대한 긍정적인 신호로 작용할 수 있으며, 이는 한국 기업들의 유럽 시장 진출 전략에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:12:49"
+  },
+  {
+    "tweet_id": 2034528879768121630,
+    "content": "쿠웨이트 석유공사가 드론 공격으로 정유시설이 타격을 받았다고 발표하며 브렌트유 선물이 7달러 이상 상승하여 배럴당 114.83달러에 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#유가 #석유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 16:16:04"
+  },
+  {
+    "tweet_id": 2034529198472368604,
+    "content": "중국 외교부는 일본의 도발적 행동에 대한 우려를 표명하며, 국제 사회가 일본의 위험한 경향을 인식하고 있다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본 #중국",
+    "format_type": "news_only",
+    "news_type": "neutral",
+    "time": "2026-03-19 16:16:17"
+  },
+  {
+    "tweet_id": 2034529422196552013,
+    "content": "일본은행 총재 우에다가 중동 갈등 이전의 다양한 데이터가 일본은행의 가정보다 약간 강한 수준에 있었다고 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#일본은행 #경제전망",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 16:19:33"
+  },
+  {
+    "tweet_id": 2034529885780410376,
+    "content": "일본은행 총재 우에다가 공급 충격의 2차적 영향이 광범위한 가격 상승으로 이어질 수 있다고 경고했습니다.",
+    "implication": "👉 일본의 물가 상승 압력이 강화되면 한국 수출 기업의 가격 경쟁력에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본은행 #물가상승",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:19:47"
+  },
+  {
+    "tweet_id": 2034530499591590309,
+    "content": "일론 머스크가 AI6의 출시가 12월에 가능할 것이라고 언급했습니다.",
+    "implication": "👉 AI 기술의 발전이 가속화되면 관련 기업들의 성장 기대감이 높아질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#AI #테크",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 16:23:01"
+  },
+  {
+    "tweet_id": 2034531578962231338,
+    "content": "일본은행 총재 우에다가 물가 목표 달성 가능성이 낮아짐에 따라 금리를 동결했다고 발표했습니다.",
+    "implication": "👉 일본의 금리 동결은 아시아 경제 전반에 안정감을 주며, 한국 기업들의 일본 시장 진출 전략에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:26:15"
+  },
+  {
+    "tweet_id": 2034531624537530675,
+    "content": "WTI유가가 브렌트유 선물의 상승세에도 불구하고 당일 상승폭을 잃었습니다.",
+    "implication": "👉 WTI유가의 하락은 에너지 관련 주식에 부정적인 영향을 미칠 수 있으며, 특히 석유 및 가스 기업의 수익성에 악재로 작용할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#WTI #유가",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 16:26:29"
+  },
+  {
+    "tweet_id": 2034533335142453265,
+    "content": "아시아 바이어들이 페르시아만 원유 대체를 위해 3년 만에 가장 많은 미국 원유를 구매했습니다.",
+    "implication": "👉 아시아 시장에서의 미국 원유 수요 증가가 한국 에너지 기업들에게 긍정적인 기회를 제공할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:32:46"
+  },
+  {
+    "tweet_id": 2034533361809764381,
+    "content": "일본은행 총재 우에다가 물가 상승 추세가 유지된다면 금리 인상이 가능하다고 언급했습니다.",
+    "implication": "👉 일본의 금리 인상 가능성은 아시아 금융 시장에 영향을 미칠 수 있으며, 한국 기업들의 일본 시장 진출 전략에 변화를 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:33:00"
+  },
+  {
+    "tweet_id": 2034533905169252580,
+    "content": "사우디 아라비아의 민방위가 얀부 주에서 안전 지침을 따를 것을 권고하는 경고를 발령했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 16:36:20"
+  },
+  {
+    "tweet_id": 2034534257331495393,
+    "content": "쿠웨이트의 미나 압둘라 정유시설이 드론 공격을 받아 화재가 발생했습니다.",
+    "implication": "👉 중동 지역의 정유시설에 대한 공격은 유가 상승 압력을 가중시킬 수 있으며, 이는 한국 에너지 기업들의 수익성에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#쿠웨이트 #유가",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 16:36:37"
+  },
+  {
+    "tweet_id": 2034535597206061389,
+    "content": "사우디 민방위가 얀부 주의 위험이 종료되었으며, 현재 상황이 안전하다고 발표했습니다.",
+    "implication": "👉 중동 지역의 안정성이 회복되면 원유 공급망에 긍정적인 영향을 미칠 수 있으며, 이는 한국 에너지 기업들의 수익성에 도움이 될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:42:54"
+  },
+  {
+    "tweet_id": 2034535847304085620,
+    "content": "미국의 평균 휘발유 가격이 2022년 이후 최고 수준으로 상승했습니다.",
+    "implication": "👉 미국 내 휘발유 가격 상승은 한국의 에너지 관련 기업들에게 원가 압박을 가중시킬 수 있으며, 이는 수익성에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#휘발유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:43:09"
+  },
+  {
+    "tweet_id": 2034537414530863474,
+    "content": "삼성전자가 2026년 자본 및 연구에 110조 원 이상을 투자할 계획을 발표했습니다.",
+    "implication": "👉 삼성전자의 대규모 투자 계획은 반도체 및 기술 분야의 성장 기대감을 높이며, 관련 기업들의 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#삼성전자 #증시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 16:49:31"
+  },
+  {
+    "tweet_id": 2034538262237450639,
+    "content": "플래티넘 가격이 3% 이상 하락하여 온스당 1,959.20달러에 거래되고 있습니다.",
+    "implication": "👉 플래티넘 가격 하락은 귀금속 관련 주식에 부정적인 영향을 미칠 수 있으며, 특히 플래티넘을 주요 원자재로 사용하는 기업들의 수익성에 악재로 작용할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#플래티넘 #귀금속",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 16:52:46"
+  },
+  {
+    "tweet_id": 2034539315850813572,
+    "content": "러시아 에너지 부차관이 에너지 판매에 대한 제재 한도가 없어야 한다고 밝혔습니다.",
+    "implication": "👉 러시아의 에너지 판매 제재 완화 주장은 국제 유가에 긍정적인 영향을 미칠 수 있으며, 이는 한국 에너지 기업들의 수익성에 도움이 될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#러시아 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:59:00"
+  },
+  {
+    "tweet_id": 2034540046855086343,
+    "content": "러시아 에너지 부차관이 시장 가격으로 파트너들에게 에너지를 계속 공급할 것이라고 밝혔습니다. 제재는 고려하지 않겠다고 덧붙였습니다.",
+    "implication": "👉 러시아의 에너지 공급 지속은 글로벌 에너지 시장의 안정성을 높일 수 있으며, 이는 한국 에너지 기업들에게 긍정적인 기회를 제공할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#러시아 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 16:59:14"
+  },
+  {
+    "tweet_id": 2034540103457255525,
+    "content": "은 가격이 5% 이상 하락하여 온스당 71.04달러로 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#은 #귀금속",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 17:02:29"
+  },
+  {
+    "tweet_id": 2034541214461272078,
+    "content": "영국 FTSE 100 지수가 1.01% 하락했습니다.",
+    "implication": "👉 영국 주식 시장의 하락은 글로벌 투자 심리에 부정적인 영향을 미칠 수 있으며, 한국 시장에도 연쇄적인 영향을 줄 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#FTSE100 #증시",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 17:05:47"
+  },
+  {
+    "tweet_id": 2034541236728864779,
+    "content": "프랑스 CAC 40 지수 1.22% 하락, 스페인 IBEX 1.47% 하락.",
+    "implication": "👉 유럽 주요 지수의 하락은 한국 증시에 부정적인 영향을 미칠 수 있으며, 글로벌 투자 심리가 약화될 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#유럽증시 #증시",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 17:06:03"
+  },
+  {
+    "tweet_id": 2034541302034096493,
+    "content": "영국이 중국산 철강에 50% 관세를 부과하여 자국 산업을 보호하기로 결정했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#철강 #영국",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 17:06:16"
+  },
+  {
+    "tweet_id": 2034542224760062194,
+    "content": "금값이 2% 이상 하락하여 온스당 4,715.80달러에 거래되고 있습니다.",
+    "implication": "👉 금값 하락은 안전 자산 선호가 약화되고 있음을 나타내며, 이는 금 관련 주식에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금 #금값",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 17:09:32"
+  },
+  {
+    "tweet_id": 2034543937114026133,
+    "content": "달러/엔 환율이 0.5% 하락하여 159.06에 거래되고 있습니다.",
+    "implication": "👉 달러/엔 환율 하락은 일본의 통화정책 변화 가능성을 시사하며, 이는 한국 수출 기업들의 경쟁력에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#환율 #달러엔",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:15:56"
+  },
+  {
+    "tweet_id": 2034545664420638764,
+    "content": "EU가 가스 저장량 감소로 인한 패닉 구매 우려를 표명했습니다.",
+    "implication": "👉 유럽의 가스 공급 불안정은 한국 에너지 기업들에게 원자재 가격 상승 압박을 가할 수 있으며, 이는 수익성에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#가스 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:22:17"
+  },
+  {
+    "tweet_id": 2034546625797148858,
+    "content": "사우디 아라비아 국방부가 드론이 사무레프 정유소에 충돌했다고 발표하며, 피해 점검이 진행 중이라고 밝혔습니다.",
+    "implication": "👉 정유소 피해는 원유 공급에 차질을 초래할 수 있으며, 이는 국제 유가에 상승 압력을 가할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 17:25:35"
+  },
+  {
+    "tweet_id": 2034547722800480630,
+    "content": "사우디 아라비아의 여러 정유소에서 화재가 발생했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 17:31:50"
+  },
+  {
+    "tweet_id": 2034548172580851920,
+    "content": "스위스 중앙은행(SNB)이 정책 금리를 0.00%로 유지했습니다. 이는 시장의 예상과 일치합니다.",
+    "implication": "👉 스위스 중앙은행의 금리 동결은 글로벌 금리 환경에 대한 신뢰를 강화하며, 이는 한국 시장의 외환 및 자산 가격에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#스위스 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:32:03"
+  },
+  {
+    "tweet_id": 2034548346187382959,
+    "content": "스웨덴 중앙은행 리크스방크가 정책 금리를 1.75%로 유지했습니다. 이는 시장의 예상과 일치합니다.",
+    "implication": "👉 스웨덴의 금리 동결은 유럽의 통화 정책 안정성을 시사하며, 이는 한국 시장의 외환 및 자산 가격에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:35:18"
+  },
+  {
+    "tweet_id": 2034548406883119383,
+    "content": "스위스 중앙은행(SNB)이 필요시 통화 시장에 개입할 준비 태세를 강화했다고 발표했습니다.",
+    "implication": "👉 스위스 중앙은행의 개입 가능성은 유로화와 스위스 프랑의 변동성을 높일 수 있으며, 이는 한국 수출 기업들의 환 리스크에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#스위스 #환율",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:35:31"
+  },
+  {
+    "tweet_id": 2034548872685764933,
+    "content": "리크스방크가 금리를 당분간 현재 수준으로 유지할 것이라고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#리크스방크 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 17:35:44"
+  },
+  {
+    "tweet_id": 2034551716750999904,
+    "content": "브렌트유 선물이 8.7% 상승하며 추가 상승세를 이어가고 있습니다.",
+    "implication": "👉 유가 상승은 한국의 에너지 관련 주식에 긍정적인 영향을 미칠 수 있으며, 특히 정유사들의 수익성 개선 기대감이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#유가 #브렌트유",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 17:48:08"
+  },
+  {
+    "tweet_id": 2034551862855455079,
+    "content": "쿠웨이트의 미나 알 아흐마디 및 알압달라 포트 정유소에서 발생한 두 건의 화재가 진압되었습니다.",
+    "implication": "👉 정유소 화재 진압 소식은 원유 공급 안정성을 시사하며, 이는 국제 유가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#정유 #원유",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 17:48:21"
+  },
+  {
+    "tweet_id": 2034554511964909950,
+    "content": "유럽 가스 가격이 카타르 에너지 중단으로 20% 급등했습니다.",
+    "implication": "👉 유럽의 가스 가격 상승은 한국 에너지 기업들의 원자재 비용 증가를 초래할 수 있으며, 이는 수익성에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#가스 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 17:57:58"
+  },
+  {
+    "tweet_id": 2034554933819961452,
+    "content": "이스라엘 텔아비브에서 이란의 미사일 발사로 공습 경고 사이렌이 울렸습니다.",
+    "implication": "👉 이란과의 긴장 고조는 중동 지역의 불안정을 증가시키며, 이는 국제 유가 상승 압력으로 작용할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #유가",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 18:01:17"
+  },
+  {
+    "tweet_id": 2034557062374719623,
+    "content": "바레인 국방부가 오늘 두 발의 탄도 미사일과 4대의 드론을 요격했다고 발표했습니다.",
+    "implication": "👉 중동 지역의 군사적 긴장 고조는 원유 공급에 대한 불안감을 증가시킬 수 있으며, 이는 국제 유가에 상승 압력을 가할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #원유",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 18:07:35"
+  },
+  {
+    "tweet_id": 2034558478346592451,
+    "content": "유럽 의회 위원회가 미국과의 무역 협정 법안을 진전시키기 위한 투표를 실시했습니다.",
+    "implication": "👉 미국과의 무역 협정이 진행됨에 따라 유럽 경제와 한국 수출 기업에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#무역 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 18:14:04"
+  },
+  {
+    "tweet_id": 2034559137661788573,
+    "content": "이란 의원이 호르무즈 해협을 통과하는 선박에 세금과 통행료를 부과하는 법안 통과를 고려하고 있다고 밝혔습니다.",
+    "implication": "👉 이란의 법안 통과 가능성은 호르무즈 해협의 통행에 대한 불확실성을 증가시켜, 국제 유가에 상승 압력을 가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #유가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 18:17:19"
+  },
+  {
+    "tweet_id": 2034559915575181470,
+    "content": "아부다비 자유항 북서쪽 40.2해리에서 상선에서 폭발이 보고되었습니다.",
+    "implication": "👉 이란과의 긴장 고조는 중동 지역의 불안정을 증가시키며, 이는 국제 유가 상승 압력으로 작용할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #유가",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 18:20:36"
+  },
+  {
+    "tweet_id": 2034560983645958502,
+    "content": "일본은행이 금리를 0.75%로 유지한다고 발표했습니다. 이는 시장 예상과 일치합니다.",
+    "implication": "👉 일본은행의 금리 결정은 아시아 통화 및 한국 시장에 대한 투자 심리에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본은행 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 18:23:52"
+  },
+  {
+    "tweet_id": 2034562038413050237,
+    "content": "사우디 야인부 항구에서 석유 적재가 중단되었습니다.",
+    "implication": "👉 야인부 항구의 석유 적재 중단은 글로벌 원유 공급에 차질을 초래할 수 있으며, 이는 국제 유가 상승 압력으로 작용할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#석유 #원자재",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 18:27:07"
+  },
+  {
+    "tweet_id": 2034562472330645574,
+    "content": "브렌트유가 중동 전쟁으로 인해 에너지 공급에 타격을 받아 10% 상승했습니다.",
+    "implication": "👉 브렌트유 가격 상승은 한국의 에너지 관련 주식에 긍정적인 영향을 미칠 수 있으며, 특히 정유사들의 수익성 개선 기대감이 커질 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#브렌트유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 18:30:25"
+  },
+  {
+    "tweet_id": 2034562680519106630,
+    "content": "STOXX 유럽 600 지수가 에너지 가격 급등으로 2.2% 하락폭을 확대했습니다.",
+    "implication": "👉 유럽 에너지 가격 상승은 한국 기업들의 원자재 비용 증가를 초래할 수 있으며, 이는 수익성에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#유럽 #증시",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 18:30:40"
+  },
+  {
+    "tweet_id": 2034563453734797622,
+    "content": "알리바바의 2026년 3분기 실적 발표: 매출 2848.4억 위안(예상 2897.9억 위안), 조정 EBITDA 340.6억 위안(예상 396.2억 위안), ADS당 순이익 7.09 위안(예상 12.34 위안). 중국 전자상거래 사업부 매출 1593.5억 위안.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#알리바바 #중국경제",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-19 18:33:57"
+  },
+  {
+    "tweet_id": 2034564169975185727,
+    "content": "영국 정부가 7월 1일부터 철강 수입 쿼터를 60% 축소한다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#철강 #영국",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 18:37:13"
+  },
+  {
+    "tweet_id": 2034564612511912261,
+    "content": "미국 리야드 대사관이 미국 시민들에게 사우디 아라비아를 떠날 것을 권고했습니다.",
+    "implication": "👉 이 같은 경고는 중동 지역의 불안정성을 반영하며, 이는 국제 유가 및 투자 심리에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#사우디 #중동",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 18:37:27"
+  },
+  {
+    "tweet_id": 2034565343373373898,
+    "content": "금과 은 가격이 다시 하락하고 있습니다. 이번 하락의 원인은 무엇인지 주목됩니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금 #은",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 18:40:48"
+  },
+  {
+    "tweet_id": 2034565711641870639,
+    "content": "트레이더들이 연준의 금리 인하 가능성을 낮추고 있으며, 2026년 25bp 금리 인하 확률을 35%로 보고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금리 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 18:44:04"
+  },
+  {
+    "tweet_id": 2034568000431419838,
+    "content": "카타르가 라스 라판의 모든 화재를 진압했다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-19 18:50:20"
+  },
+  {
+    "tweet_id": 2034568168853901737,
+    "content": "사우디 야인부 항구에서 석유 적재가 재개되었습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#사우디 #원유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 18:53:35"
+  },
+  {
+    "tweet_id": 2034569315329159598,
+    "content": "BOFA의 홀츠는 금리 인상이 은행 부문에 미치는 영향을 언급했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금리 #은행",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 18:56:50"
+  },
+  {
+    "tweet_id": 2034569330784870648,
+    "content": "브렌트유 선물이 중동 혼란으로 인해 10% 급등하여 115달러를 초과했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#브렌트유 #원유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 18:57:08"
+  },
+  {
+    "tweet_id": 2034570257336320468,
+    "content": "UAE가 전쟁에도 불구하고 1.4조 달러 규모의 미국 투자 약속을 지키겠다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#UAE #투자",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 19:00:25"
+  },
+  {
+    "tweet_id": 2034579615361175633,
+    "content": "리비아 국영석유회사(NOC)는 샤라라 파이프라인에서 발생한 화재가 진압되었다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#리비아 #석유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 19:41:30"
+  },
+  {
+    "tweet_id": 2034583585253101645,
+    "content": "러시아 에너지부는 높은 가격에 대비해 연료 수출 금지를 예방적으로 도입할 수 있다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#러시아 #유가",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 19:54:16"
+  },
+  {
+    "tweet_id": 2034584871675605128,
+    "content": "러시아 에너지부 관계자가 국내 시장에서 가격을 안정시키기 위한 추가 조치를 시행할 것이라고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#러시아 #유가",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 19:57:31"
+  },
+  {
+    "tweet_id": 2034585890920542453,
+    "content": "이스라엘 군이 '첫 번째'로 북부 이란의 목표를 타격하기 시작했다고 발표했습니다.",
+    "implication": "👉 이란과의 군사적 긴장은 중동 지역의 불안정성을 더욱 부각시켜, 국제 유가 상승 압력을 가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중동 #유가",
+    "format_type": "news_implication",
+    "news_type": "breaking",
+    "time": "2026-03-19 20:03:56"
+  },
+  {
+    "tweet_id": 2034587243650953444,
+    "content": "EU 의회가 다음 주 미국 무역 협정에 대한 투표를 진행할 예정입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#무역 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 20:07:11"
+  },
+  {
+    "tweet_id": 2034599420680085857,
+    "content": "미국 1월 최종 건축 허가가 전월 대비 4.742% 감소했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#미국 #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 20:56:02"
+  },
+  {
+    "tweet_id": 2034599442507321635,
+    "content": "미국 1월 최종 건축 허가가 138.6만 건으로, 예비치 137.6만 건을 초과했습니다.",
+    "implication": "👉 건축 허가 증가로 미국 주택 시장의 회복세가 기대되며, 이는 금리 인상에 대한 시장의 반응을 변화시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#미국 #건축허가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 20:56:14"
+  },
+  {
+    "tweet_id": 2034600019043496111,
+    "content": "레드핀에 따르면, 올해 이 시기에 주택 판매의 7분의 1이 무산되고 있으며, 이는 기록적인 수치입니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#부동산 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 20:59:59"
+  },
+  {
+    "tweet_id": 2034601339595174009,
+    "content": "영국 중앙은행(BOE) 총재인 앤드류 베일리가 중동 전쟁 상황을 평가하기 위해 금리를 동결했다고 발표했습니다.",
+    "implication": "👉 중동의 불안정성이 영국 경제에 미치는 영향을 고려할 때, BOE의 금리 결정은 향후 통화 정책 방향에 중요한 신호가 될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:02:48"
+  },
+  {
+    "tweet_id": 2034601363498488088,
+    "content": "앤드류 베일리 영국 중앙은행 총재는 인플레이션 목표인 2% 달성을 위해 어떤 상황에서도 최선을 다할 것이라고 밝혔습니다.",
+    "implication": "👉 영국 중앙은행의 인플레이션 목표 유지 의지는 금리 인상 지속 가능성을 시사하며, 이는 글로벌 금리에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:03:02"
+  },
+  {
+    "tweet_id": 2034601391235457246,
+    "content": "영국 중앙은행(BOE)은 2분기 소비자물가(CPI)가 약 3%, 3분기는 최대 3.5%에 이를 것으로 예상한다고 발표했습니다. 이는 글로벌 에너지 가격 충격에 따른 조정입니다. 이전 예상치는 2분기 2.1%였습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 21:03:17"
+  },
+  {
+    "tweet_id": 2034601800867958853,
+    "content": "트레이더들이 영국 중앙은행(BOE)의 금리 인상 가능성을 높게 보고 있으며, 2026년에는 50bp의 금리 인상이 완전히 반영되었습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 21:06:37"
+  },
+  {
+    "tweet_id": 2034602044309569609,
+    "content": "S&P 500과 NASDAQ 100 선물이 하락폭을 확대하며 세션 최저치를 기록했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#증시 #SP500",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 21:06:50"
+  },
+  {
+    "tweet_id": 2034602138039718041,
+    "content": "금이 온스당 4,626.79달러로 4% 하락했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금 #증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 21:07:03"
+  },
+  {
+    "tweet_id": 2034602306860376106,
+    "content": "미국 재무장관 베센트는 이란의 에너지 인프라를 공격하지 않을 것이라고 밝혔습니다.",
+    "implication": "👉 이란에 대한 군사적 긴장이 완화되면, 중동 지역의 에너지 시장 안정성이 높아져 유가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #유가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:07:17"
+  },
+  {
+    "tweet_id": 2034601810682413268,
+    "content": "WTI와 브렌트유의 스프레드가 11년 만에 가장 넓은 18달러로 확대되었습니다. 미국 원유가 글로벌 시장에서 저렴한 가격으로 평가받고 있습니다.",
+    "implication": "👉 미국 원유 가격이 저렴해지면서 수출 증가 가능성이 높아져, 이는 글로벌 에너지 시장의 동향에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:07:34"
+  },
+  {
+    "tweet_id": 2034602533457420708,
+    "content": "영국 중앙은행(BOE)이 금리를 3.75%로 유지했습니다. 이는 시장 예상과 일치하는 수치입니다.",
+    "implication": "👉 BOE의 금리 동결은 영국 경제의 불확실성을 반영하며, 이는 글로벌 금리 전망에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:07:48"
+  },
+  {
+    "tweet_id": 2034602610263810253,
+    "content": "베센트는 약 1억 3천만 배럴의 이란 원유가 해상에 있다고 밝혔습니다.",
+    "implication": "👉 이란 원유의 해상 보유량 증가는 글로벌 공급에 대한 우려를 완화할 수 있으며, 이는 유가 안정에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란 #유가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:10:33"
+  },
+  {
+    "tweet_id": 2034602936727392444,
+    "content": "미국 재무장관 베센트는 이란 원유에 대한 제재 해제가 임박했다고 밝혔습니다. 이란의 에너지 인프라 공격은 없을 것이라고 덧붙였습니다.",
+    "implication": "👉 이란 원유의 제재 해제는 글로벌 유가에 하방 압력을 가할 수 있으며, 이는 에너지 시장의 변동성을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란원유 #유가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:10:46"
+  },
+  {
+    "tweet_id": 2034602702752080154,
+    "content": "영국 중앙은행(BOE)이 금리를 3.75%로 유지하기로 9-0으로 투표했습니다.",
+    "implication": "👉 BOE의 금리 동결은 영국 경제의 불확실성을 반영하며, 이는 글로벌 금리 전망에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:11:40"
+  },
+  {
+    "tweet_id": 2034608615521464493,
+    "content": "트레이더들이 영국 중앙은행(BOE)의 올해 금리 인상을 3회로 예상하고 있습니다.",
+    "implication": "👉 BOE의 금리 인상 기대감이 커지면서, 이는 글로벌 금리 전망에 직접적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#BOE #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:44:08"
+  },
+  {
+    "tweet_id": 2034608822371934514,
+    "content": "트레이더들이 2026년 연준의 금리 인하를 더 이상 반영하지 않고 있습니다.",
+    "implication": "👉 이는 연준의 금리 정책에 대한 시장의 신뢰가 강화되고 있음을 나타내며, 향후 금리 인상 지속 가능성을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#금리 #연준",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:44:23"
+  },
+  {
+    "tweet_id": 2034609762382623051,
+    "content": "뱅크오브아메리카(BofA) 조사에 따르면, 신용 투자자들 사이에서 'AI 버블'이 가장 큰 우려 사항으로 떠오르고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#AI #투자",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 21:44:41"
+  },
+  {
+    "tweet_id": 2034611261577760773,
+    "content": "알루미늄 가격이 LME에서 8% 이상 하락하며 2018년 이후 최대 낙폭을 기록했습니다.",
+    "implication": "👉 알루미늄 가격의 급락은 원자재 시장의 불안정성을 반영하며, 이는 관련 산업의 생산 비용에 직접적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#알루미늄 #원자재",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:44:59"
+  },
+  {
+    "tweet_id": 2034608875916132791,
+    "content": "미국 재무장관 베센트는 이란 원유가 걸프 지역에서 계속 유출되고 있으며, 해상에 있는 이란 원유에 대한 제재 해제가 임박했다고 밝혔습니다.",
+    "implication": "👉 이란 원유의 제재 해제 가능성은 글로벌 원유 공급 증가로 이어져 유가에 하방 압력을 가할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#이란원유 #유가",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:45:17"
+  },
+  {
+    "tweet_id": 2034609399592095996,
+    "content": "미국의 신규 실업수당 청구 건수가 205,000건으로 예상치 215,000건을 하회하며, 이전 주의 213,000건에서 감소했습니다.",
+    "implication": "👉 실업수당 청구 건수의 감소는 미국 노동 시장의 강세를 시사하며, 이는 연준의 금리 정책에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#미국경제 #고용",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:45:49"
+  },
+  {
+    "tweet_id": 2034609760620683439,
+    "content": "미국 3월 필라델피아 연방은행 제조업 지수가 18.1로 상승, 예상치 8.3 및 이전 16.3을 크게 초과했습니다.",
+    "implication": "👉 제조업 지수의 급등은 미국 경제의 회복세를 나타내며, 이는 연준의 금리 인상 지속 가능성을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#미국경제 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:46:04"
+  },
+  {
+    "tweet_id": 2034611591413457166,
+    "content": "미국의 평균 소매 휘발유 가격이 2022년 이후 최고치로 상승했습니다.",
+    "implication": "👉 중간 선거를 앞두고 유가 상승은 정치적 불안정을 초래할 수 있으며, 이는 소비자 지출에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#유가 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:46:17"
+  },
+  {
+    "tweet_id": 2034605052120477956,
+    "content": "뱅크오브아메리카(BofA) 조사에 따르면, 신용 투자자들 사이에서 'AI 버블'이 가장 큰 우려 사항으로 떠오르고 있습니다.",
+    "implication": "👉 AI 관련 기업의 주가 변동성이 커질 수 있으며, 투자자들은 리스크 관리에 주의해야 합니다.",
+    "engagement": "",
+    "hashtags": "#AI #금융",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:46:33"
+  },
+  {
+    "tweet_id": 2034610085373354464,
+    "content": "스탠다드 차타드에 따르면, 스테이블코인 시장 규모가 현재 약 3,040억 달러에서 2028년까지 2조 달러로 성장할 것으로 예상되며, 이는 미국 재무부 채권에 대한 수요 증가로 이어질 것입니다.",
+    "implication": "👉 스테이블코인 시장의 급성장은 미국 재무부 채권에 대한 수요를 증가시켜, 금리에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#스테이블코인 #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:46:47"
+  },
+  {
+    "tweet_id": 2034612083422294427,
+    "content": "금이 5% 하락하여 온스당 4,575.14달러에 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금 #금가격",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 21:48:32"
+  },
+  {
+    "tweet_id": 2034612290755104971,
+    "content": "은 가격이 10% 이상 하락하여 온스당 67.58달러에 거래되고 있습니다.",
+    "implication": "👉 은 가격의 급락은 귀금속 시장의 변동성을 높이며, 투자자들은 안전 자산으로의 이동을 고려할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#은 #귀금속",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:48:53"
+  },
+  {
+    "tweet_id": 2034613018424676548,
+    "content": "알루미늄 가격이 LME에서 8% 이상 하락하며 2018년 이후 최대 낙폭을 기록했습니다.",
+    "implication": "👉 알루미늄 가격의 급락은 원자재 시장의 불안정성을 반영하며, 이는 관련 산업의 생산 비용에 직접적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#알루미늄 #원자재",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:49:37"
+  },
+  {
+    "tweet_id": 2034613740516340051,
+    "content": "이란 전쟁으로 인해 금 가격이 6% 하락하며 금속 시장에서 매도세가 확산되고 있습니다.",
+    "implication": "👉 이란 전쟁의 격화는 금속 시장의 불안정을 초래하고, 안전 자산으로의 수요 증가를 유도할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금속 #금",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:52:23"
+  },
+  {
+    "tweet_id": 2034613629702561831,
+    "content": "COMEX에서 은 가격이 13% 급락하여 온스당 67.52달러에 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#은 #귀금속",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 21:53:07"
+  },
+  {
+    "tweet_id": 2034613870082326677,
+    "content": "금과 은 가격이 각각 5%와 10% 이상 급락하며, 금은 온스당 4,575.14달러, 은은 온스당 67.58달러에 거래되고 있습니다.",
+    "implication": "👉 금과 은 가격의 급락은 안전 자산에 대한 수요 감소를 시사하며, 이는 투자자들이 리스크 관리에 주의해야 함을 의미합니다.",
+    "engagement": "",
+    "hashtags": "#금 #은",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:53:24"
+  },
+  {
+    "tweet_id": 2034614193249517913,
+    "content": "독일 DAX 지수가 3% 하락하여 22,796.48에 거래되고 있습니다.",
+    "implication": "👉 독일 DAX의 급락은 유럽 시장의 불안정성을 반영하며, 이는 한국 증시에 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#DAX #증시",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-19 21:55:41"
+  },
+  {
+    "tweet_id": 2034614547592384572,
+    "content": "트레이더들이 2026년까지 연준의 금리 인하를 더 이상 반영하지 않고 있습니다.",
+    "implication": "👉 이는 금리 인상 지속 가능성을 시사하며, 주식 시장에 대한 투자 심리가 위축될 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금리 #연준",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 21:56:56"
+  },
+  {
+    "tweet_id": 2034615490312638715,
+    "content": "금 가격이 6% 이상 하락하여 온스당 4,600달러 아래로 떨어졌습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금 #금속시장",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-19 22:00:11"
+  },
+  {
+    "tweet_id": 2034615118450037141,
+    "content": "뱅크오브아메리카는 OpenAI의 수정된 전망에 따라 2030년까지 2,830억 달러의 수익과 6,650억 달러의 컴퓨팅 지출이 AI 주식의 가치 평가를 추가로 지원할 수 있다고 밝혔습니다.",
+    "implication": "👉 이는 AI 관련 기업의 성장 기대감을 높이며, 투자자들은 해당 섹터에 대한 관심을 더욱 강화할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#AI #증시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 22:03:35"
+  },
+  {
+    "tweet_id": 2034618491157017078,
+    "content": "트럼프와 다카이치가 400억 달러 규모의 미국 원자로 프로젝트를 발표할 예정입니다.",
+    "implication": "👉 이 프로젝트는 미국의 에너지 정책에 긍정적인 영향을 미칠 수 있으며, 관련 기업들의 주가에 상승 압력을 가할 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#원자력 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:11:57"
+  },
+  {
+    "tweet_id": 2034626278515736622,
+    "content": "미국 은행 규제 당국이 대형 은행의 자본 요건 완화를 위한 새로운 규칙을 제안했습니다.",
+    "implication": "👉 대형 은행의 자본 요건 완화는 금융 시스템의 유동성을 높이고, 이는 주식 시장에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#금융 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:44:02"
+  },
+  {
+    "tweet_id": 2034626307775213716,
+    "content": "연준은 수정된 '바젤 III' 제안이 대형 은행의 자본을 1.4% 증가시킬 것이라고 발표했습니다.",
+    "implication": "👉 이는 대형 은행의 자본 적정성 강화로 이어져, 금융 시스템의 안정성을 높일 수 있으며, 투자자들은 은행 주식에 대한 신뢰를 강화할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#연준 #금융",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:44:18"
+  },
+  {
+    "tweet_id": 2034626412637040733,
+    "content": "새로운 제안이 지역 은행들이 미실현 손실을 반영하도록 요구하며, 자본 요건을 3.1% 증가시킬 것으로 예상됩니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#은행 #금융",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 22:44:36"
+  },
+  {
+    "tweet_id": 2034626441141428224,
+    "content": "연준 이사 마이클 바르가 제안에 반대하며, 변경 사항이 GSIB 자본을 6% 또는 600억 달러 감소시킬 것이라고 경고했습니다.",
+    "implication": "👉 이는 대형 은행의 자본 적정성에 대한 우려를 불러일으키며, 금융 시장의 변동성을 증가시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#연준 #금융시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:44:51"
+  },
+  {
+    "tweet_id": 2034622802641187280,
+    "content": "유럽중앙은행(ECB)이 예금금리를 2.00%, 기준금리를 2.15%로 유지했습니다. 이는 시장 예상과 일치합니다.",
+    "implication": "👉 ECB의 금리 동결은 유럽 경제의 안정성을 시사하며, 이는 한국 증시에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:45:10"
+  },
+  {
+    "tweet_id": 2034621716077641937,
+    "content": "$UBER는 2031년까지 50,000대의 로봇택시를 배치하기 위한 계약의 일환으로 $RIVN에 최대 12억 5천만 달러를 투자할 계획입니다.",
+    "implication": "👉 이는 자율주행 및 전기차 시장의 성장 기대감을 높이며, 관련 기업들의 주가에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#우버 #리비안",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-19 22:45:26"
+  },
+  {
+    "tweet_id": 2034620151790739768,
+    "content": "골드만삭스는 지난해 AI에 대한 대규모 투자가 미국 경제 성장에 거의 기여하지 않았다고 발표했습니다.",
+    "implication": "👉 이는 AI 관련 기업들의 성장 기대감에 부정적인 영향을 미칠 수 있으며, 투자자들은 해당 섹터의 리스크를 재평가할 필요가 있습니다.",
+    "engagement": "",
+    "hashtags": "#AI",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:45:49"
+  },
+  {
+    "tweet_id": 2034627745213292857,
+    "content": "S&P 500이 이란 전쟁의 여파로 하락세를 이어가며 개장했습니다.",
+    "implication": "👉 이란 전쟁의 격화는 글로벌 위험 회피 심리를 자극하고, 한국 증시에도 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#증시 #SP500",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:48:39"
+  },
+  {
+    "tweet_id": 2034629468976013570,
+    "content": "유럽중앙은행(ECB)의 라가르드 총재는 서비스 부문이 경제 성장을 주도하고 있다고 밝혔습니다.",
+    "implication": "👉 이는 유럽 경제의 회복세를 나타내며, 한국 증시에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #유럽경제",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:55:02"
+  },
+  {
+    "tweet_id": 2034629508402487576,
+    "content": "유럽중앙은행(ECB) 라가르드 총재는 투자 성장이 필요하다고 강조했습니다.",
+    "implication": "👉 이는 유럽 경제의 회복세를 나타내며, 한국 증시에 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:55:15"
+  },
+  {
+    "tweet_id": 2034629638149095812,
+    "content": "유럽중앙은행(ECB) 라가르드 총재는 전쟁이 원자재 시장을 혼란스럽게 하고 있으며, 이는 소비자 신뢰에 부정적인 영향을 미치고 있다고 언급했습니다.",
+    "implication": "👉 이는 유럽 경제의 불확실성이 커지고 있음을 시사하며, 한국 증시에도 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #유럽경제",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:55:29"
+  },
+  {
+    "tweet_id": 2034630279902749180,
+    "content": "유럽중앙은행(ECB) 라가르드 총재는 디지털 유로 법안을 신속히 채택하는 것이 필수적이라고 강조했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#ECB #디지털유로",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 22:58:43"
+  },
+  {
+    "tweet_id": 2034630444214554791,
+    "content": "유럽중앙은행(ECB) 라가르드 총재는 핵심 인플레이션 지표가 2% 목표와 일치한다고 밝혔습니다.",
+    "implication": "👉 이는 ECB의 금리 정책에 대한 신뢰를 높이며, 유럽 경제의 안정성을 시사합니다. 한국 증시에도 긍정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#ECB #금리",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-19 22:58:56"
+  },
+  {
+    "tweet_id": 2034630464611438941,
+    "content": "유럽중앙은행(ECB) 라가르드 총재는 임금 지표가 노동 비용이 추가로 완화될 것임을 시사한다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#ECB #금리",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-19 22:59:09"
+  },
+  {
+    "tweet_id": 2034731894366249338,
+    "content": "글로벌 시장이 호르무즈 해협 재개방 기대감으로 반등하며, S&P 500이 변동성 속에서 손실을 회복했습니다. 원유 가격은 $95로 하락했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#원유 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:00:44"
+  },
+  {
+    "tweet_id": 2034731896605909388,
+    "content": "투자자들은 갈등이 공급망과 연료 비용에 미치는 영향으로 인해 조심스러운 태도를 유지하고 있으며, 이란 석유에 대한 미국의 제재 완화 가능성이 불확실성을 더하고 있습니다.",
+    "implication": "👉 이는 글로벌 공급망의 불안정성이 한국 시장에도 영향을 미칠 수 있으며, 특히 에너지 관련 주식의 변동성을 증가시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#에너지 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 06:00:58"
+  },
+  {
+    "tweet_id": 2034681569361719378,
+    "content": "월스트리트 공포 및 탐욕 지수가 16/100으로, 2025년 4월 이후 최저치를 기록했습니다. 이는 투자자들의 불안감을 반영합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#공포탐욕지수 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:01:12"
+  },
+  {
+    "tweet_id": 2034686731098771490,
+    "content": "미국 에너지부 장관 라이트는 트럼프 행정부가 석유 및 가스 수출에 대한 제한을 시행할 계획이 없다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#에너지 #석유",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:01:27"
+  },
+  {
+    "tweet_id": 2034723082984726885,
+    "content": "다우지수가 200포인트 하락하며 두 번째 연속 하락세를 기록했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#다우지수 #증시",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-20 06:01:45"
+  },
+  {
+    "tweet_id": 2034724529789182014,
+    "content": "FedEx $FDX의 주가는 실적 발표 후 시간 외 거래에서 약 1% 상승했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#FedEx #증시",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 06:02:08"
+  },
+  {
+    "tweet_id": 2034726563280035976,
+    "content": "아마존이 자율 로봇 스타트업 리버(Rivr)를 인수했습니다. 리버는 2024년 8월 투자 라운드에서 1억 1천만 달러의 가치를 평가받았습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#아마존 #로봇기술",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 06:02:25"
+  },
+  {
+    "tweet_id": 2034717010597392476,
+    "content": "미국이 러시아 석유 제재를 추가로 완화하여 3월 12일까지 선적된 정제된 석유 제품의 판매를 허용했습니다. 이 완화 조치는 4월 11일까지 유효합니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#원유 #증시",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-20 06:02:43"
+  },
+  {
+    "tweet_id": 2034729371303555422,
+    "content": "DoorDash가 미국 일부 시장에서 AI 및 로봇 모델 개선을 위해 오디오 및 비디오 클립을 제출하는 배달원에게 보상을 지급하는 새로운 앱 'Tasks'를 출시했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#DoorDash #AI",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 06:03:04"
+  },
+  {
+    "tweet_id": 2034738782537134111,
+    "content": "미국 에너지부 장관이 석유 및 가스 수출 금지 계획이 없다고 발표했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#에너지 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:11:22"
+  },
+  {
+    "tweet_id": 2034745924707393882,
+    "content": "EU 지도자들이 외교적 노력을 지원할 준비가 되어 있으며, 적대 행위를 종식시키기 위한 지속 가능한 해결책을 모색하고 있다고 밝혔습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#유럽 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:48:37"
+  },
+  {
+    "tweet_id": 2034747634251169816,
+    "content": "영국이 100억 파운드 규모의 국방 예산 삭감으로 조선 계획을 연기할 가능성이 있다고 보도되었습니다.",
+    "implication": "👉 이는 글로벌 방산 산업에 대한 투자 심리를 위축시킬 수 있으며, 한국 방산 기업에도 부정적인 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#영국 #방산",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 06:48:52"
+  },
+  {
+    "tweet_id": 2034746860796023208,
+    "content": "칼시가 220억 달러의 기업 가치를 평가받으며 10억 달러를 추가로 조달했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#핀테크 #투자",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 06:49:16"
+  },
+  {
+    "tweet_id": 2034744471003218217,
+    "content": "트럼프 행정부가 2008년 금융위기 이후 시행된 자본 제한을 완화하려는 움직임을 보이고 있다고 WSJ가 보도했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#금융 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 06:49:30"
+  },
+  {
+    "tweet_id": 2034749480143073338,
+    "content": "미국 국가 부채가 39조 달러에 도달했습니다.",
+    "implication": "👉 이는 미국의 재정 건전성에 대한 우려를 불러일으킬 수 있으며, 금리에 영향을 미칠 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#미국경제 #국가부채",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 06:52:17"
+  },
+  {
+    "tweet_id": 2034751605523063147,
+    "content": "백악관이 며칠 내에 AI 규제 프레임워크를 발표할 예정입니다.",
+    "implication": "👉 이는 AI 산업에 대한 규제 환경의 변화로, 관련 기업들의 비즈니스 모델에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#AI #규제",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 07:01:34"
+  },
+  {
+    "tweet_id": 2034754350925664446,
+    "content": "미국 법무부가 AI 기술을 중국으로 불법 전송한 혐의로 세 명을 기소했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#AI #기술규제",
+    "format_type": "news_only",
+    "news_type": "breaking",
+    "time": "2026-03-20 07:10:57"
+  },
+  {
+    "tweet_id": 2034755337337909687,
+    "content": "S&P 500 E-MINI와 NASDAQ 선물이 각각 0.2% 상승했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#증시 #코스피",
+    "format_type": "news_only",
+    "news_type": "market",
+    "time": "2026-03-20 07:17:20"
+  },
+  {
+    "tweet_id": 2034757551322276011,
+    "content": "미국 원유 선물이 1.25% 하락하며 94.40달러로 거래되고 있습니다. 이는 트럼프가 국내 석유 공급 확대를 추진하는 움직임과 관련이 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#원유 #증시",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 07:48:40"
+  },
+  {
+    "tweet_id": 2034762367649841362,
+    "content": "오픈AI가 ChatGPT, Codex 앱 및 브라우저를 통합한 데스크탑 슈퍼앱을 출시하여 자원과 사용자 경험을 간소화할 계획이라고 WSJ가 보도했습니다.",
+    "implication": "👉 이는 AI 기술의 통합으로 사용자 경험이 개선될 가능성이 있으며, 관련 기업들의 경쟁력 강화에 기여할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#오픈AI #AI",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 07:48:53"
+  },
+  {
+    "tweet_id": 2034757056968659183,
+    "content": "마이크론(Micron)의 지난해 매출이 581억 달러로, 2023년 155억 달러에서 크게 증가했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#마이크론 #반도체",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 07:49:07"
+  },
+  {
+    "tweet_id": 2034761359544533142,
+    "content": "오픈AI가 ChatGPT, 코딩 플랫폼 Codex, 브라우저를 통합한 데스크탑 '슈퍼앱' 출시를 계획하고 있다고 WSJ가 보도했습니다.",
+    "implication": "👉 이는 AI 통합 플랫폼에 대한 수요 증가를 반영하며, 관련 기업들의 시장 경쟁력을 강화할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#오픈AI #AI",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 07:49:21"
+  },
+  {
+    "tweet_id": 2034766093236023714,
+    "content": "짐 크래머가 시장이 과매도 상태에 빠지면 매수해야 한다고 언급했습니다. 역사적으로 평균이 너무 빠르게 하락할 때 매수하는 것이 필요하다고 강조했습니다.",
+    "implication": "👉 이는 현재 시장의 과매도 신호를 반영하며, 투자자들이 매수 기회를 모색할 수 있는 시점임을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#투자전략 #증시",
+    "format_type": "news_implication",
+    "news_type": "market",
+    "time": "2026-03-20 07:57:43"
+  },
+  {
+    "tweet_id": 2034765918648336636,
+    "content": "슈퍼 마이크로가 미국 수출 통제 조사와 관련하여 두 명의 직원이 휴직하고 계약자가 해고되었습니다. 이 회사는 조사에 협조하고 있으며, 피고로 지명되지 않았습니다.",
+    "implication": "👉 이는 미국의 수출 통제 강화가 기술 기업에 미치는 영향을 반영하며, 관련 기업들의 운영에 불확실성을 더할 수 있습니다.",
+    "engagement": "",
+    "hashtags": "",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 07:58:28"
+  },
+  {
+    "tweet_id": 2034765937107509447,
+    "content": "이탈리아 총리 멜로니가 국가 비상 에너지 조치를 지지한다고 밝혔습니다.",
+    "implication": "👉 이는 유럽의 에너지 정책 변화가 한국 기업의 에너지 수급 전략에 영향을 미칠 수 있음을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#이탈리아 #에너지",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 07:58:41"
+  },
+  {
+    "tweet_id": 2034767884442808817,
+    "content": "미국이 러시아산 원유의 판매 및 인도를 승인했습니다.",
+    "implication": "👉 이는 글로벌 원유 공급에 영향을 미칠 수 있으며, 유가 변동성을 높일 가능성이 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #증시",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 08:04:58"
+  },
+  {
+    "tweet_id": 2034776985701163402,
+    "content": "테슬라가 플로리다 키시미에서 첫 번째 V4 슈퍼차저 스테이션을 개장했습니다. 이 스테이션은 최대 500 kW의 충전 속도를 지원하며, 테슬라 소유자는 $0.40/kWh의 요금을 지불해야 합니다.",
+    "implication": "👉 이는 테슬라의 충전 인프라 확장이 전기차 수요 증가에 대응하고, 장기적으로 매출 성장에 기여할 수 있음을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #전기차",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 08:49:24"
+  },
+  {
+    "tweet_id": 2034770648883458535,
+    "content": "슈퍼 마이크로의 공동 창립자와 직원, 계약자가 NVIDIA 칩을 중국으로 밀반입한 혐의로 미국 검찰에 기소되었습니다.",
+    "implication": "👉 이는 미국의 반도체 수출 통제가 강화될 가능성을 시사하며, 관련 기업들의 공급망에 영향을 미칠 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#NVIDIA #반도체",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 08:49:38"
+  },
+  {
+    "tweet_id": 2034774053077107184,
+    "content": "슈퍼 마이크로($SMCI) 주가가 보고서 발표 이후 시간 외 거래에서 10% 이상 하락했습니다.",
+    "implication": "👉 이는 슈퍼 마이크로의 주가 하락이 투자자들의 신뢰도에 부정적인 영향을 미칠 수 있으며, 향후 실적 전망에 대한 우려를 증대시킬 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#슈퍼마이크로 #증시",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 08:49:55"
+  },
+  {
+    "tweet_id": 2034777503168868709,
+    "content": "인텔($INTC)의 주가가 현재 90 이상의 선행 주가수익비율(P/E)로 거래되고 있습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#인텔 #주식시장",
+    "format_type": "news_only",
+    "news_type": "company",
+    "time": "2026-03-20 08:50:12"
+  },
+  {
+    "tweet_id": 2034774669958815793,
+    "content": "중국이 비료 수출을 제한했다고 로이터가 보도했습니다.",
+    "implication": "👉 이는 글로벌 농업 생산에 영향을 미칠 수 있으며, 비료 관련 기업들의 수익성에 긍정적인 영향을 줄 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#중국 #비료",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 08:50:59"
+  },
+  {
+    "tweet_id": 2034780697043640668,
+    "content": "테슬라가 미국에서 최대 500 kW 충전 속도를 지원하는 V4 슈퍼차저 스테이션 4곳을 개장했습니다. 플로리다 키시미, 테네시 갯린버그, 유타 테일러스빌, 캘리포니아 레드우드 시티에 위치합니다.",
+    "implication": "👉 이는 테슬라의 충전 인프라 확장이 전기차 수요 증가에 대응하고, 장기적으로 매출 성장에 기여할 수 있음을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#테슬라 #전기차",
+    "format_type": "news_implication",
+    "news_type": "company",
+    "time": "2026-03-20 08:57:46"
+  },
+  {
+    "tweet_id": 2034782046422544545,
+    "content": "이스라엘 총리 베냐민 네타냐후가 도널드 트럼프의 반발 이후 이란의 에너지 인프라를 타겟팅하지 않겠다고 밝혔습니다. 이는 에너지 사이트에 대한 공격이 유가를 급등시킨 가운데 긴장을 완화하려는 의도로 해석됩니다.",
+    "implication": "👉 이는 중동의 지정학적 긴장이 완화될 경우, 원유 공급 안정성이 높아져 유가 하락 압력을 받을 수 있음을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#원유 #중동",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 09:02:05"
+  },
+  {
+    "tweet_id": 2034782048691659021,
+    "content": "전쟁이 심화되고 있으며, 사상자 수가 증가하고 시장에 혼란을 초래하고 있습니다. 미국은 2천억 달러의 자금 지원을 요청하고 있으며, 호르무즈 해협 재개방 노력이 글로벌 에너지 공급 안정화에 중요합니다.",
+    "implication": "👉 이는 글로벌 에너지 공급의 불안정성이 커지고 있음을 시사하며, 원유 가격 상승 압력을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#원유 #글로벌시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 09:02:20"
+  },
+  {
+    "tweet_id": 2034782122251362390,
+    "content": "모건 스탠리는 2026년 액화천연가스(LNG) 공급 부족을 예상하며, JKM 가격을 MMBTU당 30달러로 전망했습니다. 2027년 JKM 가격 예측은 15달러로 상향 조정했습니다.",
+    "implication": "",
+    "engagement": "",
+    "hashtags": "#LNG #에너지",
+    "format_type": "news_only",
+    "news_type": "macro",
+    "time": "2026-03-20 09:02:38"
+  },
+  {
+    "tweet_id": 2034782615086268822,
+    "content": "금값이 6년 만에 가장 큰 주간 하락폭을 기록하며 8% 가까이 하락했습니다. 중동 갈등이 에너지 가격을 상승시키고 인플레이션 우려를 부추기며 금리 인하 기대를 낮추고 있습니다.",
+    "implication": "👉 이는 금리 인하 기대가 줄어들면서 금 가격에 부정적인 영향을 미치고, 안전 자산 선호가 증가할 가능성을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#금 #인플레이션",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 09:05:59"
+  },
+  {
+    "tweet_id": 2034784310239404095,
+    "content": "리오 틴토 그룹이 연간 약 3천만 톤의 보크사이트 공급 중단을 발표했습니다. 이는 알루미늄 시장에 대한 우려를 불러일으키고 있으며, 글렌코 PLC와 관련된 운영에도 영향을 미칠 수 있습니다.",
+    "implication": "👉 이는 알루미늄 공급 부족 우려가 커지면서 가격 상승 압력을 높일 수 있음을 시사합니다.",
+    "engagement": "",
+    "hashtags": "#알루미늄 #금속시장",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 09:12:41"
+  },
+  {
+    "tweet_id": 2034785883237544423,
+    "content": "일본이 법적 제약으로 인해 군사 개입을 제한하겠다고 밝혔지만, 미국의 원유 수입을 증가시키고 방위 협력에 동의했습니다. 호르무즈 해협과 관련된 에너지 안보 우려는 여전히 존재합니다.",
+    "implication": "👉 이는 일본의 원유 수입 증가가 글로벌 에너지 시장에 긍정적인 영향을 미칠 수 있으며, 원유 공급 안정성을 높일 수 있습니다.",
+    "engagement": "",
+    "hashtags": "#일본 #원유",
+    "format_type": "news_implication",
+    "news_type": "macro",
+    "time": "2026-03-20 09:16:11"
   }
 ]

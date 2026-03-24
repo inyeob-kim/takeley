@@ -36,13 +36,13 @@ from summary_report import post_interim_report
 # Load env once (config.py now guards against duplicate calls).
 set_environment()
 
-openai.api_key = os.getenv("OPENAI_API_KEY") 
+openai.api_key = os.getenv("OPENAI_API_KEY")
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 client_twitter_read = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
-client_twitter = tweepy.Client( 
+client_twitter = tweepy.Client(
     consumer_key=os.getenv("TWITTER_API_KEY"),
-    consumer_secret=os.getenv("TWITTER_API_SECRET"), 
+    consumer_secret=os.getenv("TWITTER_API_SECRET"),
     access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
     access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 )
@@ -54,7 +54,7 @@ auth_v1 = tweepy.OAuth1UserHandler(
     os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 )
 api_v1 = tweepy.API(auth_v1)
- 
+
 POSTED_TWEETS_FILE = "posted_tweets.json"
 USER_ID_FILE = "user_ids.json"
 TWEET_COUNT_STATE_FILE = "tweet_count_state.json"
@@ -62,8 +62,52 @@ NEW_TWEET_RANGE = 20
 FETCH_SCAN_INTERVAL_SECONDS = 30
 FETCH_LIMIT_PER_USER = 5
 
-TIER1_ACCOUNTS = ["Investingcom", "FirstSquawk", "DeItaone"]
-TIER2_ACCOUNTS = ["unusual_whales", "SawyerMerritt", "StockMKTNewz"]
+TIER1_ACCOUNTS = ["Investingcom", "DeItaone"]
+
+TIER2_ACCOUNTS = [
+    "unusual_whales",
+    "SawyerMerritt",
+    "StockMKTNewz",
+    "muskonomy",
+]
+
+OPTIONAL_ACCOUNTS = ["FirstSquawk"]
+
+HIGH_FREQUENCY_SOURCES = {"DeItaone", "Investingcom"}
+TESLA_FOCUSED_SOURCES = {"SawyerMerritt", "muskonomy", "tslaming"}
+NOISY_BREAKING_SOURCES = {"FirstSquawk"}
+OPTIONS_FLOW_SOURCES = {"unusual_whales"}
+GENERAL_MARKET_SOURCES = {"StockMKTNewz"}
+
+MARKET_IMPACT_KEYWORDS = (
+    "fed", "fomc", "inflation", "cpi", "ppi", "jobs", "rate", "yield", "bond", "dollar",
+    "oil", "crude", "wti", "brent", "s&p", "nasdaq", "dow", "risk", "risk-off",
+    "금리", "인플레이션", "고용", "국채", "달러", "유가", "원유", "증시", "지수", "위험회피",
+)
+COMPANY_MATERIAL_KEYWORDS = (
+    "earnings", "guidance", "launch", "regulatory", "approval", "production", "delivery", "partnership",
+    "실적", "가이던스", "출시", "규제", "승인", "생산", "인도", "계약", "파트너십",
+)
+TESLA_STRONG_KEYWORDS = (
+    "tesla", "tsla", "musk", "xai", "fsd", "robotaxi", "optimus",
+    "테슬라", "머스크", "로보택시", "옵티머스", "사이버캡",
+)
+COMMENTARY_HINTS = (
+    "seems", "could", "maybe", "opinion", "thinks", "feel", "narrative", "bullish",
+    "가능성", "의견", "전망", "추정", "해석", "관측", "기대", "낙관", "비관", "코멘트",
+)
+GEO_ESCALATION_KEYWORDS = (
+    "attack", "strike", "sanction", "ceasefire", "military", "missile", "policy action",
+    "공격", "공습", "제재", "휴전", "군사", "미사일", "긴급", "정책 발표",
+)
+FED_RATES_KEYWORDS = (
+    "fed", "fomc", "powell", "rate", "yield", "cpi", "jobs",
+    "연준", "fomc", "파월", "금리", "국채", "물가", "고용",
+)
+MIDEAST_OIL_KEYWORDS = (
+    "middle east", "iran", "israel", "gaza", "hormuz", "oil", "wti", "brent",
+    "중동", "이란", "이스라엘", "가자", "호르무즈", "유가", "원유",
+)
 
 
 def debug_env() -> None:
@@ -94,7 +138,11 @@ def wait_with_progress(seconds: int) -> None:
         time.sleep(1)
 
 
-def is_within_active_hours(start_time: str = "06:00", end_time: str = "23:00", test_mode: bool = False) -> bool:
+def is_within_active_hours(
+    start_time: str = "06:00",
+    end_time: str = "23:00",
+    test_mode: bool = False,
+) -> bool:
     if test_mode:
         return True
 
@@ -102,10 +150,14 @@ def is_within_active_hours(start_time: str = "06:00", end_time: str = "23:00", t
     start_time_obj = datetime.strptime(start_time, "%H:%M").time()
     end_time_obj = datetime.strptime(end_time, "%H:%M").time()
 
+    if start_time_obj == end_time_obj:
+        return True
+
     if start_time_obj < end_time_obj:
         return start_time_obj <= now_kst < end_time_obj
-        return now_kst >= start_time_obj or now_kst < end_time_obj
-    
+
+    return now_kst >= start_time_obj or now_kst < end_time_obj
+
 
 def _extract_opening_prefix(content: str) -> str:
     text = (content or "").strip()
@@ -140,7 +192,7 @@ def _infer_format_type_from_content(content: str) -> str:
         ),
         -1,
     )
-    follow_lines = main_lines[implication_index + 1 :] if implication_index != -1 else []
+    follow_lines = main_lines[implication_index + 1:] if implication_index != -1 else []
     if not follow_lines:
         return "news_implication"
 
@@ -172,6 +224,149 @@ def _recent_format_types(posted_tweets: List[Dict], limit: int = 60) -> List[str
             fmt = _infer_format_type_from_content(str(item.get("content", "")))
         result.append(fmt)
     return result
+
+
+def _contains_any(text: str, keywords: tuple[str, ...]) -> bool:
+    lowered = (text or "").lower()
+    return any(keyword in lowered for keyword in keywords)
+
+
+def _has_hard_signal(summary: str) -> bool:
+    text = summary or ""
+    has_number = bool(re.search(r"\d", text))
+    has_event_word = _contains_any(
+        text,
+        (
+            "official", "announced", "confirmed", "approved", "cut", "hike", "raised", "lowered",
+            "공식", "발표", "확인", "승인", "인상", "인하", "결정", "제재", "공격",
+        ) + COMPANY_MATERIAL_KEYWORDS,
+    )
+    return has_number or has_event_word
+
+
+def _contains_number_signal(text: str) -> bool:
+    return bool(re.search(r"\b\d+(\.\d+)?%?\b", text or ""))
+
+
+def _contains_breaking_signal(text: str) -> bool:
+    lowered = (text or "").lower()
+    return any(
+        keyword in lowered
+        for keyword in (
+            "breaking",
+            "just in",
+            "developing",
+            "official",
+            "confirmed",
+            "emergency",
+            "statement",
+            "alert",
+            "속보",
+            "긴급",
+            "공식",
+            "발표",
+            "확정",
+        )
+    )
+
+
+def _contains_macro_or_policy_signal(text: str) -> bool:
+    lowered = (text or "").lower()
+    return any(
+        keyword in lowered
+        for keyword in (
+            "fed", "fomc", "powell", "cpi", "ppi", "jobs", "payrolls", "inflation",
+            "rate", "rates", "yield", "treasury", "bond",
+            "trump", "white house", "tariff", "sanction", "ceasefire",
+            "tesla", "tsla", "nvda", "nvidia", "apple", "microsoft",
+            "earnings", "guidance", "sec", "fda", "approval",
+            "연준", "파월", "금리", "물가", "고용", "국채",
+            "트럼프", "관세", "제재", "휴전",
+            "테슬라", "엔비디아", "실적", "승인",
+        )
+    )
+
+
+def _count_recent_theme_mentions(posted_tweets: List[Dict], keywords: tuple[str, ...], limit: int = 10) -> int:
+    count = 0
+    for item in posted_tweets[-limit:]:
+        if _contains_any(str(item.get("content", "")), keywords):
+            count += 1
+    return count
+
+
+def _should_skip_conservative_gate(
+    *,
+    username: str,
+    summary: str,
+    implication: str,
+    news_type: str,
+    posted_tweets: List[Dict],
+) -> str:
+    lowered_summary = (summary or "").lower()
+    weak_market = (
+        news_type == "neutral"
+        and not _contains_any(lowered_summary, MARKET_IMPACT_KEYWORDS)
+        and not _has_hard_signal(summary)
+    )
+
+    if _contains_any(lowered_summary, COMMENTARY_HINTS) and not _has_hard_signal(summary):
+        return "conservative_commentary_like"
+    if not implication and weak_market:
+        return "conservative_weak_market_no_implication"
+
+    if username in NOISY_BREAKING_SOURCES:
+        has_hard = _has_hard_signal(summary)
+        has_breaking = _contains_breaking_signal(summary)
+        has_macro = _contains_macro_or_policy_signal(summary)
+        has_number = _contains_number_signal(summary)
+
+        if not (has_hard or has_breaking or has_macro or has_number):
+            return "noisy_source_not_material"
+
+        if news_type == "neutral" and not (has_hard or has_macro):
+            return "noisy_source_neutral"
+
+        if _contains_any(lowered_summary, COMMENTARY_HINTS) and not has_hard:
+            return "noisy_source_commentary"
+
+    if username in HIGH_FREQUENCY_SOURCES:
+        if news_type == "neutral":
+            return "source_strict_high_freq_neutral"
+        if news_type == "company" and not _contains_any(lowered_summary, COMPANY_MATERIAL_KEYWORDS):
+            return "source_strict_high_freq_weak_company"
+
+    if username in TESLA_FOCUSED_SOURCES:
+        if not _contains_any(lowered_summary, TESLA_STRONG_KEYWORDS):
+            return "source_strict_tesla_offtopic"
+        if _contains_any(lowered_summary, COMMENTARY_HINTS) and not _has_hard_signal(summary):
+            return "source_strict_tesla_commentary"
+
+    if username in OPTIONS_FLOW_SOURCES:
+        if news_type == "neutral" and not _has_hard_signal(summary):
+            return "source_strict_options_neutral"
+
+    if username in GENERAL_MARKET_SOURCES:
+        if news_type == "company" and not _contains_any(lowered_summary, COMPANY_MATERIAL_KEYWORDS):
+            if not _has_hard_signal(summary):
+                return "source_strict_general_market_weak_company"
+
+    # Theme overload suppression: skip weak incremental follow-ups unless materially new.
+    if _contains_any(lowered_summary, TESLA_STRONG_KEYWORDS):
+        if _count_recent_theme_mentions(posted_tweets, TESLA_STRONG_KEYWORDS, limit=10) >= 2 and not _has_hard_signal(summary):
+            return "theme_overload_tesla"
+    if _contains_any(lowered_summary, MIDEAST_OIL_KEYWORDS):
+        if _count_recent_theme_mentions(posted_tweets, MIDEAST_OIL_KEYWORDS, limit=10) >= 2:
+            if not _contains_any(lowered_summary, GEO_ESCALATION_KEYWORDS) and not _has_hard_signal(summary):
+                return "theme_overload_mideast_oil"
+    if _contains_any(lowered_summary, FED_RATES_KEYWORDS):
+        if _count_recent_theme_mentions(posted_tweets, FED_RATES_KEYWORDS, limit=10) >= 2 and not _has_hard_signal(summary):
+            return "theme_overload_fed_rates"
+
+    if news_type == "company" and not _contains_any(lowered_summary, COMPANY_MATERIAL_KEYWORDS) and not _has_hard_signal(summary):
+        return "conservative_company_not_material"
+
+    return ""
 
 
 def process_user(
@@ -259,6 +454,7 @@ def process_user(
                 news_type = ai_result.get("news_type", "neutral")
                 engagement = ai_result.get("engagement", "").strip()
                 hashtags = ai_result.get("hashtags", "").strip()
+
                 if not summary:
                     print(f"[AI] classification=error tweet_id={tweet_id} error=empty_summary")
                     processed = False
@@ -270,90 +466,106 @@ def process_user(
                         print("[AI] engagement_dropped reason=repetition")
                         engagement = ""
 
-                    format_type = rebalance_format_type(
-                        suggested_format_type=format_type,
-                        news_type=news_type,
-                        has_implication=bool(implication),
-                        has_engagement=bool(engagement),
-                        recent_format_types=recent_format_types,
-                    )
-
-                    tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
-                    final_text, normalized_format_type = assemble_final_post_text(
-                        format_type=format_type,
+                    gate_reason = _should_skip_conservative_gate(
+                        username=username,
                         summary=summary,
                         implication=implication,
-                        engagement=engagement,
-                        hashtags=hashtags,
-                        tweet_url=tweet_url,
-                        recent_prefixes=recent_prefixes,
+                        news_type=news_type,
+                        posted_tweets=posted_tweets,
                     )
-
-                    implication_added = "yes" if ("\n\n👉" in final_text or "\n\n→" in final_text) else "no"
-                    engagement_added = "yes" if bool(engagement) and normalized_format_type in {
-                        "news_implication_question",
-                        "news_implication_repost",
-                    } else "no"
-                    print(f"[AI] classification=relevant tweet_id={tweet_id}")
-                    print(f"[AI] news_type={news_type}")
-                    print(f"[AI] format_type={normalized_format_type}")
-                    print(f"[AI] implication_added={implication_added}")
-                    print(f"[AI] engagement_added={engagement_added}")
-                    print(f"[AI] hashtags={hashtags or 'none'}")
-                    print(
-                        f"[POST_DIAG] stage=pre_post "
-                        f"tweet_id={tweet_id} "
-                        f"source_user={username} "
-                        f"text_len={len(final_text)} "
-                        f"line_count={len([line for line in final_text.splitlines() if line.strip()])} "
-                        f"mention_count={len(re.findall(r'(^|\\s)@[A-Za-z0-9_]{1,15}', final_text))} "
-                        f"url_count={len(re.findall(r'https?://\\S+', final_text))} "
-                        f"fingerprint={_build_text_fingerprint(final_text)}"
-                    )
-                    success, mode = post_with_optional_image(
-                        client_twitter,
-                        api_v1,
-                        final_text,
-                        tweet_text,
-                        tweet_id,
-                    )
-                    if success:
-                        stored_implication = implication if normalized_format_type != "news_only" else ""
-                        stored_engagement = (
-                            engagement
-                            if normalized_format_type in {"news_implication_question", "news_implication_repost"}
-                            else ""
-                        )
-                        posted_tweets.append(
-                            {
-                                "tweet_id": tweet_id,
-                                "content": summary,
-                                "implication": stored_implication,
-                                "engagement": stored_engagement,
-                                "hashtags": hashtags,
-                                "format_type": normalized_format_type,
-                                "news_type": news_type,
-                                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            }
-                        )
-                        posted_id_set.add(str(tweet_id))
-                        recent_posts.append(summary)
-                        if stored_implication:
-                            recent_implications.append(stored_implication)
-                        if stored_engagement:
-                            recent_engagements.append(stored_engagement)
-                        recent_format_types.append(normalized_format_type)
-                        recent_prefix = _extract_opening_prefix(final_text)
-                        if recent_prefix:
-                            recent_prefixes.append(recent_prefix)
-                        posted_count += 1
-                        print(f"[POST] success tweet_id={tweet_id} mode={mode}")
-                        print(f"[POST] mode={mode}")
-                        wait_with_progress(10)
+                    if gate_reason:
+                        print(f"[FILTER] tweet_id={tweet_id} reason={gate_reason}")
+                        print(f"[AI] conservative_gate=skip reason={gate_reason}")
                         processed = True
                     else:
-                        print(f"[POST] failed tweet_id={tweet_id} mode={mode}")
-                        processed = False
+                        print("[AI] conservative_gate=pass")
+
+                        format_type = rebalance_format_type(
+                            suggested_format_type=format_type,
+                            news_type=news_type,
+                            has_implication=bool(implication),
+                            has_engagement=bool(engagement),
+                            recent_format_types=recent_format_types,
+                        )
+
+                        tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+                        final_text, normalized_format_type = assemble_final_post_text(
+                            format_type=format_type,
+                            summary=summary,
+                            implication=implication,
+                            engagement=engagement,
+                            hashtags=hashtags,
+                            tweet_url=tweet_url,
+                            recent_prefixes=recent_prefixes,
+                        )
+
+                        implication_added = "yes" if ("\n\n👉" in final_text or "\n\n→" in final_text) else "no"
+                        engagement_added = "yes" if bool(engagement) and normalized_format_type in {
+                            "news_implication_question",
+                            "news_implication_repost",
+                        } else "no"
+
+                        print(f"[AI] classification=relevant tweet_id={tweet_id}")
+                        print(f"[AI] news_type={news_type}")
+                        print(f"[AI] format_type={normalized_format_type}")
+                        print(f"[AI] implication_added={implication_added}")
+                        print(f"[AI] engagement_added={engagement_added}")
+                        print(f"[AI] hashtags={hashtags or 'none'}")
+                        print(
+                            f"[POST_DIAG] stage=pre_post "
+                            f"tweet_id={tweet_id} "
+                            f"source_user={username} "
+                            f"text_len={len(final_text)} "
+                            f"line_count={len([line for line in final_text.splitlines() if line.strip()])} "
+                            f"mention_count={len(re.findall(r'(^|\\s)@[A-Za-z0-9_]{1,15}', final_text))} "
+                            f"url_count={len(re.findall(r'https?://\\S+', final_text))} "
+                            f"fingerprint={_build_text_fingerprint(final_text)}"
+                        )
+
+                        success, mode = post_with_optional_image(
+                            client_twitter,
+                            api_v1,
+                            final_text,
+                            tweet_text,
+                            tweet_id,
+                        )
+                        if success:
+                            stored_implication = implication if normalized_format_type != "news_only" else ""
+                            stored_engagement = (
+                                engagement
+                                if normalized_format_type in {"news_implication_question", "news_implication_repost"}
+                                else ""
+                            )
+                            posted_tweets.append(
+                                {
+                                    "tweet_id": tweet_id,
+                                    "content": summary,
+                                    "implication": stored_implication,
+                                    "engagement": stored_engagement,
+                                    "hashtags": hashtags,
+                                    "format_type": normalized_format_type,
+                                    "news_type": news_type,
+                                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                }
+                            )
+                            posted_id_set.add(str(tweet_id))
+                            recent_posts.append(summary)
+                            if stored_implication:
+                                recent_implications.append(stored_implication)
+                            if stored_engagement:
+                                recent_engagements.append(stored_engagement)
+                            recent_format_types.append(normalized_format_type)
+                            recent_prefix = _extract_opening_prefix(final_text)
+                            if recent_prefix:
+                                recent_prefixes.append(recent_prefix)
+                            posted_count += 1
+                            print(f"[POST] success tweet_id={tweet_id} mode={mode}")
+                            print(f"[POST] mode={mode}")
+                            wait_with_progress(10)
+                            processed = True
+                        else:
+                            print(f"[POST] failed tweet_id={tweet_id} mode={mode}")
+                            processed = False
 
         if processed:
             save_last_seen_id(username, tweet_id)
@@ -366,8 +578,9 @@ def process_user(
     return posted_count, "OK"
 
 
-def main_loop(test_mode: bool = False) -> None:
+def main_loop(test_mode: bool = False, enable_optional_sources: bool = False) -> None:
     print("\n[START] Priority Twitter Translator + Poster")
+
     posted_tweets = load_json(POSTED_TWEETS_FILE, [])
     if not isinstance(posted_tweets, list):
         posted_tweets = []
@@ -384,13 +597,18 @@ def main_loop(test_mode: bool = False) -> None:
     recent_tweets: List[Dict] = []
 
     total_num_posts_today = 0
-    scheduler = AccountScheduler(TIER1_ACCOUNTS, TIER2_ACCOUNTS)
+
+    tier2_accounts = list(TIER2_ACCOUNTS)
+    if enable_optional_sources:
+        tier2_accounts.extend(OPTIONAL_ACCOUNTS)
+
+    scheduler = AccountScheduler(TIER1_ACCOUNTS, tier2_accounts)
 
     if test_mode:
         print("[MODE] test_mode=true no_special_script")
         return
 
-    while True: 
+    while True:
         if not is_within_active_hours(start_time="06:00", end_time="23:00", test_mode=False):
             print("[SCHED] outside_active_hours=true sleep=30")
             wait_with_progress(FETCH_SCAN_INTERVAL_SECONDS)
@@ -404,7 +622,7 @@ def main_loop(test_mode: bool = False) -> None:
 
         print(f"[SCHED] due_accounts={len(due_accounts)} users={','.join(due_accounts)}")
         for username in due_accounts:
-            before_count = len(posted_tweets) 
+            before_count = len(posted_tweets)
             posted_count, status = process_user(username, posted_tweets, posted_id_set, user_ids)
             total_num_posts_today += posted_count
 
@@ -412,7 +630,7 @@ def main_loop(test_mode: bool = False) -> None:
             recent_tweets.extend(new_tweets_slice)
 
             current_tweet_count = len(posted_tweets)
-            new_tweets = current_tweet_count - last_interim_count 
+            new_tweets = current_tweet_count - last_interim_count
             print(
                 f"[STATE] total_posts={total_num_posts_today} "
                 f"stored_posts={current_tweet_count} new_since_interim={new_tweets}"
@@ -426,7 +644,7 @@ def main_loop(test_mode: bool = False) -> None:
                 tweet_count_state["last_interim_count"] = last_interim_count
                 save_json(tweet_count_state, TWEET_COUNT_STATE_FILE)
                 recent_tweets.clear()
- 
+
             if status == RATE_LIMIT:
                 scheduler.mark_fetched(username, defer_minutes=15)
                 print(f"[RATE_LIMIT] user={username} pause_minutes=15")
@@ -442,4 +660,7 @@ if __name__ == "__main__":
     if not ok:
         print(f"[AUTH] startup_validation_failed category={category} action=exit")
         sys.exit(1)
-    main_loop(test_mode=False)
+
+    # 평소 운영: False
+    # 이벤트 장세 / 큰 변동성 장세: True
+    main_loop(test_mode=False, enable_optional_sources=False)
