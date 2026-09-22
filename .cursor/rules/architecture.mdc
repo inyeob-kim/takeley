@@ -1,0 +1,51 @@
+---
+description: TAKELEY architecture — Common Intelligence First, Issue-centric (signals store)
+alwaysApply: true
+---
+
+# Architecture Rules
+
+## Product unit
+
+The core unit for users is **Issue** (persisted as Event / Signal rows), not raw posts or tweets.
+TAKELEY is NOT an X repost product. X is one `SourceProvider` among many.
+
+## Common Intelligence First
+
+```text
+Sources → Worker ingest → Pipeline → DB → API personalization → App
+```
+
+- User requests MUST NOT call external source APIs or LLMs.
+- Worker builds shared intelligence once; many users reuse it.
+- API reads DB (+ light personalization) only.
+
+## Backend layers
+
+```text
+api (routers) → services → repositories / pipeline / providers
+worker/jobs → providers + pipeline → repositories
+```
+
+- Routers: HTTP only
+- Services: read/personalize/brief for the app
+- Pipeline: normalize → dedupe → entities → cluster → analyze → quality gate
+- Providers: external fetch adapters only (used by worker, not by API)
+
+## App layers
+
+```text
+Flutter screens → API client → Backend /api/v1
+Share links → Backend /i/:id (HTML) → optional takeley:// app
+Admin → Backend /api/v1/admin/*
+```
+
+UI must not embed fetch URLs ad hoc or contain ranking/clustering logic.
+
+## Extensibility
+
+New sources implement `SourceProvider`. New assets/topics extend data — do not hardcode Tesla-only paths outside MVP config.
+
+## Fail fast
+
+Validate at API boundary with Pydantic. Raise clear errors; do not swallow failures silently.

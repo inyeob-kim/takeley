@@ -1,0 +1,47 @@
+---
+description: LLM / AI usage for TAKELEY Issue pipeline
+alwaysApply: true
+---
+
+# AI Integration Rules
+
+## Where LLM runs
+
+LLM MAY run only in the **worker pipeline** (e.g. cluster → signal analysis, brief script).
+
+LLM MUST NOT run on:
+
+- Per-user API requests
+- Raw unfiltered firehose of every post
+- Critical auth / billing / quota enforcement
+
+## Cost funnel
+
+Prefer:
+
+```text
+Raw → rules/filter → dedupe/similarity → clusters → LLM on clusters only → Signals
+```
+
+Never send all raw items to the LLM.
+
+## Output contract
+
+- Structured JSON (schema-validated) before persist
+- Must separate confirmed_fact / market_interpretation / opinion / rumor
+- Must not invent facts; empty `confirmed_facts` is OK
+
+## Fallback
+
+If LLM fails or key missing: deterministic heuristic analyze + quality gate still runs.
+Degrade gracefully; do not fail the whole ingest cycle.
+
+## Prompts
+
+Keep prompts in pipeline modules (or a dedicated prompts module), versioned by behavior change.
+Reuse — do not copy-paste divergent prompts per call site.
+
+## Observability
+
+Log model name, cluster size, success/failure, and token/cost proxies when available.
+Do not log full secrets; truncate sensitive payloads if needed.

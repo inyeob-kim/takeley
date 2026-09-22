@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/columneditor.tsx","./src/confirmmodal.tsx","./src/contributorapplicationspanel.tsx","./src/deepthoughtspanel.tsx","./src/toasthost.tsx","./src/api.contributor.test.ts","./src/api.ts","./src/columnmarkdown.tsx","./src/config.ts","./src/contributorlabels.ts","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.9.3"}

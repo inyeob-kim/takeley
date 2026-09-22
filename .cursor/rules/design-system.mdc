@@ -1,0 +1,292 @@
+---
+description: Issue + Participation visual design (Finimize benchmark — content-first, blue accent)
+alwaysApply: false
+globs: mobile/**/*.{dart,css},admin/**/*.{tsx,ts,css},docs/design*.md
+---
+
+# Design System — Issue + Participation
+
+**North star screenshots:** Finimize home feed, article detail, and onboarding CTA  
+(content-first editorial, one royal blue accent, calm whitespace, soft elevation).
+
+Product mapping: Finimize *article card* → our **Issue card**; Finimize *play/bookmark* → our **participate (vote)**; Finimize *membership bar* → rare inverse CTA only.
+
+Not: brokerage terminal, Toss gray-inset lists, teal legacy chrome, social graph, news dump.
+
+---
+
+## Hard rules
+
+1. **North star = Finimize** — not Toss inset chrome, not Bloomberg density.
+2. Prefer **remove UI** over adding density when unsure.
+3. **One primary action per Issue:** participate (vote) when suitable. Everything else is secondary.
+4. **One brand accent** (`#2D5BE3`). Status colors (rising / up-down) are signals, not chrome.
+5. Do not force vote UI when `participation_suitable` is false — read-only Issue.
+6. Evidence / sources stay on Detail — never replace trust with “🔥 TRENDING” alone.
+7. **Adopt Finimize hierarchy; adapt Finimize chrome** — we do not ship Weekly Brief hero, Ideas/Discover/AI tabs, or membership unlock bar in MVP.
+
+---
+
+## What we adopt vs skip (from benchmarks)
+
+| Finimize pattern | Our product |
+|------------------|-------------|
+| Bold headline → muted dek → footer category | **Adopt** as Issue card spine |
+| Soft white elevated spotlight cards | **Adopt** for featured Issue / key prompts |
+| Pill CTA + hard black offset shadow | **Adopt** for decisive single actions only |
+| ALL-CAPS blue category (NEWS / QUICK TAKE) | **Adopt** → 이슈 / 의견 / 뉴스 등 |
+| Meta: name · time · read | **Adapt** → 출처/카테고리 · 시간 · N명 참여 |
+| Large hero image under headline | **Optional** — graceful without image |
+| Compact row: text + right thumbnail | **Optional** for 급상승 strip |
+| 🔥 TRENDING top-right | **Optional** on rising only — never sole trust cue |
+| Greeting “Afternoon, Name” | **Optional** later; MVP may use “오늘의 이슈” |
+| Weekly Brief / asset BUY cards | **Skip** (deferred finance) |
+| Sticky black membership bar | **Skip** unless paywall exists |
+| 4-tab Home/Ideas/Discover/AI | **Skip** → `홈 \| 내 이슈 \| 프로필` (설정은 프로필 기어) |
+
+---
+
+## Color (locked)
+
+| Token | Value | Use |
+|-------|--------|-----|
+| Background | `#FFFFFF` | Screen canvas, feed |
+| Canvas soft | `#F7F8FA` | Rare soft host (vote panel bg) — not default feed chrome |
+| Surface | `#FFFFFF` | Elevated cards, sheets |
+| Foreground | `#0A0A0A` | Titles, primary text |
+| Muted | `#4B5563` | Dek/summary, timestamps, secondary meta |
+| Border / hairline | `rgba(0,0,0,0.08)` | Inputs, subtle dividers |
+| Accent | `#2D5BE3` | Active tab, category labels, links, primary CTA fill |
+| Accent soft | `#E8EEFC` | Selected vote fill, soft chips |
+| CTA inverse | `#0A0A0A` | Rare full-width promo bar (white text) |
+| Rising hint | `#E85D04` | “급상승” / TRENDING label only |
+
+Avoid: purple glow, **teal brand** (`#0C7A73`), loud gradients, multi-accent rainbow, green “BUY” finance chrome on Issue cards.
+
+---
+
+## Typography
+
+### Font stack
+
+```text
+"Pretendard", -apple-system, BlinkMacSystemFont, "Noto Sans KR", system-ui, sans-serif
+```
+
+### Scale (mobile) — Finimize-weighted
+
+| Role | Size | Weight | Color | Notes |
+|------|------|--------|-------|--------|
+| Screen / greeting title | 26–30px | Bold–ExtraBold (700–800) | Foreground | Home left; tracking ≈ -0.02em |
+| Issue headline (feed) | **22–26px** | Bold (700) | Foreground | 2–3 lines; dominant scan target |
+| Issue headline (detail) | **28–32px** | ExtraBold (800) | Foreground | Editorial lead |
+| Section title | 17–18px | SemiBold (600) | Foreground | “지금 뜨는 이슈” |
+| Dek / summary | 15–16px | Regular (400) | Muted | 2–3 lines feed; fuller on detail |
+| Body (detail) | 16–17px | Regular (400) | Foreground | line-height ≈ 1.55–1.65 |
+| Question | 16–17px | SemiBold (600) | Foreground | “당신의 생각은?” |
+| Meta | 12–13px | Regular (400) | Muted | middot separators |
+| Category label | 11–12px | Bold (700) | Accent | **ALL CAPS** (or KO equivalent weight); tracking ≈ 0.06em; **text only — no pill fill** |
+| Tab label | 10–11px | Medium | Muted / Accent when active | |
+
+Hierarchy rule: **headline wins**. Summary never competes with title weight.
+
+---
+
+## Layout & spacing
+
+- Mobile-first, content width ~430px centered.
+- Horizontal padding: **20px**.
+- Between feed Issues: **28–36px whitespace** (Finimize gap) — prefer gap over dense hairline stacks.
+- Section gap: **28–40px**.
+- Tap targets ≥ 44px.
+- Home weight: **Issue feed first**. No Brief hero, no ticker, no watchlist strip.
+
+---
+
+## Elevation & surfaces
+
+Finimize uses **two surface modes** — do not collapse into one.
+
+### A. Feed default (editorial stack)
+
+- White canvas
+- Issues separated by **generous whitespace** (not Toss gray inset lists)
+- No heavy border around every item
+- Optional hairline only if gap alone is unclear
+
+### B. Soft elevated card (spotlight)
+
+Use for: first/featured Issue, onboarding prompts, rare callouts.
+
+- Surface `#FFFFFF`
+- Radius **14–16px**
+- Shadow: `0 4px 16px rgba(0,0,0,0.06)` — soft, not neo-brutal
+- Padding ~16–18px
+
+### C. Vote / participation panel
+
+- Optional Canvas soft `#F7F8FA` host **on Detail only**
+- Not used as default feed chrome
+
+---
+
+## Issue card anatomy (Finimize-aligned)
+
+### Featured / standard feed card
+
+```text
+[Meta row — source or “이슈” · time · N명 참여]
+[Headline — bold 22–26px]
+[Summary — muted, 2–3 lines]
+[Optional hero image — 16:9 / 4:3, radius 12–14px]
+[Optional key points — ≤3, feed only if short]
+──────────────── footer
+[CATEGORY — Accent ALL-CAPS left]     [생각 남기기 →  or option chips]
+```
+
+### Compact card (급상승 / secondary)
+
+```text
+[Meta · optional 급상승 right]
+[Headline + summary — left ⅔]
+[Optional thumb — right ⅓, radius 10–12px]
+[CATEGORY footer]
+```
+
+### Rules
+
+- **Category lives in the footer** (Finimize NEWS / QUICK TAKE), not as a loud top chip with fill.
+- Meta uses middots: `시간 · N명 참여`.
+- Left-aligned scan path.
+- No price columns, % pills, BUY/SELL dots on Issue cards.
+- When `participation_suitable`: show question + chips or “생각 남기기 →” as the card’s action.
+- When not suitable: omit vote chrome; footer can be category + “자세히”.
+- Press: light opacity (`.pressable`) — no bounce.
+
+---
+
+## Issue Detail (Finimize article order)
+
+Do not rearrange without product reason:
+
+1. Utility bar — back (left); optional share (right). No dense icon rows.
+2. **Title** (28–32px ExtraBold)
+3. **Dek / summary** (muted)
+4. Meta — time · source count (Accent link style for tappable source names if any)
+5. Optional hero image
+6. Why it matters (short) + key points
+7. Sources (compact)
+8. **Participation block** (question + full-width options + %) — primary action
+9. Comments
+
+Participation block:
+
+- Full-width options, min-height **52px**, radius **12px**
+- Default: white + Accent outline
+- Selected: Accent soft fill + Accent border
+- Show % / counts after vote (or live if product prefers transparency)
+- Omit entirely if not `participation_suitable`
+
+---
+
+## Buttons & inputs
+
+### Primary decisive CTA (onboarding / single commit)
+
+From Finimize “That’s me!”:
+
+- Pill (`border-radius: 9999px`)
+- Fill Accent `#2D5BE3`, text white, SemiBold
+- Hard offset shadow: **`3px 3px 0 #0A0A0A`** (solid, not blur)
+- Use for: onboarding continue, rare one-shot commits
+- **Do not** put offset shadow on every vote row or every feed chip
+
+### Vote options
+
+- Rounded rect 12px, Accent outline; selected = Accent soft
+- No offset shadow
+
+### Secondary
+
+- Accent text SemiBold / ALL-CAPS category — no pill storms
+
+### Inputs
+
+- Radius **8–10px**, hairline border, generous padding (~14–16px)
+- Focus: thin Accent caret/ring — not neon glow
+- One field per screen when possible (onboarding pattern)
+
+---
+
+## Headers & navigation
+
+### Home header
+
+Prefer Finimize calm greeting energy:
+
+- Large left title (“오늘의 이슈” or later `안녕하세요, {name}`)
+- Optional one-line muted subtitle
+- Optional outline profile affordance top-right (settings shortcut) — keep sparse
+- No ticker, no Brief listen bar
+
+### Bottom tabs (MVP)
+
+```text
+홈 | 내 이슈 | 프로필
+```
+
+- White bar, hairline top
+- Active = Accent fill/stroke; inactive = muted outline
+- Settings lives under Profile (top-right gear), not as a tab
+- Hide finance tabs (관심 / 일정) and audio Brief from primary chrome
+
+---
+
+## Imagery (optional)
+
+- Prefer real editorial / context photos when we have them
+- Radius **12–14px** (featured), **10–12px** (thumb)
+- Aspect: featured ~4:3 or 16:9; thumb square/4:3
+- **No image required** — typography hierarchy must stand alone (MVP default)
+
+---
+
+## Prefer / avoid
+
+**Prefer**
+
+- Typography + whitespace as hierarchy (Finimize feed)
+- Category as Accent **text label** in footer
+- Soft elevation only for spotlight
+- Offset-shadow pill only for decisive CTAs
+- Read → one-tap participate → see results
+
+**Avoid**
+
+- Teal legacy chrome
+- Toss gray inset list shells as default feed
+- Pill filter clusters / chip storms
+- Bloomberg density / chart walls
+- Purple AI glow
+- Emoji as the only structure (🔥 OK only as rising hint)
+- Forced 찬성/반대 on non-debatable Issues
+- Copying Finimize Brief / membership / 4-tab IA into MVP
+
+---
+
+## Motion
+
+Calm, short. Hierarchy — not decoration. No bounce loops on Home.
+
+---
+
+## Implementation checklist (UI PRs)
+
+1. Accent `#2D5BE3` — zero teal brand chrome
+2. Feed = white + **generous gaps**; soft elevate only featured
+3. Card order: **meta → headline → summary → (image) → footer category + action**
+4. Headlines **22–26 feed / 28–32 detail**; summaries Muted
+5. Category = Accent ALL-CAPS text, **no filled pill**
+6. Vote = primary action; sources secondary on Detail
+7. Decisive CTA may use `3px 3px 0 #0A0A0A` offset; vote rows do not
+8. Readable for middle-aged users — large type, few actions

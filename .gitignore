@@ -1,3 +1,64 @@
+# —— OS / IDE ——
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# —— Secrets / local env ——
+.env
+.env.*
+!.env.example
+!**/.env.example
+backend/.env
+backend/firebase-credentials.json
+backend/**/firebase-credentials*.json
+mobile/android/app/google-services.json
+mobile/ios/Runner/GoogleService-Info.plist
+
+# —— Python / backend ——
 __pycache__/
-.env.local
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
 venv/
+backend/.venv/
+backend/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.db
+backend/takeley.db
+backend/storage/
+
+# —— Admin (Vite) ——
+admin/node_modules/
+admin/dist/
+admin/.vite/
+
+# —— Flutter / mobile (root-level catch-alls; see also mobile/.gitignore) ——
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/coverage/
+mobile/**/*.iml
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/**/captures/
+mobile/android/.cxx/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/Flutter.podspec
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/ephemeral/
+mobile/ios/Flutter/flutter_export_environment.sh

@@ -1,0 +1,66 @@
+---
+description: Frontend UX for Issue + Participation (Flutter app)
+alwaysApply: true
+globs: mobile/**/*
+---
+
+# Frontend Rules
+
+## Target users
+
+Curious adults (including middle-aged readers). Prefer calm, large type, few actions.
+If unsure, remove UI — do not add density.
+
+## Visual principles
+
+- Minimal, clean, content-first — **Finimize** tone (not Toss inset chrome, not Bloomberg)
+- Large typography, generous whitespace, clear hierarchy
+- Accent is royal blue (`#2D5BE3`); **no teal brand chrome**, no purple-glow “AI default”
+- Layout / type / surfaces: follow [`.cursor/rules/design-system.mdc`](design-system.mdc)
+- Issue card spine (from Finimize): **meta → headline → summary → footer category + participate**
+- Category = Accent ALL-CAPS **text** (not filled chips); soft elevate only featured cards
+- Offset-shadow pill CTA only for decisive single actions — not every vote row
+
+## Core user flow
+
+App open → **Issue feed** → open card → **one-tap opinion** → see aggregates / comments.
+
+Home should emphasize:
+
+1. 지금 뜨는 이슈 (featured + stacked editorial cards)
+2. 급상승 (optional compact secondary)
+3. Not: Market Brief hero, watchlist strip, calendar peek, Finimize membership bar
+
+
+## Participation in UI
+
+- Primary CTA on card/detail = vote when `participation_suitable`
+- If not suitable: read-only Issue — no forced 찬반
+- Evidence / sources on Detail — secondary to the question
+
+## Structure
+
+- Screens render only
+- All network calls via API client layer (no raw HTTP in screen files)
+- Local UI state OK; shared server state via client/store
+- Keep screens focused; split past ~300 lines
+
+## Navigation (MVP)
+
+```text
+홈 | 내 이슈 | 프로필
+```
+
+설정은 프로필 상단 기어로 진입 (하단 탭에 두지 않음).
+Finance tabs (관심 / 일정) and Brief audio stay out of primary chrome (code may remain deferred).
+
+## Stack
+
+- Product UI: Flutter in `mobile/`
+- Share landing (read-only + app CTA): backend `/i/:id` — not a second consumer app
+- Admin portal: `admin/` (operators only)
+- Do not add another parallel consumer UI without consolidating
+
+## Errors
+
+Show calm empty/error states. Never crash the UI on API failure.

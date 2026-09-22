@@ -1,0 +1,53 @@
+---
+description: Product principles — TAKELEY Issue + Take
+alwaysApply: true
+---
+
+# Product Rules
+
+## Brand
+
+**TAKELEY** (테이클리 — TAKE + DAILY)
+
+Tagline: **Take a look. Take a side.**
+
+## One-line definition
+
+AI finds Issues people care about, turns them into short cards, and lets users leave a take and see others — not a news dump, not an X translator bot, not a finance terminal.
+
+## Core loop
+
+```text
+DISCOVER → UNDERSTAND → TAKE → RETURN
+```
+
+## Success looks like
+
+“이 이슈, 어떻게 생각해? — 한 번 누르고 남들 생각도 본다.”  
+Not “정보가 많다.” / Not “오늘 브리핑 들었다.”
+
+## MVP focus
+
+High-quality daily Issues (~5–10), multi-source when possible.  
+Loop: **Card → Take → See others / comments**.  
+Validate participation rate over polish features.
+
+## Trend status (NORMAL | RISING | TRENDING)
+
+External fame alone is not enough. RISING / TRENDING require **external signal** (velocity or AI+reply peak) **and** TAKELEY internal interest (unique opens / follow / vote).  
+RISING = rising speed; TRENDING = larger scale. Comments are not required. No separate HOT state.
+
+## Non-goals (for now)
+
+- Tweet reposting / content-formatter posting flows
+- Full-market Bloomberg / HTS coverage
+- Per-request live web search + LLM answers
+- Social graph (follow, DM, friends)
+- Prediction markets / money / points / heavy gamification
+- Forced debate on every announcement
+- UI redesign in identity-only migrations
+
+## When implementing features
+
+Ask: does this help someone understand an Issue fast and express a view?  
+If it only adds more raw posts, charts, or dashboard chrome, skip it.

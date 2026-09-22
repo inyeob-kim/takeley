@@ -1,0 +1,50 @@
+---
+description: FastAPI backend conventions for TAKELEY
+alwaysApply: true
+globs: backend/**/*.py
+---
+
+# Backend Rules (FastAPI)
+
+## Layout
+
+Work under `backend/app/` and `backend/worker/`:
+
+- `api/v1` — routers
+- `services` — app-facing logic
+- `db/repositories` — persistence
+- `providers` — X / News / Reddit / Official adapters
+- `pipeline` — intelligence processing
+- `domain` / `schemas` — domain + API DTOs
+
+## Router rules
+
+MUST: validate input, call services, return schemas.  
+MUST NOT: business logic, direct DB/session queries, provider/LLM calls.
+
+## Service rules
+
+MUST: personalization, brief assembly, signal reads.  
+MUST NOT: FastAPI types, raw SQL, external HTTP to sources.
+
+## Worker rules
+
+Ingest and analyze run in `worker/`, not in request handlers.
+Persist Events first; publish Signals only after quality gate + daily quota.
+
+## Evidence integrity
+
+- Community-only sources (X/Reddit) must NOT become `confirmed_fact` without trusted corroboration.
+- Separate fact / interpretation / opinion / rumor explicitly.
+
+## Schemas
+
+Use Pydantic response models. Do not expose SQLAlchemy models directly from routers.
+
+## Config
+
+Use `app.core.config.Settings`. Tesla MVP knobs: `daily_signal_cap`, min importance/confidence, RSS URL.
+
+## Logging
+
+Log ingest/process counts and gate rejections. Never log secrets or full PII.

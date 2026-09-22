@@ -1,0 +1,43 @@
+---
+description: TAKELEY core coding standards — always apply
+alwaysApply: true
+---
+
+# Coding Rules
+
+## Single responsibility
+
+Each function does ONE thing. Prefer small, named helpers over long blocks.
+
+## Naming
+
+Use clear names that match domain language: `Signal`, `Event`, `Provider`, `Watchlist`.
+
+```python
+# BAD
+def do_stuff(x): ...
+
+# GOOD
+def cluster_raw_items(items): ...
+def passes_quality_gate(signal): ...
+```
+
+## No magic values
+
+Thresholds, caps, and source lists belong in `Settings` / constants — not scattered literals.
+
+## Early return
+
+Avoid deep nesting. Validate and return/raise early.
+
+## Comments
+
+Explain WHY (cost, safety, product constraint). Do not narrate WHAT.
+
+## Consistency
+
+Follow existing patterns in `backend/app/` and `mobile/` / `admin/`. Do not invent a new style per file.
+
+## Secrets
+
+Never commit real API keys. Use `backend/.env` (gitignored) and empty placeholders in `.env.example`.
