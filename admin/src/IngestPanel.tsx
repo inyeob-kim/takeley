@@ -143,8 +143,6 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
   const slots = parseScanHours(form.scan_hours_kst);
   const lanes = [form.morning_lane, form.afternoon_lane, form.night_lane];
   const morningWhen = windowLabel(slots[0], form.scan_window_minutes);
-  const afternoonWhen = windowLabel(slots[1], form.scan_window_minutes);
-  const nightWhen = windowLabel(slots[2], form.scan_window_minutes);
   const accountNight = windowLabel(slots[slots.length - 1], form.scan_window_minutes);
   const allWhen = slots.map((slot) => formatHm(slot.hour, slot.minute)).join(", ");
 
