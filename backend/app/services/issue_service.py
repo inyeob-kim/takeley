@@ -28,6 +28,7 @@ from app.schemas import (
     MyActivityOut,
     ParticipationOptionOut,
 )
+from app.services.columnist_service import profile_is_public
 
 
 def touch_content_updated(signal: Signal, when: datetime | None = None) -> None:
@@ -271,6 +272,16 @@ def _bulk_comment_counts(db: Session, signal_ids: list[str]) -> dict[str, int]:
     return {sid: int(n) for sid, n in rows}
 
 
+def _public_columnist_id(signal: Signal) -> str | None:
+    """Omit the profile link when the columnist turned the page off."""
+    columnist_id = getattr(signal, "columnist_id", None) or None
+    if not columnist_id:
+        return None
+    if profile_is_public(getattr(signal, "columnist", None)):
+        return columnist_id
+    return None
+
+
 def _to_issue_out(
     db: Session,
     signal: Signal,
@@ -278,6 +289,7 @@ def _to_issue_out(
     user_id: str | None = None,
     include_sources: bool = False,
     expose_sources: bool | None = None,
+    keep_columnist_link: bool = False,
     retention: _RetentionCtx | None = None,
     option_counts: dict[str, int] | None = None,
     comment_count: int | None = None,
@@ -384,7 +396,11 @@ def _to_issue_out(
         column_author_image_url=(
             getattr(signal, "column_author_image_url", None) or None
         ),
-        columnist_id=(getattr(signal, "columnist_id", None) or None),
+        columnist_id=(
+            (getattr(signal, "columnist_id", None) or None)
+            if keep_columnist_link
+            else _public_columnist_id(signal)
+        ),
         key_points=signal.key_points or [],
         category=signal.category,
         topic=signal.topic,

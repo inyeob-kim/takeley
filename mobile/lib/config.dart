@@ -14,3 +14,7 @@ const String kAppVersion = String.fromEnvironment(
   'APP_VERSION',
   defaultValue: '1.0.0',
 );
+
+String get kPrivacyUrl => '${kShareOrigin.replaceAll(RegExp(r'/$'), '')}/privacy';
+
+String get kSupportUrl => '${kShareOrigin.replaceAll(RegExp(r'/$'), '')}/support';

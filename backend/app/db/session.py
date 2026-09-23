@@ -81,6 +81,7 @@ def _ensure_columnist_schema() -> None:
                         specialties JSONB,
                         contact_email VARCHAR(254),
                         show_email BOOLEAN NOT NULL DEFAULT FALSE,
+                        profile_public BOOLEAN NOT NULL DEFAULT TRUE,
                         image_url VARCHAR(1024),
                         status VARCHAR(32) NOT NULL DEFAULT 'active',
                         sort_order INTEGER NOT NULL DEFAULT 0,
@@ -119,6 +120,12 @@ def _ensure_columnist_schema() -> None:
                         "ALTER TABLE columnists ADD COLUMN show_email BOOLEAN NOT NULL DEFAULT FALSE"
                     )
                 )
+            if "profile_public" not in col_names:
+                conn.execute(
+                    text(
+                        "ALTER TABLE columnists ADD COLUMN profile_public BOOLEAN NOT NULL DEFAULT TRUE"
+                    )
+                )
 
 
 def _ensure_sqlite_schema_patches() -> None:
@@ -148,6 +155,7 @@ def _ensure_sqlite_schema_patches() -> None:
                 specialties JSON,
                 contact_email VARCHAR(254),
                 show_email BOOLEAN NOT NULL DEFAULT 0,
+                profile_public BOOLEAN NOT NULL DEFAULT 1,
                 image_url VARCHAR(1024),
                 status VARCHAR(32) NOT NULL DEFAULT 'active',
                 sort_order INTEGER NOT NULL DEFAULT 0,
@@ -173,6 +181,10 @@ def _ensure_sqlite_schema_patches() -> None:
         if columnist_cols and "show_email" not in columnist_cols:
             conn.exec_driver_sql(
                 "ALTER TABLE columnists ADD COLUMN show_email BOOLEAN NOT NULL DEFAULT 0"
+            )
+        if columnist_cols and "profile_public" not in columnist_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE columnists ADD COLUMN profile_public BOOLEAN NOT NULL DEFAULT 1"
             )
 
         issues = conn.exec_driver_sql("PRAGMA table_info(issues)").fetchall()

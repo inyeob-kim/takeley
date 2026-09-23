@@ -129,6 +129,7 @@ class _IssueCardState extends State<IssueCard> {
                       child: CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
                         errorWidget: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),

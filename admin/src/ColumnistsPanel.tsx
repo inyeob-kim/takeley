@@ -24,6 +24,7 @@ type Form = {
   specialties: string;
   contact_email: string;
   show_email: boolean;
+  profile_public: boolean;
   status: ColumnistStatus;
 };
 
@@ -47,6 +48,7 @@ function emptyForm(): Form {
     specialties: "",
     contact_email: "",
     show_email: false,
+    profile_public: true,
     status: "active",
   };
 }
@@ -59,6 +61,7 @@ function toForm(row: AdminColumnist): Form {
     specialties: specialtiesToText(row.specialties),
     contact_email: row.contact_email || "",
     show_email: Boolean(row.show_email),
+    profile_public: row.profile_public !== false,
     status: row.status,
   };
 }
@@ -166,6 +169,7 @@ export function ColumnistsPanel({
           specialties: textToSpecialties(form.specialties),
           contact_email: form.contact_email.trim() || null,
           show_email: Boolean(form.contact_email.trim()) && form.show_email,
+          profile_public: form.profile_public,
           status: form.status,
         });
         if (pendingFile) {
@@ -184,6 +188,7 @@ export function ColumnistsPanel({
           specialties: textToSpecialties(form.specialties),
           contact_email: form.contact_email.trim() || "",
           show_email: Boolean(form.contact_email.trim()) && form.show_email,
+          profile_public: form.profile_public,
           status: form.status,
         });
         setItems((prev) => prev.map((x) => (x.id === row.id ? row : x)));
@@ -298,6 +303,7 @@ export function ColumnistsPanel({
                   <span className="cat">{statusLabel(row.status)}</span>
                   <p className="title">{row.display_name}</p>
                   <p className="meta">
+                    {row.profile_public === false ? "프로필 비공개 · " : ""}
                     {row.headline || "테이클리 칼럼니스트"}
                     {row.created_at ? ` · ${formatWhen(row.created_at)}` : ""}
                   </p>
@@ -448,6 +454,22 @@ export function ColumnistsPanel({
                       <option value="hidden">프로필에 안 보임</option>
                       <option value="public">프로필 바이라인에 표시</option>
                     </select>
+                  </label>
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={!form.profile_public}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          profile_public: !e.target.checked,
+                        }))
+                      }
+                    />
+                    <span>
+                      <strong>프로필 비공개</strong>
+                      <em>이슈 바이라인은 남고, 탭해서 프로필로 들어가지 않습니다</em>
+                    </span>
                   </label>
                 </div>
 

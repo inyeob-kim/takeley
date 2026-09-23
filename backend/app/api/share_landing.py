@@ -291,7 +291,7 @@ def _teaser_html(
     return teaser, "앱에서 이어서 보기"
 
 
-@router.get("/i/{issue_id}", response_class=HTMLResponse)
+@router.api_route("/i/{issue_id}", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def issue_share_landing(
     issue_id: str,
     sid: str | None = Query(None),

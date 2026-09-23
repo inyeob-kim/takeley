@@ -173,3 +173,33 @@ String _readNid(Map<String, String> params) {
   final nid = params['nid'] ?? params['notification_id'] ?? '';
   return nid;
 }
+
+String issueRoutePath(SignalLink link) {
+  final q = <String, String>{
+    if (link.shareId != null && link.shareId!.isNotEmpty) 'sid': link.shareId!,
+    if (link.refUserId != null && link.refUserId!.isNotEmpty)
+      'ref': link.refUserId!,
+  };
+  if (q.isEmpty) return '/issues/${link.signalId}';
+  return Uri(path: '/issues/${link.signalId}', queryParameters: q).toString();
+}
+
+/// Maps a platform / share URI onto an in-app GoRouter location.
+String? routerLocationForUri(Uri uri) {
+  final path = uri.path;
+  if (path == '/home' ||
+      path == '/activity' ||
+      path == '/profile' ||
+      path == '/settings' ||
+      path.startsWith('/issues/')) {
+    return null;
+  }
+  final target = parseDeepLink(uri.toString());
+  if (target is SignalLink) return issueRoutePath(target);
+  if (target is SettingsLink) return '/settings';
+  if (target is BriefLink || target is HomeLink) return '/home';
+  if (uri.scheme == 'takeley' || path.isEmpty || path == '/') {
+    return '/home';
+  }
+  return null;
+}

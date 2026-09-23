@@ -32,6 +32,16 @@ def test_device_register_is_idempotent():
     assert first.user.is_pro is False
 
 
+def test_device_delete_removes_user():
+    db = _session()
+    svc = DeviceService(db)
+    created = svc.register(
+        DeviceRegisterIn(device_id="device-del-12345", platform="ios")
+    )
+    svc.delete_device(user_id=created.user.id, device_id="device-del-12345")
+    assert svc.users.get_by_id(created.user.id) is None
+
+
 def test_paid_subscription_makes_pro():
     db = _session()
     user = DeviceService(db).register(

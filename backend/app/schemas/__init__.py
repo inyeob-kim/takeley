@@ -139,6 +139,11 @@ class DeviceRegisterIn(BaseModel):
     app_version: Optional[str] = Field(default=None, max_length=32)
 
 
+class DeviceDeleteIn(BaseModel):
+    device_id: str = Field(..., min_length=8, max_length=128)
+    user_id: str = Field(..., min_length=8, max_length=64)
+
+
 class UserOut(BaseModel):
     id: str
     device_id: str
@@ -503,6 +508,7 @@ class ColumnistOut(BaseModel):
     specialties: list[str] = Field(default_factory=list)
     contact_email: Optional[str] = None
     show_email: bool = False
+    profile_public: bool = True
     image_url: Optional[str] = None
     status: str = "active"
     sort_order: int = 0
@@ -552,6 +558,7 @@ class AdminColumnistIn(BaseModel):
     specialties: list[str] = Field(default_factory=list, max_length=12)
     contact_email: Optional[str] = Field(default=None, max_length=254)
     show_email: bool = False
+    profile_public: bool = True
     image_url: Optional[str] = None
     status: str = Field(default="active", pattern="^(active|archived)$")
     sort_order: Optional[int] = None
@@ -564,6 +571,7 @@ class AdminColumnistPatchIn(BaseModel):
     specialties: Optional[list[str]] = Field(default=None, max_length=12)
     contact_email: Optional[str] = Field(default=None, max_length=254)
     show_email: Optional[bool] = None
+    profile_public: Optional[bool] = None
     image_url: Optional[str] = None
     clear_image: bool = False
     status: Optional[str] = Field(default=None, pattern="^(active|archived)$")

@@ -46,5 +46,22 @@ void main() {
       expect(parseDeepLink('/settings'), isA<SettingsLink>());
       expect(parseDeepLink('/home'), isA<HomeLink>());
     });
+
+    test('maps takeley:// share button onto /issues/:id', () {
+      final loc = routerLocationForUri(
+        Uri.parse(
+          'takeley://i/4f34cc27-e54c-417e-86aa-f5e5f8e474d3'
+          '?sid=s1&ref=u9',
+        ),
+      );
+      expect(loc, '/issues/4f34cc27-e54c-417e-86aa-f5e5f8e474d3?sid=s1&ref=u9');
+    });
+
+    test('leaves in-app issue routes alone', () {
+      expect(
+        routerLocationForUri(Uri.parse('/issues/abc-123?sid=s1')),
+        isNull,
+      );
+    });
   });
 }

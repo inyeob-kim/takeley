@@ -82,14 +82,11 @@ class _TakeleyAppState extends State<TakeleyApp> {
           :final shareId,
           :final refUserId,
         ):
-        final q = <String, String>{
-          if (shareId != null && shareId.isNotEmpty) 'sid': shareId,
-          if (refUserId != null && refUserId.isNotEmpty) 'ref': refUserId,
-        };
-        final qs = q.isEmpty
-            ? ''
-            : '?${q.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
-        _router.go('/issues/$signalId$qs');
+        _router.go(
+          issueRoutePath(
+            SignalLink(signalId, shareId: shareId, refUserId: refUserId),
+          ),
+        );
       case SettingsLink():
         _router.go('/settings');
       case BriefLink():
@@ -111,9 +108,15 @@ class _TakeleyAppState extends State<TakeleyApp> {
     return GoRouter(
       initialLocation: '/home',
       redirect: (context, state) {
+        final mapped = routerLocationForUri(state.uri);
+        if (mapped != null) return mapped;
         final path = state.uri.path;
         if (path.isEmpty || path == '/') return '/home';
         return null;
+      },
+      onException: (context, state, router) {
+        final mapped = routerLocationForUri(state.uri);
+        router.go(mapped ?? '/home');
       },
       routes: [
         StatefulShellRoute.indexedStack(

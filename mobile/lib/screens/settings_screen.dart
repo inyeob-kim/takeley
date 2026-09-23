@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../api/contributor_api.dart';
 import '../api/device_session.dart';
@@ -233,6 +234,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
+                            ProfilePillRow(
+                              icon: Icons.policy_outlined,
+                              label: '개인정보 처리방침',
+                              onTap: () => unawaited(_openUrl(kPrivacyUrl)),
+                            ),
+                            ProfilePillRow(
+                              icon: Icons.mail_outline_rounded,
+                              label: '고객지원',
+                              onTap: () => unawaited(_openUrl(kSupportUrl)),
+                            ),
+                            ProfilePillRow(
+                              icon: Icons.delete_outline_rounded,
+                              label: '내 데이터 삭제',
+                              onTap: () => unawaited(_confirmDeleteData()),
+                            ),
                             const SizedBox(height: 28),
                             const Text(
                               'Crafted for curious minds · TAKELEY',
@@ -250,6 +266,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('페이지를 열 수 없습니다.')),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteData() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('내 데이터를 삭제할까요?'),
+        content: const Text(
+          '이 기기의 투표, 댓글, 알림 토큰이 삭제됩니다. 앱은 익명 새 세션으로 다시 시작됩니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await widget.session.deleteAccount();
+      await widget.session.ensureRegistered(
+        platform: FcmService.platformName(),
+        appVersion: kAppVersion,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('데이터를 삭제했습니다.')),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.')),
+      );
+    }
   }
 
   Future<void> _openContributorPanel() async {

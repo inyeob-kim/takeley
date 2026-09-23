@@ -386,6 +386,7 @@ export type AdminColumnist = {
   specialties?: string[];
   contact_email?: string | null;
   show_email?: boolean;
+  profile_public?: boolean;
   image_url: string | null;
   status: ColumnistStatus;
   sort_order: number;
@@ -409,6 +410,7 @@ export function createColumnist(
     specialties?: string[];
     contact_email?: string | null;
     show_email?: boolean;
+    profile_public?: boolean;
     image_url?: string | null;
     status?: ColumnistStatus;
   },
@@ -429,6 +431,7 @@ export function updateColumnist(
     specialties?: string[];
     contact_email?: string | null;
     show_email?: boolean;
+    profile_public?: boolean;
     image_url?: string | null;
     clear_image?: boolean;
     status?: ColumnistStatus;

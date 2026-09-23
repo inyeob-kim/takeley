@@ -225,6 +225,8 @@ class Columnist(Base):
     specialties: Mapped[list] = mapped_column(JSONType, default=list)
     contact_email: Mapped[Optional[str]] = mapped_column(String(254), nullable=True)
     show_email: Mapped[bool] = mapped_column(Boolean, default=False)
+    # False: byline stays on the Issue, but the public profile is not openable.
+    profile_public: Mapped[bool] = mapped_column(Boolean, default=True)
     image_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="active", index=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)

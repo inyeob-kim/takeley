@@ -61,7 +61,25 @@ sed "s/DOMAIN_NAME/\${DOMAIN}/g" /tmp/takeley.conf.template | sudo tee /etc/ngin
 sudo ln -sfn /etc/nginx/sites-available/takeley /etc/nginx/sites-enabled/takeley
 sudo rm -f /etc/nginx/sites-enabled/default
 # Temporarily comment ssl server blocks if certs missing — use HTTP-only stub for first certbot
-if [[ ! -d /etc/letsencrypt/live/api.\${DOMAIN} ]]; then
+# live/ is root-only (0700); ubuntu cannot see it without sudo
+if ! sudo test -d /etc/letsencrypt/live/\${DOMAIN}; then
+  # Apex HTTPS block needs its own cert — strip it until certbot has run
+  sudo python3 - <<'PY'
+from pathlib import Path
+p = Path("/etc/nginx/sites-available/takeley")
+text = p.read_text()
+start = text.find("# Apex — share landing")
+if start < 0:
+    raise SystemExit(0)
+# Keep HTTP apex (listen 80) for ACME; drop the 443 apex server until certs exist.
+rest = text[start:]
+http_end = rest.find("server {\n    listen 443")
+if http_end > 0:
+    text = text[:start] + rest[:http_end]
+    p.write_text(text)
+PY
+fi
+if ! sudo test -d /etc/letsencrypt/live/api.\${DOMAIN}; then
   sudo tee /etc/nginx/sites-available/takeley >/dev/null <<EOF
 server {
     listen 80;

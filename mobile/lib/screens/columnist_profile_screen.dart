@@ -9,6 +9,7 @@ import '../theme/takeley_colors.dart';
 import '../utils/category_label.dart';
 import '../utils/format_news_time.dart';
 import '../utils/resolve_image.dart';
+import '../widgets/columnist_avatar.dart';
 import '../widgets/data_state.dart';
 import '../widgets/profile_chrome.dart';
 
@@ -208,19 +209,7 @@ class _ColumnistProfileScreenState extends State<ColumnistProfileScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        ClipOval(
-          child: SizedBox(
-            width: 72,
-            height: 72,
-            child: image != null
-                ? CachedNetworkImage(
-                    imageUrl: image,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => _initialAvatar(initial),
-                  )
-                : _initialAvatar(initial),
-          ),
-        ),
+        ColumnistAvatar(size: 72, imageUrl: image, initial: initial),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -262,22 +251,6 @@ class _ColumnistProfileScreenState extends State<ColumnistProfileScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _initialAvatar(String initial) {
-    return ColoredBox(
-      color: TakeleyColors.accentSoft,
-      child: Center(
-        child: Text(
-          initial,
-          style: const TextStyle(
-            color: TakeleyColors.accent,
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
-          ),
-        ),
-      ),
     );
   }
 

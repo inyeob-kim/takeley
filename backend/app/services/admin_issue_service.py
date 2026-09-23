@@ -29,6 +29,10 @@ from fastapi import UploadFile
 logger = logging.getLogger(__name__)
 
 
+def _admin_issue_out(db, row, **kwargs):
+    return _to_issue_out(db, row, keep_columnist_link=True, **kwargs)
+
+
 class AdminIssueService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -53,7 +57,7 @@ class AdminIssueService:
             .all()
         )
         items = [
-            _to_issue_out(
+            _admin_issue_out(
                 self.db, s, include_sources=False, expose_sources=True
             )
             for s in rows
@@ -116,7 +120,7 @@ class AdminIssueService:
         )
         if not row:
             return None
-        return _to_issue_out(
+        return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
 
@@ -304,7 +308,7 @@ class AdminIssueService:
         if not row:
             return None
         if row.status == SignalStatus.PUBLISHED.value:
-            return _to_issue_out(
+            return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
         if row.status == SignalStatus.REJECTED.value:
@@ -335,7 +339,7 @@ class AdminIssueService:
             send_pending_pushes(self.db, limit=50)
         except Exception:
             logger.exception("admin publish push flush failed issue=%s", row.id)
-        return _to_issue_out(
+        return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
 
@@ -345,7 +349,7 @@ class AdminIssueService:
         if not row:
             return None
         if row.status == SignalStatus.REJECTED.value:
-            return _to_issue_out(
+            return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
 
@@ -357,7 +361,7 @@ class AdminIssueService:
         _ = (reason or "").strip()
         self.db.commit()
         self.db.refresh(row)
-        return _to_issue_out(
+        return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
 
@@ -376,7 +380,7 @@ class AdminIssueService:
         row.updated_at = now
         self.db.commit()
         self.db.refresh(row)
-        return _to_issue_out(
+        return _admin_issue_out(
             self.db, row, include_sources=True, expose_sources=True
         )
 

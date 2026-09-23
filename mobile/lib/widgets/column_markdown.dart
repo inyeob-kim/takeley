@@ -98,7 +98,9 @@ class ColumnMarkdownView extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
               imageUrl: url,
-              fit: BoxFit.cover,
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
               errorWidget: (_, __, ___) => const SizedBox.shrink(),
             ),
           ),

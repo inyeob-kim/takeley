@@ -40,4 +40,21 @@ class DeviceSession {
     userId = user['id'] as String;
     await prefs.setString(_userKey, userId!);
   }
+
+  Future<void> deleteAccount() async {
+    final uid = userId;
+    final did = deviceId;
+    if (uid == null || did == null) {
+      throw StateError('not_registered');
+    }
+    await _api.postJson('/api/v1/devices/delete', {
+      'user_id': uid,
+      'device_id': did,
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_deviceKey);
+    await prefs.remove(_userKey);
+    userId = null;
+    deviceId = null;
+  }
 }

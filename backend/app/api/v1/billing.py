@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.schemas import (
+    DeviceDeleteIn,
     DeviceRegisterIn,
     DeviceRegisterOut,
     EntitlementOut,
@@ -25,6 +26,15 @@ def register_device(
         return DeviceService(db).register(body)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/devices/delete")
+def delete_device(body: DeviceDeleteIn, db: Session = Depends(get_db)) -> dict:
+    try:
+        DeviceService(db).delete_device(user_id=body.user_id, device_id=body.device_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True}
 
 
 @router.get("/billing/entitlements", response_model=EntitlementOut)

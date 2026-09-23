@@ -20,6 +20,7 @@ import '../utils/format_news_time.dart';
 import '../utils/resolve_image.dart';
 import '../utils/share_issue.dart';
 import '../widgets/column_markdown.dart';
+import '../widgets/columnist_avatar.dart';
 import '../widgets/data_state.dart';
 import '../widgets/deep_thought_card.dart';
 import '../widgets/takeley_buttons.dart';
@@ -225,7 +226,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                           borderRadius: BorderRadius.circular(12),
                           child: CachedNetworkImage(
                             imageUrl: coverImage,
-                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                            alignment: Alignment.topCenter,
                           ),
                         ),
                       ),
@@ -672,26 +675,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         onTap: canOpen ? () => _openColumnist(columnistId.trim()) : null,
         child: Row(
         children: [
-          ClipOval(
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: imageUrl != null
-                  ? CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
-                  : ColoredBox(
-                      color: TakeleyColors.accentSoft,
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            color: TakeleyColors.accent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-          ),
+          ColumnistAvatar(size: 40, imageUrl: imageUrl, initial: initial),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -958,7 +942,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover),
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+            ),
           ),
         ],
         if (metaParts.isNotEmpty) ...[

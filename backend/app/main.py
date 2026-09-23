@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.legal import router as legal_router
 from app.api.share_landing import router as share_landing_router
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -49,6 +50,7 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "takeley", "env": settings.environment}
 
 
+app.include_router(legal_router)
 app.include_router(share_landing_router)
 app.include_router(api_router, prefix="/api/v1")
 

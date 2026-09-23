@@ -73,6 +73,12 @@ def public_email(row: Columnist) -> str | None:
     return (getattr(row, "contact_email", None) or "").strip() or None
 
 
+def profile_is_public(row: Columnist | None) -> bool:
+    if row is None:
+        return False
+    return bool(getattr(row, "profile_public", True))
+
+
 def _out(row: Columnist) -> ColumnistOut:
     return ColumnistOut(
         id=row.id,
@@ -82,6 +88,7 @@ def _out(row: Columnist) -> ColumnistOut:
         specialties=normalize_specialties(getattr(row, "specialties", None)),
         contact_email=getattr(row, "contact_email", None),
         show_email=bool(getattr(row, "show_email", False)),
+        profile_public=profile_is_public(row),
         image_url=row.image_url,
         status=row.status,
         sort_order=int(row.sort_order or 0),
@@ -127,6 +134,7 @@ class ColumnistService:
         specialties: list[str] | None = None,
         contact_email: str | None = None,
         show_email: bool = False,
+        profile_public: bool = True,
         image_url: str | None = None,
         status: str = "active",
         sort_order: int | None = None,
@@ -149,6 +157,7 @@ class ColumnistService:
             specialties=normalize_specialties(specialties),
             contact_email=normalize_contact_email(contact_email),
             show_email=bool(show_email),
+            profile_public=bool(profile_public),
             image_url=image,
             status=status,
             sort_order=int(order),
@@ -167,6 +176,7 @@ class ColumnistService:
         specialties: list[str] | None = None,
         contact_email: str | None = None,
         show_email: bool | None = None,
+        profile_public: bool | None = None,
         image_url: str | None = None,
         clear_image: bool = False,
         status: str | None = None,
@@ -190,6 +200,8 @@ class ColumnistService:
             row.contact_email = normalize_contact_email(contact_email)
         if show_email is not None:
             row.show_email = bool(show_email)
+        if profile_public is not None:
+            row.profile_public = bool(profile_public)
         if clear_image:
             delete_local_image_if_owned(row.image_url)
             row.image_url = None
@@ -246,12 +258,16 @@ class ColumnistService:
         page = max(1, min(page, settings.columnist_issue_page_max))
         return page, max(0, offset)
 
+    def _require_public_row(self, columnist_id: str) -> Columnist:
+        row = self.repo.get(columnist_id)
+        if not row or not profile_is_public(row):
+            raise ColumnistError("Columnist not found", status_code=404)
+        return row
+
     def public_profile(
         self, columnist_id: str, *, limit: int | None = None
     ) -> ColumnistProfileOut:
-        row = self.repo.get(columnist_id)
-        if not row:
-            raise ColumnistError("Columnist not found", status_code=404)
+        row = self._require_public_row(columnist_id)
         page, _ = self._page_bounds(limit=limit, offset=0)
         total = self.repo.count_published_issues(columnist_id)
         issues = self.repo.published_issues(columnist_id, limit=page, offset=0)
@@ -275,9 +291,7 @@ class ColumnistService:
         limit: int | None = None,
         offset: int = 0,
     ) -> ColumnistIssueListOut:
-        row = self.repo.get(columnist_id)
-        if not row:
-            raise ColumnistError("Columnist not found", status_code=404)
+        row = self._require_public_row(columnist_id)
         page, skip = self._page_bounds(limit=limit, offset=offset)
         total = self.repo.count_published_issues(columnist_id)
         issues = self.repo.published_issues(columnist_id, limit=page, offset=skip)
