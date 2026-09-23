@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../api/contributor_api.dart';
@@ -254,6 +256,7 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
         _take = next;
         _hint = '검토 요청을 보냈어요.';
       });
+      FocusManager.instance.primaryFocus?.unfocus();
       widget.onSaved?.call(next);
     } catch (e) {
       if (!mounted) return;
@@ -308,9 +311,9 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
         _bodyCtrl.text.trim().isNotEmpty;
 
     return PopScope(
-      canPop: false,
+      canPop: !_canEdit || !_dirty,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _handleBack();
+        if (!didPop) unawaited(_handleBack());
       },
       child: Scaffold(
         backgroundColor: TakeleyColors.canvas,
@@ -423,6 +426,8 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
                         ),
                       ),
                       onChanged: (_) => setState(() {}),
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -451,6 +456,8 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
                         disabledBorder: InputBorder.none,
                       ),
                       onChanged: (_) => setState(() {}),
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                     ),
                     const SizedBox(height: 20),
                     const Divider(height: 1, color: TakeleyColors.border),
@@ -505,6 +512,8 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
                           ),
                         ),
                         onChanged: (_) => setState(() {}),
+                        onTapOutside: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
                       ),
                     ],
                     if (_error != null) ...[
@@ -609,15 +618,6 @@ class _WriterNav extends StatelessWidget {
               onPressed: onBack,
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
               tooltip: '이슈로 돌아가기',
-            ),
-            const Text(
-              '깊이 있는 생각',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-                color: TakeleyColors.accent,
-              ),
             ),
           ],
         ),

@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    admin_columnists,
     admin_contributor,
     admin_issues,
     billing,
+    columnists,
     contributor,
     issue_takes,
     issues,
@@ -14,7 +16,9 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 api_router.include_router(admin_issues.router)
+api_router.include_router(admin_columnists.router)
 api_router.include_router(admin_contributor.router)
+api_router.include_router(columnists.router)
 api_router.include_router(contributor.router)
 # Issue-takes before issues so static paths like .../takes/mine resolve cleanly
 # when mounted; both use /issues prefix.

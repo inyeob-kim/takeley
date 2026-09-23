@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../api/api_client.dart';
+import '../api/columnists_api.dart';
 import '../api/contributor_api.dart';
 import '../api/device_session.dart';
 import '../api/issues_api.dart';
 import '../api/models.dart';
+import '../navigation/cupertino_nav.dart';
+import 'columnist_profile_screen.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/category_label.dart';
 import '../utils/contributor_ui.dart';
@@ -86,22 +90,17 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   bool _loading = true;
   String? _error;
   final _commentCtrl = TextEditingController();
-  final _columnScrollCtrl = ScrollController();
   bool _submitting = false;
   bool _voting = false;
   bool _shareBusy = false;
-  bool _showColumns = false;
-  bool _showUpdateBanner = false;
+  bool _didOpenInitialFocus = false;
   List<IssueTake> _publishedTakes = [];
   List<IssueTake> _myTakes = [];
   String? _contributorStatus;
-  IssueDeepFocus? _deepFocus;
-  IssueTake? _writerTake;
 
   @override
   void initState() {
     super.initState();
-    _deepFocus = widget.initialDeepFocus;
     _recordSharedLinkOpened();
     _load();
   }
@@ -129,10 +128,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     }
     if (oldWidget.issueId != widget.issueId) {
       setState(() {
-        _showColumns = false;
-        _showUpdateBanner = false;
-        _deepFocus = widget.initialDeepFocus;
-        _writerTake = null;
+        _didOpenInitialFocus = false;
       });
       _load();
     }
@@ -141,16 +137,187 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
-    _columnScrollCtrl.dispose();
     super.dispose();
   }
 
-  void _openColumns() {
-    setState(() => _showColumns = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_columnScrollCtrl.hasClients) return;
-      _columnScrollCtrl.jumpTo(0);
-    });
+  void _popRoute() {
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _openColumns() async {
+    final issue = _issue;
+    if (issue == null || !mounted) return;
+    final authorName = (issue.columnAuthorName ?? '').trim();
+    final authorImage = resolveImageUrl(issue.columnAuthorImageUrl);
+    final columnBody = issue.columnBody.trim();
+    final updatedLabel = formatNewsTime(
+      issueStoryTimestamp(
+        publishedAt: issue.publishedAt,
+        firstSeenAt: issue.firstSeenAt,
+        contentUpdatedAt: issue.contentUpdatedAt,
+      ),
+    );
+    final coverImage = resolveImageUrl(issue.imageUrl);
+    final sources = issue.sources.take(8).toList();
+    final readMin = _estimateReadMinutes(issue);
+
+    await pushCupertinoPage(
+      context,
+      Scaffold(
+        backgroundColor: TakeleyColors.canvas,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _navBar(onBack: _popRoute),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                  children: [
+                    const Text(
+                      'COLUMN',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.7,
+                        color: TakeleyColors.accent,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      issue.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 26,
+                        height: 1.25,
+                        letterSpacing: -0.4,
+                        color: TakeleyColors.fg,
+                      ),
+                    ),
+                    if (issue.summary.trim().isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        issue.summary.trim(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          height: 1.55,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF444444),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                    if (authorName.isNotEmpty)
+                      _columnByline(
+                        name: authorName,
+                        imageUrl: authorImage,
+                        updatedLabel: updatedLabel,
+                        readMinutes: readMin,
+                        columnistId: issue.columnistId,
+                      ),
+                    if (coverImage != null)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: authorName.isEmpty ? 16 : 0,
+                          bottom: 16,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedNetworkImage(
+                            imageUrl: coverImage,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ColumnMarkdownView(source: columnBody),
+                    _sourceCredit(sources),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openDeepList() async {
+    if (!mounted) return;
+    await pushCupertinoPage(
+      context,
+      DeepThoughtListScreen(
+        contributorApi: widget.contributorApi,
+        issueId: widget.issueId,
+        userId: _userId,
+        initialTakes: _publishedTakes,
+        canWriteDeep: showDeepThoughtWriterCta(_contributorStatus),
+        onBack: _popRoute,
+        onWrite: () => unawaited(_openWriter()),
+      ),
+    );
+  }
+
+  Future<void> _openDeepDetail(String takeId) async {
+    if (!mounted) return;
+    await pushCupertinoPage(
+      context,
+      DeepThoughtDetailScreen(
+        contributorApi: widget.contributorApi,
+        issueId: widget.issueId,
+        takeId: takeId,
+        userId: _userId,
+        onBack: _popRoute,
+      ),
+    );
+  }
+
+  Future<void> _openWriter({String? takeId}) async {
+    final issue = _issue;
+    if (issue == null || !mounted) return;
+    final initial = _pickWriterTake(takeId: takeId);
+    await pushCupertinoPage(
+      context,
+      DeepThoughtWriterScreen(
+        contributorApi: widget.contributorApi,
+        issueId: widget.issueId,
+        issueTitle: issue.title,
+        issueSummary: issue.summary,
+        userId: _userId,
+        initialTake: initial,
+        onBack: _popRoute,
+        onSaved: (_) {
+          unawaited(_reloadDeepThoughts());
+        },
+      ),
+    );
+    if (mounted) unawaited(_reloadDeepThoughts());
+  }
+
+  IssueTake? _pickWriterTake({String? takeId}) {
+    if (takeId != null) {
+      final found = _myTakes.where((t) => t.id == takeId).firstOrNull;
+      if (found != null) return found;
+    }
+    return _myTakes
+            .where((t) => t.status == 'draft' || t.status == 'rejected')
+            .firstOrNull ??
+        _myTakes.where((t) => t.status == 'pending_review').firstOrNull;
+  }
+
+  void _maybeOpenInitialDeepFocus() {
+    if (_didOpenInitialFocus || !mounted) return;
+    final focus = widget.initialDeepFocus;
+    if (focus == null) return;
+    _didOpenInitialFocus = true;
+    switch (focus.mode) {
+      case IssueDeepFocusMode.list:
+        unawaited(_openDeepList());
+      case IssueDeepFocusMode.detail:
+        final id = focus.takeId;
+        if (id != null) unawaited(_openDeepDetail(id));
+      case IssueDeepFocusMode.writer:
+        unawaited(_openWriter(takeId: focus.takeId));
+    }
   }
 
   String? get _userId => widget.session.userId;
@@ -184,9 +351,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       } else {
         setState(() => _myTakes = []);
       }
-      if (_deepFocus?.mode == IssueDeepFocusMode.writer) {
-        _syncWriterTake();
-      }
     } catch (_) {
       if (mounted) setState(() => _publishedTakes = []);
     }
@@ -209,11 +373,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       setState(() {
         _issue = issue;
         _comments = comments;
-        _showUpdateBanner = issue.hasNewUpdate;
         _loading = false;
       });
       unawaited(widget.issuesApi.view(widget.issueId, userId: userId));
-      unawaited(_reloadDeepThoughts());
+      await _reloadDeepThoughts();
+      _maybeOpenInitialDeepFocus();
       unawaited(widget.issuesApi.recordEvent(
         id: widget.issueId,
         event: 'open',
@@ -225,38 +389,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         _loading = false;
         _error = '이슈를 불러오지 못했어요.';
       });
-    }
-  }
-
-  void _syncWriterTake() {
-    final focus = _deepFocus;
-    if (focus == null || focus.mode != IssueDeepFocusMode.writer) return;
-    if (focus.takeId != null) {
-      final found = _myTakes.where((t) => t.id == focus.takeId).firstOrNull;
-      if (found != null) {
-        setState(() => _writerTake = found);
-        return;
-      }
-      widget.contributorApi
-          .fetchMyIssueTakes(widget.issueId, userId: _userId)
-          .then((mine) {
-        if (!mounted) return;
-        setState(() {
-          _myTakes = mine;
-          _writerTake =
-              mine.where((t) => t.id == focus.takeId).firstOrNull;
-        });
-      }).catchError((_) {
-        if (mounted) setState(() => _writerTake = null);
-      });
-    } else {
-      final editable = _myTakes
-              .where((t) => t.status == 'draft' || t.status == 'rejected')
-              .firstOrNull ??
-          _myTakes
-              .where((t) => t.status == 'pending_review')
-              .firstOrNull;
-      setState(() => _writerTake = editable);
     }
   }
 
@@ -380,6 +512,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           _issue = _issue!.copyWith(commentCount: _issue!.commentCount + 1);
         }
       });
+      FocusManager.instance.primaryFocus?.unfocus();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -490,22 +623,54 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
+  void _openColumnist(String columnistId) {
+    unawaited(
+      pushCupertinoPage(
+        context,
+        ColumnistProfileScreen(
+          columnistId: columnistId,
+          columnistsApi: ColumnistsApi(ApiClient()),
+          onIssueOpen: (issueId) {
+            unawaited(
+              pushCupertinoPage(
+                context,
+                IssueDetailScreen(
+                  issueId: issueId,
+                  issuesApi: widget.issuesApi,
+                  contributorApi: widget.contributorApi,
+                  session: widget.session,
+                  onBack: () => Navigator.of(context).pop(),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _columnByline({
     required String name,
     required String? imageUrl,
     required String? updatedLabel,
-    required int readMinutes,
+    int? readMinutes,
+    String? columnistId,
   }) {
     final initial =
         name.trim().isNotEmpty ? String.fromCharCodes(name.runes.take(1)) : '?';
     final meta = <String>[];
     if (updatedLabel != null && updatedLabel.isNotEmpty) {
-      meta.add(updatedLabel);
+      meta.add('$updatedLabel 업데이트');
     }
-    meta.add('$readMinutes분 읽기');
+    if (readMinutes != null && readMinutes > 0) {
+      meta.add('$readMinutes분 읽기');
+    }
+    final canOpen = columnistId != null && columnistId.trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 16),
-      child: Row(
+      child: InkWell(
+        onTap: canOpen ? () => _openColumnist(columnistId.trim()) : null,
+        child: Row(
         children: [
           ClipOval(
             child: SizedBox(
@@ -550,6 +715,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -675,13 +841,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               style: TextStyle(color: TakeleyColors.muted, height: 1.45),
             ),
             _deepThoughtCta(
-              onTap: () {
-                setState(() {
-                  _deepFocus =
-                      const IssueDeepFocus(mode: IssueDeepFocusMode.writer);
-                });
-                _syncWriterTake();
-              },
+              onTap: () => unawaited(_openWriter()),
             ),
           ],
           if (preview.isNotEmpty) ...[
@@ -689,25 +849,13 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             for (final t in preview)
               DeepThoughtCard(
                 take: t,
-                onTap: () {
-                  setState(() {
-                    _deepFocus = IssueDeepFocus(
-                      mode: IssueDeepFocusMode.detail,
-                      takeId: t.id,
-                    );
-                  });
-                },
+                onTap: () => unawaited(_openDeepDetail(t.id)),
               ),
             if (remaining > 0)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _deepFocus =
-                          const IssueDeepFocus(mode: IssueDeepFocusMode.list);
-                    });
-                  },
+                  onPressed: () => unawaited(_openDeepList()),
                   style: TextButton.styleFrom(
                     foregroundColor: TakeleyColors.accent,
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -726,13 +874,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           ],
           if (ranked.isNotEmpty && canWriteDeep)
             _deepThoughtCta(
-              onTap: () {
-                setState(() {
-                  _deepFocus =
-                      const IssueDeepFocus(mode: IssueDeepFocusMode.writer);
-                });
-                _syncWriterTake();
-              },
+              onTap: () => unawaited(_openWriter()),
             ),
         ],
       ),
@@ -741,169 +883,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final focus = _deepFocus;
-    if (focus?.mode == IssueDeepFocusMode.list) {
-      return DeepThoughtListScreen(
-        contributorApi: widget.contributorApi,
-        issueId: widget.issueId,
-        userId: _userId,
-        initialTakes: _publishedTakes,
-        canWriteDeep: showDeepThoughtWriterCta(_contributorStatus),
-        onBack: () => setState(() => _deepFocus = null),
-        onWrite: () {
-          setState(() {
-            _deepFocus =
-                const IssueDeepFocus(mode: IssueDeepFocusMode.writer);
-          });
-          _syncWriterTake();
-        },
-      );
-    }
-
-    if (focus?.mode == IssueDeepFocusMode.detail && focus!.takeId != null) {
-      return DeepThoughtDetailScreen(
-        contributorApi: widget.contributorApi,
-        issueId: widget.issueId,
-        takeId: focus.takeId!,
-        userId: _userId,
-        onBack: () => setState(() => _deepFocus = null),
-      );
-    }
-
-    if (focus?.mode == IssueDeepFocusMode.writer) {
-      if (_issue == null) {
-        return Scaffold(
-          backgroundColor: TakeleyColors.canvas,
-          body: SafeArea(
-            child: Column(
-              children: [
-                _navBar(onBack: widget.onBack),
-                Expanded(
-                  child: _loading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: TakeleyColors.accent,
-                          ),
-                        )
-                      : DataState(
-                          message: _error ?? '이슈를 찾을 수 없어요.',
-                          actionLabel: '다시 시도',
-                          onAction: _load,
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      return DeepThoughtWriterScreen(
-        contributorApi: widget.contributorApi,
-        issueId: widget.issueId,
-        issueTitle: _issue!.title,
-        issueSummary: _issue!.summary,
-        userId: _userId,
-        initialTake: _writerTake,
-        onBack: () {
-          setState(() => _deepFocus = null);
-          unawaited(_reloadDeepThoughts());
-        },
-        onSaved: (t) {
-          setState(() => _writerTake = t);
-          unawaited(_reloadDeepThoughts());
-        },
-      );
-    }
-
-    if (_showColumns && _issue != null) {
-      final issue = _issue!;
-      final authorName = (issue.columnAuthorName ?? '').trim();
-      final authorImage = resolveImageUrl(issue.columnAuthorImageUrl);
-      final columnBody = issue.columnBody.trim();
-      final updatedLabel = formatNewsTime(
-        issue.updatedAt ?? issue.publishedAt ?? issue.firstSeenAt,
-      );
-      final coverImage = resolveImageUrl(issue.imageUrl);
-      final sources = issue.sources.take(8).toList();
-      final readMin = _estimateReadMinutes(issue);
-
-      return Scaffold(
-        backgroundColor: TakeleyColors.canvas,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _navBar(onBack: () => setState(() => _showColumns = false)),
-              Expanded(
-                child: ListView(
-                  key: const ValueKey('issue-column-list'),
-                  controller: _columnScrollCtrl,
-                  primary: false,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-                  children: [
-                    const Text(
-                      'COLUMN',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.7,
-                        color: TakeleyColors.accent,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      issue.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 26,
-                        height: 1.25,
-                        letterSpacing: -0.4,
-                        color: TakeleyColors.fg,
-                      ),
-                    ),
-                    if (issue.summary.trim().isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        issue.summary.trim(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 1.55,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF444444),
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ],
-                    if (authorName.isNotEmpty)
-                      _columnByline(
-                        name: authorName,
-                        imageUrl: authorImage,
-                        updatedLabel: updatedLabel,
-                        readMinutes: readMin,
-                      ),
-                    if (coverImage != null)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: authorName.isEmpty ? 16 : 0,
-                          bottom: 16,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: CachedNetworkImage(
-                            imageUrl: coverImage,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ColumnMarkdownView(source: columnBody),
-                    _sourceCredit(sources),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: TakeleyColors.canvas,
       body: SafeArea(
@@ -933,9 +912,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
     final issue = _issue!;
     final imageUrl = resolveImageUrl(issue.imageUrl);
-    final when = formatNewsTime(issue.publishedAt ?? issue.firstSeenAt);
     final metaParts = <String>[];
-    if (when.isNotEmpty) metaParts.add(when);
     if (issue.sourceCount > 0) metaParts.add('출처 ${issue.sourceCount}');
     final sources = issue.sources.take(8).toList();
     final canWriteDeep = showDeepThoughtWriterCta(_contributorStatus);
@@ -944,17 +921,6 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
       children: [
-        if (_showUpdateBanner)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16),
-            child: Text(
-              '새로운 소식이 추가됐어요',
-              style: TextStyle(
-                color: TakeleyColors.accent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
         Text(
           categoryLabel(issue.category),
           style: Theme.of(context).textTheme.labelLarge,
@@ -974,6 +940,20 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 ),
           ),
         ],
+        if ((issue.columnAuthorName ?? '').trim().isNotEmpty)
+          _columnByline(
+            name: issue.columnAuthorName!.trim(),
+            imageUrl: resolveImageUrl(issue.columnAuthorImageUrl),
+            updatedLabel: formatNewsTime(
+              issueStoryTimestamp(
+                publishedAt: issue.publishedAt,
+                firstSeenAt: issue.firstSeenAt,
+                contentUpdatedAt: issue.contentUpdatedAt,
+              ),
+            ),
+            readMinutes: _estimateReadMinutes(issue),
+            columnistId: issue.columnistId,
+          ),
         if (imageUrl != null) ...[
           const SizedBox(height: 16),
           ClipRRect(
@@ -1042,6 +1022,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           maxLines: 3,
           minLines: 3,
           onChanged: (_) => setState(() {}),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           decoration: const InputDecoration(
             hintText: '짧은 생각을 남겨 보세요',
           ),

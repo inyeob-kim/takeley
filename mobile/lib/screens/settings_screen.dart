@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +6,7 @@ import '../api/contributor_api.dart';
 import '../api/device_session.dart';
 import '../api/settings_api.dart';
 import '../config.dart';
+import '../navigation/cupertino_nav.dart';
 import '../services/fcm_service.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/contributor_ui.dart';
@@ -39,9 +41,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   String? _error;
   ContributorMe? _contributor;
-  bool _showContributorPanel = false;
   final _motivation = TextEditingController();
   final Set<String> _selectedInterests = {};
+  final _panelTick = ValueNotifier<int>(0);
   bool _applyBusy = false;
   String? _applyError;
   String? _applyHint;
@@ -57,11 +59,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _motivation.removeListener(_onApplyFormChanged);
     _motivation.dispose();
+    _panelTick.dispose();
     super.dispose();
   }
 
   void _onApplyFormChanged() {
     if (mounted) setState(() {});
+    _panelTick.value++;
   }
 
   bool get _canSubmitApplication =>
@@ -126,6 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _applyError = null;
       _applyHint = null;
     });
+    _panelTick.value++;
     try {
       final app = await widget.contributorApi.submitApplication(
         motivation: _motivation.text.trim(),
@@ -144,29 +149,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _motivation.clear();
         _selectedInterests.clear();
       });
+      FocusManager.instance.primaryFocus?.unfocus();
+      _panelTick.value++;
       await _load();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _applyError = formatContributorApiError('$e', '신청에 실패했어요');
       });
+      _panelTick.value++;
     } finally {
-      if (mounted) setState(() => _applyBusy = false);
+      if (mounted) {
+        setState(() => _applyBusy = false);
+        _panelTick.value++;
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showContributorPanel) {
-      return _buildContributorPanel(context);
-    }
-
     final status = _contributor?.contributorStatus ?? 'NONE';
 
-    return SafeArea(
-      bottom: false,
-      child: Material(
-        color: TakeleyColors.canvas,
+    return Scaffold(
+      backgroundColor: TakeleyColors.canvas,
+      body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             ScreenTopBar(
@@ -210,9 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: Icons.edit_note_rounded,
                               label: '깊이 있는 생각',
                               value: contributorSettingsLabel(status),
-                              onTap: () => setState(
-                                () => _showContributorPanel = true,
-                              ),
+                              onTap: () => unawaited(_openContributorPanel()),
                             ),
                             const SizedBox(height: 16),
                             const ProfileBlockLabel('정보'),
@@ -247,25 +252,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildContributorPanel(BuildContext context) {
+  Future<void> _openContributorPanel() async {
+    await pushCupertinoPage(
+      context,
+      ListenableBuilder(
+        listenable: Listenable.merge([_motivation, _panelTick]),
+        builder: (context, _) => _buildContributorPanel(),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
+  Widget _buildContributorPanel() {
     final status = _contributor?.contributorStatus ?? 'NONE';
     final canApply = status == 'NONE' || status == 'REJECTED';
 
-    return SafeArea(
-      bottom: false,
-      child: Material(
-        color: TakeleyColors.canvas,
+    return Scaffold(
+      backgroundColor: TakeleyColors.canvas,
+      body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             ScreenTopBar(
               title: '깊이 있는 생각',
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                onPressed: () => setState(() {
-                  _showContributorPanel = false;
-                  _applyError = null;
-                  _applyHint = null;
-                }),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
             Expanded(
@@ -398,6 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _selectedInterests.add(label);
                       }
                     });
+                    _panelTick.value++;
                   },
                 ),
             ],
@@ -424,6 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             minLines: rows,
             maxLines: rows + 4,
             enabled: !_applyBusy,
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             decoration: InputDecoration(hintText: hint),
           ),
         ],

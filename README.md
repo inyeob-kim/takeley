@@ -46,7 +46,8 @@ npm run dev
 ```
 
 **공유 링크:** `http://127.0.0.1:8000/i/{이슈ID}?sid=...`  
-**푸시 설정:** `mobile/PUSH_NATIVE.md`
+**푸시 설정:** `mobile/PUSH_NATIVE.md`  
+**프로덕션 (AWS EC2 + RDS):** [`deploy/README.md`](deploy/README.md)
 
 ---
 
@@ -56,6 +57,7 @@ npm run dev
 backend/   FastAPI + worker + /i/:id share landing
 mobile/    Flutter (제품 앱)
 admin/     Issue 검수·발행
+deploy/    AWS EC2 + RDS Terraform / nginx / systemd
 docs/      설계 메모
 ```
 

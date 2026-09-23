@@ -17,6 +17,7 @@ from app.services.issue_image_service import (
     normalize_image_url,
     save_issue_image,
 )
+from app.services.columnist_service import ColumnistError, ColumnistService
 from app.services.issue_service import (
     _to_issue_out,
     replace_participation_options,
@@ -59,6 +60,50 @@ class AdminIssueService:
         ]
         return IssueListOut(items=items, count=len(items))
 
+    _BLANK_TITLE = "새 칼럼 초안"
+    _BLANK_SUMMARY = "요약을 입력해 주세요."
+
+    def create_manual(
+        self,
+        *,
+        title: str | None = None,
+        columnist_id: str | None = None,
+        category: str | None = None,
+    ) -> IssueOut:
+        """Blank editorial draft — not from the ingest pipeline."""
+        now = datetime.utcnow()
+        t = (title or "").strip()
+        if t and len(t) < 4:
+            raise ValueError("title_too_short")
+        row = Signal(
+            title=t[:512] if t else self._BLANK_TITLE,
+            summary=self._BLANK_SUMMARY,
+            why_it_matters="",
+            column_body="",
+            status=SignalStatus.DRAFT.value,
+            lifecycle="CANDIDATE",
+            trend_status="NORMAL",
+            participation_suitable=False,
+            show_sources=False,
+            topic="column",
+            category=normalize_industry_category(category) if category else None,
+            first_seen_at=now,
+            content_updated_at=now,
+            updated_at=now,
+        )
+        if columnist_id:
+            try:
+                ColumnistService(self.db).apply_to_issue(row, columnist_id)
+            except ColumnistError as exc:
+                raise ValueError(exc.detail) from exc
+        self.db.add(row)
+        self.db.commit()
+        self.db.refresh(row)
+        out = self.get(row.id)
+        if not out:
+            raise ValueError("create_failed")
+        return out
+
     def get(self, issue_id: str) -> IssueOut | None:
         row = (
             self.db.query(Signal)
@@ -86,6 +131,8 @@ class AdminIssueService:
         column_author_name: str | None = None,
         column_author_image_url: str | None = None,
         clear_column_author_image: bool = False,
+        columnist_id: str | None = None,
+        clear_columnist: bool = False,
         image_url: str | None = None,
         clear_image: bool = False,
         key_points: list[str] | None = None,
@@ -107,8 +154,6 @@ class AdminIssueService:
             return None
         if row.status == SignalStatus.REJECTED.value:
             raise ValueError("rejected_issue_cannot_edit")
-        if row.status == SignalStatus.PUBLISHED.value:
-            raise ValueError("published_issue_cannot_edit")
 
         content_changed = False
 
@@ -130,11 +175,31 @@ class AdminIssueService:
         if column_body is not None:
             row.column_body = column_body.strip()
             content_changed = True
-        if column_author_name is not None:
+        if clear_columnist or columnist_id is not None:
+            try:
+                ColumnistService(self.db).apply_to_issue(
+                    row, None if clear_columnist else columnist_id
+                )
+            except ColumnistError as exc:
+                raise ValueError(exc.detail) from exc
+            content_changed = True
+        elif column_author_name is not None:
             name = column_author_name.strip()
             row.column_author_name = name[:128] if name else None
             content_changed = True
-        if clear_column_author_image:
+            if clear_column_author_image:
+                delete_local_image_if_owned(
+                    getattr(row, "column_author_image_url", None)
+                )
+                row.column_author_image_url = None
+            elif column_author_image_url is not None:
+                next_author = normalize_image_url(column_author_image_url)
+                if next_author != (row.column_author_image_url or None):
+                    delete_local_image_if_owned(
+                        getattr(row, "column_author_image_url", None)
+                    )
+                row.column_author_image_url = next_author
+        elif clear_column_author_image:
             delete_local_image_if_owned(
                 getattr(row, "column_author_image_url", None)
             )
@@ -202,6 +267,8 @@ class AdminIssueService:
 
         if content_changed:
             touch_content_updated(row)
+            if row.status == SignalStatus.PUBLISHED.value:
+                row.lifecycle = "UPDATED"
         row.updated_at = datetime.utcnow()
         self.db.commit()
         return self.get(issue_id)
@@ -212,13 +279,13 @@ class AdminIssueService:
             return None
         if row.status == SignalStatus.REJECTED.value:
             raise ValueError("rejected_issue_cannot_edit")
-        if row.status == SignalStatus.PUBLISHED.value:
-            raise ValueError("published_issue_cannot_edit")
 
         path = await save_issue_image(file)
         delete_local_image_if_owned(getattr(row, "image_url", None))
         row.image_url = path
         touch_content_updated(row)
+        if row.status == SignalStatus.PUBLISHED.value:
+            row.lifecycle = "UPDATED"
         row.updated_at = datetime.utcnow()
         self.db.commit()
         return self.get(issue_id)
@@ -230,8 +297,6 @@ class AdminIssueService:
             return None
         if row.status == SignalStatus.REJECTED.value:
             raise ValueError("rejected_issue_cannot_edit")
-        if row.status == SignalStatus.PUBLISHED.value:
-            raise ValueError("published_issue_cannot_edit")
         return await save_issue_image(file)
 
     def publish(self, issue_id: str) -> IssueOut | None:

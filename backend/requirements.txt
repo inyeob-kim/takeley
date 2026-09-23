@@ -10,6 +10,6 @@ tweepy==4.15.0
 alembic==1.15.2
 # Optional: FCM push (worker). Safe to omit when FCM_ENABLED=false.
 firebase-admin==6.7.0
-# Optional Postgres driver (when not using SQLite):
-# pip install "psycopg[binary]>=3.2.10"
+# Postgres (production / local docker-compose)
+psycopg[binary]>=3.2.10
 python-multipart>=0.0.9

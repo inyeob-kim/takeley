@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../api/device_session.dart';
 import '../api/issues_api.dart';
 import '../api/models.dart';
 import '../api/settings_api.dart';
+import '../navigation/cupertino_nav.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/tab_visibility_reload.dart';
 import '../widgets/profile_chrome.dart';
@@ -41,7 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   int _commentCount = 0;
   int? _takesCount;
   bool _loading = true;
-  bool _showNicknamePanel = false;
+  final _nickTick = ValueNotifier<int>(0);
   final _draftCtrl = TextEditingController();
   bool _nickSaving = false;
   String? _nickHint;
@@ -52,7 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   void onTabBecameVisible() {
-    if (!_showNicknamePanel) _load(silent: true);
+    _load(silent: true);
   }
 
   @override
@@ -64,6 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     _draftCtrl.dispose();
+    _nickTick.dispose();
     super.dispose();
   }
 
@@ -117,6 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       _nickError = null;
       _nickHint = null;
     });
+    _nickTick.value++;
     try {
       final updated = await widget.settingsApi.update(
         userId: widget.session.userId,
@@ -130,92 +135,112 @@ class _ProfileScreenState extends State<ProfileScreen>
             ? '닉네임을 저장했어요.'
             : '닉네임을 지웠어요. 익명으로 보여요.';
       });
+      _nickTick.value++;
+      FocusManager.instance.primaryFocus?.unfocus();
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _nickError = '닉네임을 저장하지 못했어요.';
       });
+      _nickTick.value++;
     } finally {
-      if (mounted) setState(() => _nickSaving = false);
+      if (mounted) {
+        setState(() => _nickSaving = false);
+        _nickTick.value++;
+      }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_showNicknamePanel) {
-      final trimmed = _draftCtrl.text.trim();
-      final valid = trimmed.isEmpty ||
-          (trimmed.length >= _nickMin && trimmed.length <= _nickMax);
-      final dirty = trimmed != (_displayName ?? '');
-      return ColoredBox(
-        color: TakeleyColors.canvas,
-        child: Column(
-          children: [
-            ScreenTopBar(
-              title: '닉네임',
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                onPressed: () => setState(() {
-                  _showNicknamePanel = false;
-                  _nickHint = null;
-                  _nickError = null;
-                }),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+  Future<void> _openNicknamePanel() async {
+    _draftCtrl.text = _displayName ?? '';
+    _nickHint = null;
+    _nickError = null;
+    _nickTick.value++;
+    await pushCupertinoPage(
+      context,
+      ListenableBuilder(
+        listenable: Listenable.merge([_draftCtrl, _nickTick]),
+        builder: (context, _) {
+          final trimmed = _draftCtrl.text.trim();
+          final valid = trimmed.isEmpty ||
+              (trimmed.length >= _nickMin && trimmed.length <= _nickMax);
+          final dirty = trimmed != (_displayName ?? '');
+          return Scaffold(
+            backgroundColor: TakeleyColors.canvas,
+            body: SafeArea(
+              child: Column(
                 children: [
-                  const ProfileBlockLabel('표시 이름'),
-                  TextField(
-                    controller: _draftCtrl,
-                    maxLength: _nickMax,
-                    enabled: !_nickSaving,
-                    decoration: const InputDecoration(
-                      hintText: '비우면 익명',
-                      counterText: '',
-                    ),
-                    onChanged: (_) => setState(() {
-                      _nickHint = null;
-                    }),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    !valid
-                        ? '$_nickMin–$_nickMax자로 입력해 주세요.'
-                        : (_nickHint ?? '댓글·깊이 있는 생각에 보여요.'),
-                    style: TextStyle(
-                      color: !valid || _nickError != null
-                          ? TakeleyColors.danger
-                          : TakeleyColors.secondaryLabel,
-                      fontSize: 13,
+                  ScreenTopBar(
+                    title: '닉네임',
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
-                  if (_nickError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        _nickError!,
-                        style: const TextStyle(
-                          color: TakeleyColors.danger,
-                          fontSize: 13,
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                      children: [
+                        const ProfileBlockLabel('표시 이름'),
+                        TextField(
+                          controller: _draftCtrl,
+                          maxLength: _nickMax,
+                          enabled: !_nickSaving,
+                          decoration: const InputDecoration(
+                            hintText: '비우면 익명',
+                            counterText: '',
+                          ),
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          onChanged: (_) {
+                            _nickHint = null;
+                            _nickTick.value++;
+                          },
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          !valid
+                              ? '$_nickMin–$_nickMax자로 입력해 주세요.'
+                              : (_nickHint ?? '댓글·깊이 있는 생각에 보여요.'),
+                          style: TextStyle(
+                            color: !valid || _nickError != null
+                                ? TakeleyColors.danger
+                                : TakeleyColors.secondaryLabel,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (_nickError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _nickError!,
+                              style: const TextStyle(
+                                color: TakeleyColors.danger,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        TakeleyPrimaryButton(
+                          label: _nickSaving ? '저장 중…' : '저장',
+                          enabled: !_nickSaving && dirty && valid,
+                          onPressed: _saveNickname,
+                        ),
+                      ],
                     ),
-                  const SizedBox(height: 16),
-                  TakeleyPrimaryButton(
-                    label: _nickSaving ? '저장 중…' : '저장',
-                    enabled: !_nickSaving && dirty && valid,
-                    onPressed: _saveNickname,
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      );
-    }
+          );
+        },
+      ),
+    );
+    if (mounted) setState(() {});
+  }
 
+  @override
+  Widget build(BuildContext context) {
     final emptyName = (_displayName ?? '').trim().isEmpty;
     final shown = emptyName ? '익명' : _displayName!.trim();
 
@@ -242,14 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          _draftCtrl.text = _displayName ?? '';
-                          setState(() {
-                            _showNicknamePanel = true;
-                            _nickHint = null;
-                            _nickError = null;
-                          });
-                        },
+                        onTap: () => unawaited(_openNicknamePanel()),
                         behavior: HitTestBehavior.opaque,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(0, 12, 0, 30),

@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import get_settings
@@ -39,6 +39,7 @@ def init_db() -> None:
     _rename_signals_table_if_needed()
     Base.metadata.create_all(bind=engine)
     _ensure_sqlite_schema_patches()
+    _ensure_columnist_schema()
     db = SessionLocal()
     try:
         ensure_default_templates(db)
@@ -63,6 +64,63 @@ def _rename_signals_table_if_needed() -> None:
             conn.exec_driver_sql("ALTER TABLE signals RENAME TO issues")
 
 
+def _ensure_columnist_schema() -> None:
+    """Additive columnists table + issues.columnist_id (SQLite and Postgres)."""
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        if "columnists" not in tables:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE columnists (
+                        id VARCHAR(36) PRIMARY KEY,
+                        display_name VARCHAR(128) NOT NULL,
+                        headline VARCHAR(160) NOT NULL DEFAULT '',
+                        bio TEXT NOT NULL DEFAULT '',
+                        specialties JSONB,
+                        contact_email VARCHAR(254),
+                        show_email BOOLEAN NOT NULL DEFAULT FALSE,
+                        image_url VARCHAR(1024),
+                        status VARCHAR(32) NOT NULL DEFAULT 'active',
+                        sort_order INTEGER NOT NULL DEFAULT 0,
+                        user_id VARCHAR(36),
+                        created_at TIMESTAMP,
+                        updated_at TIMESTAMP
+                    )
+                    """
+                )
+            )
+        issue_cols = (
+            {c["name"] for c in inspector.get_columns("issues")}
+            if "issues" in tables
+            else set()
+        )
+        if "issues" in tables and "columnist_id" not in issue_cols:
+            conn.execute(text("ALTER TABLE issues ADD COLUMN columnist_id VARCHAR(36)"))
+        if "columnists" in tables:
+            col_names = {c["name"] for c in inspector.get_columns("columnists")}
+            if "specialties" not in col_names:
+                spec_type = (
+                    "JSONB"
+                    if settings.database_url.startswith("postgresql")
+                    else "JSON"
+                )
+                conn.execute(
+                    text(f"ALTER TABLE columnists ADD COLUMN specialties {spec_type}")
+                )
+            if "contact_email" not in col_names:
+                conn.execute(
+                    text("ALTER TABLE columnists ADD COLUMN contact_email VARCHAR(254)")
+                )
+            if "show_email" not in col_names:
+                conn.execute(
+                    text(
+                        "ALTER TABLE columnists ADD COLUMN show_email BOOLEAN NOT NULL DEFAULT FALSE"
+                    )
+                )
+
+
 def _ensure_sqlite_schema_patches() -> None:
     """SQLite create_all does not ALTER existing tables — add missing cols."""
     if not settings.database_url.startswith("sqlite"):
@@ -79,6 +137,43 @@ def _ensure_sqlite_schema_patches() -> None:
                 conn.exec_driver_sql(
                     "ALTER TABLE market_briefs ADD COLUMN audio_status VARCHAR(32) DEFAULT 'none'"
                 )
+
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS columnists (
+                id VARCHAR(36) PRIMARY KEY,
+                display_name VARCHAR(128) NOT NULL,
+                headline VARCHAR(160) NOT NULL DEFAULT '',
+                bio TEXT NOT NULL DEFAULT '',
+                specialties JSON,
+                contact_email VARCHAR(254),
+                show_email BOOLEAN NOT NULL DEFAULT 0,
+                image_url VARCHAR(1024),
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                user_id VARCHAR(36),
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users (id)
+            )
+            """
+        )
+        columnist_cols = {
+            r[1]
+            for r in conn.exec_driver_sql("PRAGMA table_info(columnists)").fetchall()
+        }
+        if columnist_cols and "specialties" not in columnist_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE columnists ADD COLUMN specialties JSON"
+            )
+        if columnist_cols and "contact_email" not in columnist_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE columnists ADD COLUMN contact_email VARCHAR(254)"
+            )
+        if columnist_cols and "show_email" not in columnist_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE columnists ADD COLUMN show_email BOOLEAN NOT NULL DEFAULT 0"
+            )
 
         issues = conn.exec_driver_sql("PRAGMA table_info(issues)").fetchall()
         issue_cols = {r[1] for r in issues}
@@ -161,6 +256,10 @@ def _ensure_sqlite_schema_patches() -> None:
             (
                 "column_author_image_url",
                 "ALTER TABLE issues ADD COLUMN column_author_image_url VARCHAR(1024)",
+            ),
+            (
+                "columnist_id",
+                "ALTER TABLE issues ADD COLUMN columnist_id VARCHAR(36)",
             ),
             (
                 "image_url",

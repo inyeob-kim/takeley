@@ -15,6 +15,7 @@ class ShellScreen extends StatelessWidget {
     final index = navigationShell.currentIndex;
     return PhoneFrame(
       child: Scaffold(
+        backgroundColor: TakeleyColors.canvas,
         body: SafeArea(
           bottom: false,
           child: navigationShell,

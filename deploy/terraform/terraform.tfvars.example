@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in. Never commit terraform.tfvars.
+aws_region         = "ap-northeast-2"
+project            = "takeley"
+domain_name        = "example.com"          # REPLACE after Amazon Registrar purchase
+create_hosted_zone = false                  # true only if zone does not exist yet
+ssh_ingress_cidr   = "1.2.3.4/32"           # REPLACE with your public IP /32
+ssh_public_key     = "ssh-ed25519 AAAA... takeley-deploy"
+letsencrypt_email  = "you@example.com"
+db_instance_class  = "db.t4g.micro"
+app_instance_type  = "t4g.small"

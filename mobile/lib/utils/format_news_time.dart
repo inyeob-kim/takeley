@@ -10,6 +10,22 @@ DateTime? parseApiDate(String? raw) {
   return then.toLocal();
 }
 
+/// First publish, then [contentUpdatedAt] after a notified content edit.
+String? issueStoryTimestamp({
+  String? publishedAt,
+  String? firstSeenAt,
+  String? contentUpdatedAt,
+}) {
+  final published = parseApiDate(publishedAt) ?? parseApiDate(firstSeenAt);
+  final updated = parseApiDate(contentUpdatedAt);
+  if (published != null &&
+      updated != null &&
+      updated.isAfter(published.add(const Duration(seconds: 2)))) {
+    return contentUpdatedAt;
+  }
+  return publishedAt ?? firstSeenAt;
+}
+
 String formatNewsTime(String? raw, {DateTime? now}) {
   final then = parseApiDate(raw);
   if (then == null) return '';

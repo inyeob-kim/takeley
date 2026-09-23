@@ -1,0 +1,17 @@
+[Unit]
+Description=TAKELEY FastAPI (uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=takeley
+Group=takeley
+WorkingDirectory=/opt/takeley/backend
+EnvironmentFile=/etc/takeley/backend.env
+ExecStart=/opt/takeley/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

@@ -384,6 +384,7 @@ def _to_issue_out(
         column_author_image_url=(
             getattr(signal, "column_author_image_url", None) or None
         ),
+        columnist_id=(getattr(signal, "columnist_id", None) or None),
         key_points=signal.key_points or [],
         category=signal.category,
         topic=signal.topic,
@@ -416,6 +417,7 @@ def _to_issue_out(
         published_at=published_at,
         first_seen_at=signal.first_seen_at,
         updated_at=signal.updated_at,
+        content_updated_at=getattr(signal, "content_updated_at", None),
         is_following=is_following,
         has_new_update=has_new,
         my_last_seen_at=my_last_seen,

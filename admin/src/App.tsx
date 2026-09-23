@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  createIssue,
   fetchCounts,
+  fetchColumnists,
   fetchIssue,
   fetchIssues,
   publishIssue,
@@ -8,14 +10,16 @@ import {
   resolveMediaUrl,
   unpublishIssue,
   updateIssue,
-  uploadColumnMedia,
   uploadIssueImage,
+  type AdminColumnist,
   type AdminIssue,
+  type AdminIssueUpdate,
   type Counts,
   type IssueStatus,
 } from "./api";
 import { ConfirmModal } from "./ConfirmModal";
 import { ColumnEditor } from "./ColumnEditor";
+import { ColumnistsPanel } from "./ColumnistsPanel";
 import { ContributorApplicationsPanel } from "./ContributorApplicationsPanel";
 import { DeepThoughtsPanel } from "./DeepThoughtsPanel";
 import { ToastHost } from "./ToastHost";
@@ -34,7 +38,7 @@ const CATEGORIES = [
   "엔터",
 ] as const;
 
-type AdminSection = "issues" | "applications" | "takes";
+type AdminSection = "issues" | "columnists" | "applications" | "takes";
 
 type EditForm = {
   title: string;
@@ -43,6 +47,7 @@ type EditForm = {
   column_body: string;
   column_author_name: string;
   column_author_image_url: string;
+  columnist_id: string;
   image_url: string;
   key_points_text: string;
   category: string;
@@ -74,6 +79,7 @@ function toForm(issue: AdminIssue): EditForm {
     column_body: issue.column_body || "",
     column_author_name: issue.column_author_name || "",
     column_author_image_url: issue.column_author_image_url || "",
+    columnist_id: issue.columnist_id || "",
     image_url: issue.image_url || "",
     key_points_text: (issue.key_points || []).join("\n"),
     category: issue.category || "",
@@ -121,6 +127,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [columnists, setColumnists] = useState<AdminColumnist[]>([]);
 
   function applyDetail(issue: AdminIssue | null) {
     setDetail(issue);
@@ -139,7 +146,11 @@ export default function App() {
     setRejectReason("");
   }
 
-  async function refresh(nextStatus: IssueStatus = status, adminKey = key) {
+  async function refresh(
+    nextStatus: IssueStatus = status,
+    adminKey = key,
+    selectId?: string | null,
+  ) {
     setError(null);
     const [c, list] = await Promise.all([
       fetchCounts(adminKey),
@@ -152,7 +163,8 @@ export default function App() {
       applyDetail(null);
       return;
     }
-    const keep = list.items.find((x) => x.id === selectedId);
+    const want = selectId ?? selectedId;
+    const keep = list.items.find((x) => x.id === want);
     const pick = keep?.id || list.items[0].id;
     setSelectedId(pick);
     applyDetail(await fetchIssue(adminKey, pick));
@@ -166,6 +178,13 @@ export default function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, key, status, section]);
+
+  useEffect(() => {
+    if (!authed || !key) return;
+    void fetchColumnists(key, "active")
+      .then((list) => setColumnists(list.items))
+      .catch(() => setColumnists([]));
+  }, [authed, key, section]);
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -195,6 +214,36 @@ export default function App() {
     setSection("issues");
     setItems([]);
     applyDetail(null);
+  }
+
+  async function onCreateColumnDraft(columnistId?: string) {
+    if (section === "issues" && dirty) {
+      setError(
+        "저장하지 않은 이슈 변경이 있습니다. 저장하거나 버린 뒤 초안을 만드세요.",
+      );
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const row = await createIssue(key, {
+        columnist_id: columnistId || null,
+      });
+      const needSwitch = section !== "issues" || status !== "draft";
+      setSelectedId(row.id);
+      applyDetail(row);
+      setSection("issues");
+      setStatus("draft");
+      setNotice("칼럼 초안을 만들었습니다. 제목과 본문을 적어 주세요.");
+      if (!needSwitch) {
+        await refresh("draft", key, row.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "초안 만들기 실패");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function requestSection(next: AdminSection) {
@@ -236,39 +285,49 @@ export default function App() {
     setStatus(next);
   }
 
+  function buildUpdateBody(
+    next: EditForm,
+    extras: Partial<AdminIssueUpdate> = {},
+  ): AdminIssueUpdate {
+    const keyPoints = lines(next.key_points_text);
+    const optionLines = lines(next.participation_options_text);
+    return {
+      title: next.title.trim(),
+      summary: next.summary.trim(),
+      why_it_matters: next.why_it_matters.trim(),
+      column_body: next.column_body.trim(),
+      columnist_id: next.columnist_id.trim() || null,
+      clear_columnist: !next.columnist_id.trim(),
+      column_author_name: null,
+      column_author_image_url: null,
+      clear_column_author_image: false,
+      image_url: next.image_url.trim() || null,
+      clear_image: !next.image_url.trim(),
+      key_points: keyPoints,
+      category: next.category.trim() || null,
+      participation_suitable: next.participation_suitable,
+      participation_question: next.participation_suitable
+        ? next.participation_question.trim() || null
+        : null,
+      participation_options: next.participation_suitable ? optionLines : null,
+      show_sources: next.show_sources,
+      push_title: next.push_title.trim() || null,
+      push_body: next.push_body.trim() || null,
+      ...extras,
+    };
+  }
+
   async function onSave() {
     if (!detail || !form || busy) return;
-    if (detail.status !== "draft") {
-      setError("배포된 이슈는 수정할 수 없습니다. 배포 취소 후 편집하세요.");
+    if (detail.status !== "draft" && detail.status !== "published") {
+      setError("폐기된 이슈는 편집할 수 없습니다.");
       return;
     }
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const keyPoints = lines(form.key_points_text);
-      const optionLines = lines(form.participation_options_text);
-      const saved = await updateIssue(key, detail.id, {
-        title: form.title.trim(),
-        summary: form.summary.trim(),
-        why_it_matters: form.why_it_matters.trim(),
-        column_body: form.column_body.trim(),
-        column_author_name: form.column_author_name.trim() || null,
-        column_author_image_url: form.column_author_image_url.trim() || null,
-        clear_column_author_image: !form.column_author_image_url.trim(),
-        image_url: form.image_url.trim() || null,
-        clear_image: !form.image_url.trim(),
-        key_points: keyPoints,
-        category: form.category.trim() || null,
-        participation_suitable: form.participation_suitable,
-        participation_question: form.participation_suitable
-          ? form.participation_question.trim() || null
-          : null,
-        participation_options: form.participation_suitable ? optionLines : null,
-        show_sources: form.show_sources,
-        push_title: form.push_title.trim() || null,
-        push_body: form.push_body.trim() || null,
-      });
+      const saved = await updateIssue(key, detail.id, buildUpdateBody(form));
       applyDetail(saved);
       setItems((prev) =>
         prev.map((item) =>
@@ -327,8 +386,8 @@ export default function App() {
 
   async function onUploadImage(file: File | null) {
     if (!detail || !file || busy) return;
-    if (detail.status !== "draft") {
-      setError("배포된 이슈는 수정할 수 없습니다. 배포 취소 후 편집하세요.");
+    if (detail.status !== "draft" && detail.status !== "published") {
+      setError("폐기된 이슈는 편집할 수 없습니다.");
       return;
     }
     setBusy(true);
@@ -347,42 +406,20 @@ export default function App() {
 
   async function clearImage() {
     if (!detail || busy) return;
-    if (detail.status !== "draft") {
-      setError("배포된 이슈는 수정할 수 없습니다. 배포 취소 후 편집하세요.");
+    if (detail.status !== "draft" && detail.status !== "published") {
+      setError("폐기된 이슈는 편집할 수 없습니다.");
       return;
     }
+    if (!form) return;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const saved = await updateIssue(key, detail.id, {
-        title: (form?.title || detail.title).trim(),
-        summary: (form?.summary || detail.summary).trim(),
-        why_it_matters: (form?.why_it_matters || detail.why_it_matters || "").trim(),
-        column_body: (form?.column_body || detail.column_body || "").trim(),
-        column_author_name:
-          (form?.column_author_name || detail.column_author_name || "").trim() ||
-          null,
-        column_author_image_url:
-          (
-            form?.column_author_image_url ||
-            detail.column_author_image_url ||
-            ""
-          ).trim() || null,
-        clear_column_author_image: false,
-        image_url: null,
-        clear_image: true,
-        key_points: lines(form?.key_points_text || ""),
-        category: (form?.category || detail.category || "").trim() || null,
-        participation_suitable: Boolean(
-          form?.participation_suitable ?? detail.participation_suitable,
-        ),
-        participation_question: detail.participation_question,
-        participation_options: null,
-        show_sources: form?.show_sources ?? Boolean(detail.show_sources),
-        push_title: form?.push_title?.trim() || detail.push_title || null,
-        push_body: form?.push_body?.trim() || detail.push_body || null,
-      });
+      const saved = await updateIssue(
+        key,
+        detail.id,
+        buildUpdateBody(form, { image_url: null, clear_image: true }),
+      );
       applyDetail(saved);
       setNotice("대표 이미지를 제거했습니다.");
     } catch (err) {
@@ -470,7 +507,7 @@ export default function App() {
     }
   }
 
-  const canEdit = detail?.status === "draft";
+  const canEdit = detail?.status === "draft" || detail?.status === "published";
   const issueTitle = detail?.title?.trim() || "이 이슈";
 
   if (!authed) {
@@ -530,6 +567,13 @@ export default function App() {
         </button>
         <button
           type="button"
+          className={section === "columnists" ? "is-active" : ""}
+          onClick={() => requestSection("columnists")}
+        >
+          칼럼니스트
+        </button>
+        <button
+          type="button"
           className={section === "applications" ? "is-active" : ""}
           onClick={() => requestSection("applications")}
         >
@@ -543,6 +587,14 @@ export default function App() {
           깊이 있는 생각
         </button>
       </nav>
+
+      {section === "columnists" ? (
+        <ColumnistsPanel
+          adminKey={key}
+          onAuthFailure={() => setAuthed(false)}
+          onStartColumnDraft={(id) => void onCreateColumnDraft(id)}
+        />
+      ) : null}
 
       {section === "applications" ? (
         <ContributorApplicationsPanel
@@ -578,6 +630,14 @@ export default function App() {
                 {counts ? ` · ${counts[s]}` : ""}
               </button>
             ))}
+            <button
+              type="button"
+              className="tabs__ghost"
+              disabled={busy}
+              onClick={() => void onCreateColumnDraft()}
+            >
+              칼럼 초안
+            </button>
           </div>
 
           <div className="layout">
@@ -619,12 +679,14 @@ export default function App() {
                 {dirty ? " · 수정됨" : ""}
               </p>
 
-              {!canEdit ? (
+              {detail.status === "published" ? (
                 <p className="meta">
-                  {detail.status === "published"
-                    ? "배포된 이슈는 수정할 수 없습니다. 고치려면 배포 취소 후 편집하세요."
-                    : "폐기된 이슈는 편집할 수 없습니다."}
+                  배포된 글입니다. 저장은 앱에 바로 반영되고 푸시는 보내지 않습니다.
+                  홈에서 내리려면 배포 취소를 쓰세요.
                 </p>
+              ) : null}
+              {!canEdit ? (
+                <p className="meta">폐기된 이슈는 편집할 수 없습니다.</p>
               ) : null}
 
               <div className={`editor${canEdit ? "" : " editor--readonly"}`}>
@@ -767,102 +829,51 @@ export default function App() {
                   </p>
 
                 <div className="column-field">
-                  <span className="column-field__label">칼럼 작성자</span>
+                  <span className="column-field__label">테이클리 칼럼니스트</span>
                   <span className="field-hint">
-                    앱 컬럼 상단 byline (이름 · 사진)
+                    선정 필진에서 고릅니다. 이름·사진은 프로필에서 관리합니다.
                   </span>
                   <div className="author-byline-admin">
-                    {resolveMediaUrl(form.column_author_image_url) ? (
-                      <img
-                        className="author-byline-admin__avatar"
-                        src={
-                          resolveMediaUrl(form.column_author_image_url) || ""
-                        }
-                        alt=""
-                      />
-                    ) : (
-                      <div className="author-byline-admin__avatar author-byline-admin__avatar--empty">
-                        {(
-                          form.column_author_name.trim().slice(0, 1) || "?"
-                        ).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="author-byline-admin__fields">
-                      <input
-                        type="text"
-                        value={form.column_author_name}
-                        disabled={!canEdit}
-                        placeholder="작성자 이름"
-                        maxLength={128}
-                        onChange={(e) =>
-                          patchForm({ column_author_name: e.target.value })
-                        }
-                      />
-                      <div className="author-byline-admin__image-row">
-                        <input
-                          type="text"
-                          value={form.column_author_image_url}
-                          disabled={!canEdit}
-                          placeholder="사진 URL (선택)"
-                          onChange={(e) =>
-                            patchForm({
-                              column_author_image_url: e.target.value,
-                            })
-                          }
+                    {(() => {
+                      const picked =
+                        columnists.find((c) => c.id === form.columnist_id) ||
+                        null;
+                      const photo = resolveMediaUrl(
+                        picked?.image_url || form.column_author_image_url,
+                      );
+                      const label = (
+                        picked?.display_name ||
+                        form.column_author_name ||
+                        "?"
+                      ).trim();
+                      return photo ? (
+                        <img
+                          className="author-byline-admin__avatar"
+                          src={photo}
+                          alt=""
                         />
-                        {canEdit ? (
-                          <label className="image-field__file">
-                            업로드
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,image/gif"
-                              disabled={busy}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                e.target.value = "";
-                                if (!file || !detail) return;
-                                void (async () => {
-                                  setBusy(true);
-                                  setError(null);
-                                  try {
-                                    const { url } = await uploadColumnMedia(
-                                      key,
-                                      detail.id,
-                                      file,
-                                    );
-                                    patchForm({
-                                      column_author_image_url: url,
-                                    });
-                                    setNotice(
-                                      "작성자 사진을 올렸습니다. 저장을 눌러 반영하세요.",
-                                    );
-                                  } catch (err) {
-                                    setError(
-                                      err instanceof Error
-                                        ? err.message
-                                        : "사진 업로드 실패",
-                                    );
-                                  } finally {
-                                    setBusy(false);
-                                  }
-                                })();
-                              }}
-                            />
-                          </label>
-                        ) : null}
-                        {form.column_author_image_url && canEdit ? (
-                          <button
-                            type="button"
-                            className="image-field__clear"
-                            disabled={busy}
-                            onClick={() =>
-                              patchForm({ column_author_image_url: "" })
-                            }
-                          >
-                            사진 제거
-                          </button>
-                        ) : null}
-                      </div>
+                      ) : (
+                        <div className="author-byline-admin__avatar author-byline-admin__avatar--empty">
+                          {(label.slice(0, 1) || "?").toUpperCase()}
+                        </div>
+                      );
+                    })()}
+                    <div className="author-byline-admin__fields">
+                      <select
+                        value={form.columnist_id}
+                        disabled={!canEdit}
+                        onChange={(e) =>
+                          patchForm({ columnist_id: e.target.value })
+                        }
+                      >
+                        <option value="">없음</option>
+                        {columnists.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.display_name}
+                            {c.headline ? ` · ${c.headline}` : ""}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1047,7 +1058,7 @@ export default function App() {
                   <>
                     <button
                       type="button"
-                      className="primary"
+                      className="ghost"
                       disabled={busy}
                       onClick={openUnpublishModal}
                     >

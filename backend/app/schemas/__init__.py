@@ -245,6 +245,7 @@ class IssueOut(BaseModel):
     column_body: str = ""
     column_author_name: Optional[str] = None
     column_author_image_url: Optional[str] = None
+    columnist_id: Optional[str] = None
     image_url: Optional[str] = None
     key_points: list[str] = Field(default_factory=list)
     category: Optional[str] = None
@@ -280,6 +281,7 @@ class IssueOut(BaseModel):
     published_at: Optional[datetime] = None
     first_seen_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    content_updated_at: Optional[datetime] = None
     is_following: bool = False
     has_new_update: bool = False
     my_last_seen_at: Optional[datetime] = None
@@ -491,3 +493,78 @@ class AdminTakeRejectIn(BaseModel):
 class AdminTakeListOut(BaseModel):
     items: list[IssueTakeOut]
     count: int
+
+
+class ColumnistOut(BaseModel):
+    id: str
+    display_name: str
+    headline: str = ""
+    bio: str = ""
+    specialties: list[str] = Field(default_factory=list)
+    contact_email: Optional[str] = None
+    show_email: bool = False
+    image_url: Optional[str] = None
+    status: str = "active"
+    sort_order: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class ColumnistListOut(BaseModel):
+    items: list[ColumnistOut]
+    count: int
+
+
+class ColumnistIssueCardOut(BaseModel):
+    id: str
+    title: str
+    summary: str
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+    published_at: Optional[datetime] = None
+    content_updated_at: Optional[datetime] = None
+
+
+class ColumnistProfileOut(BaseModel):
+    id: str
+    display_name: str
+    headline: str = ""
+    bio: str = ""
+    specialties: list[str] = Field(default_factory=list)
+    email: Optional[str] = None
+    image_url: Optional[str] = None
+    status: str = "active"
+    issue_count: int = 0
+    issues: list[ColumnistIssueCardOut] = Field(default_factory=list)
+
+
+class ColumnistIssueListOut(BaseModel):
+    items: list[ColumnistIssueCardOut]
+    count: int
+    offset: int = 0
+    limit: int = 10
+
+
+class AdminColumnistIn(BaseModel):
+    display_name: str = Field(..., min_length=1, max_length=128)
+    headline: str = Field(default="", max_length=160)
+    bio: str = Field(default="", max_length=8000)
+    specialties: list[str] = Field(default_factory=list, max_length=12)
+    contact_email: Optional[str] = Field(default=None, max_length=254)
+    show_email: bool = False
+    image_url: Optional[str] = None
+    status: str = Field(default="active", pattern="^(active|archived)$")
+    sort_order: Optional[int] = None
+
+
+class AdminColumnistPatchIn(BaseModel):
+    display_name: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    headline: Optional[str] = Field(default=None, max_length=160)
+    bio: Optional[str] = Field(default=None, max_length=8000)
+    specialties: Optional[list[str]] = Field(default=None, max_length=12)
+    contact_email: Optional[str] = Field(default=None, max_length=254)
+    show_email: Optional[bool] = None
+    image_url: Optional[str] = None
+    clear_image: bool = False
+    status: Optional[str] = Field(default=None, pattern="^(active|archived)$")
+    sort_order: Optional[int] = None

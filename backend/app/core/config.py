@@ -34,13 +34,17 @@ class Settings(BaseSettings):
     issue_llm_understand_budget_per_cycle: int = 12
     # Max recent Issues shown to Match LLM as shortlist.
     issue_llm_match_shortlist: int = 8
+    # Public columnist profile: first page + load-more page size.
+    columnist_issue_page_size: int = 10
+    columnist_issue_page_max: int = 40
     # Explicit override: DEBUG | INFO | WARNING | ERROR. Empty → derive from env/debug.
     log_level: str = ""
     # Admin review portal — header X-Admin-Key. Empty → admin routes disabled.
     admin_api_key: str = ""
     # Local default is SQLite so the API/worker run without Docker.
-    # For Postgres: postgresql+psycopg://takeley:takeley@localhost:5432/takeley
-    database_url: str = "sqlite:///./takeley.db"
+    # For local SQLite fallback: sqlite:///./takeley.db
+    # Docker Compose Postgres (default for launch):
+    database_url: str = "postgresql+psycopg://takeley:takeley@localhost:5432/takeley"
     openai_api_key: str = ""
     # Chat completions model for analyze / select / brief synthesize.
     openai_model: str = "gpt-4o-mini"

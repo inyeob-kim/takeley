@@ -113,7 +113,11 @@ class Issue(Base):
     why_it_matters: Mapped[str] = mapped_column(Text, default="")
     # Long-form Korean editorial for "컬럼 자세히 보기" (worker-generated).
     column_body: Mapped[str] = mapped_column(Text, default="")
-    # Column byline (Finimize-style author credit).
+    # TAKELEY-selected columnist (not a Contributor). Snapshot name/image stay below.
+    columnist_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("columnists.id"), nullable=True, index=True
+    )
+    # Column byline snapshot at assign/publish time.
     column_author_name: Mapped[Optional[str]] = mapped_column(
         String(128), nullable=True
     )
@@ -199,10 +203,41 @@ class Issue(Base):
     takes: Mapped[list["IssueTake"]] = relationship(
         back_populates="issue", cascade="all, delete-orphan"
     )
+    columnist: Mapped[Optional["Columnist"]] = relationship(
+        back_populates="issues"
+    )
 
 
 # Backward-compatible ORM alias (same mapper / table `issues`).
 Signal = Issue
+
+
+class Columnist(Base):
+    """TAKELEY-selected editorial columnist — not a Contributor / app user."""
+
+    __tablename__ = "columnists"
+    __table_args__ = (Index("idx_columnists_status_sort", "status", "sort_order"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    display_name: Mapped[str] = mapped_column(String(128))
+    headline: Mapped[str] = mapped_column(String(160), default="")
+    bio: Mapped[str] = mapped_column(Text, default="")
+    specialties: Mapped[list] = mapped_column(JSONType, default=list)
+    contact_email: Mapped[Optional[str]] = mapped_column(String(254), nullable=True)
+    show_email: Mapped[bool] = mapped_column(Boolean, default=False)
+    image_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # Optional later link after a scouted writer has an app account.
+    user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    issues: Mapped[list["Issue"]] = relationship(back_populates="columnist")
 
 
 class SignalSource(Base):

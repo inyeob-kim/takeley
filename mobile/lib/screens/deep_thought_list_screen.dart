@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../api/contributor_api.dart';
+import '../navigation/cupertino_nav.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/contributor_ui.dart';
 import '../widgets/data_state.dart';
@@ -38,7 +41,6 @@ class _DeepThoughtListScreenState extends State<DeepThoughtListScreen> {
   late List<IssueTake> _takes;
   bool _loading = false;
   String? _error;
-  String? _openTakeId;
 
   @override
   void initState() {
@@ -73,19 +75,21 @@ class _DeepThoughtListScreenState extends State<DeepThoughtListScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final openId = _openTakeId;
-    if (openId != null) {
-      return DeepThoughtDetailScreen(
+  Future<void> _openDetail(String takeId) async {
+    await pushCupertinoPage(
+      context,
+      DeepThoughtDetailScreen(
         contributorApi: widget.contributorApi,
         issueId: widget.issueId,
-        takeId: openId,
+        takeId: takeId,
         userId: widget.userId,
-        onBack: () => setState(() => _openTakeId = null),
-      );
-    }
+        onBack: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: TakeleyColors.canvas,
       body: SafeArea(
@@ -131,7 +135,7 @@ class _DeepThoughtListScreenState extends State<DeepThoughtListScreen> {
                                   DeepThoughtCard(
                                     take: t,
                                     onTap: () =>
-                                        setState(() => _openTakeId = t.id),
+                                        unawaited(_openDetail(t.id)),
                                   ),
                                 if (widget.canWriteDeep &&
                                     widget.onWrite != null) ...[

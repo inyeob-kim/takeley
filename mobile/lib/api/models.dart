@@ -59,6 +59,7 @@ class Issue {
     this.columnBody = '',
     this.columnAuthorName,
     this.columnAuthorImageUrl,
+    this.columnistId,
     this.imageUrl,
     this.keyPoints = const [],
     this.category,
@@ -87,6 +88,7 @@ class Issue {
     this.publishedAt,
     this.firstSeenAt,
     this.updatedAt,
+    this.contentUpdatedAt,
     this.isFollowing = false,
     this.hasNewUpdate = false,
     this.myLastSeenAt,
@@ -99,6 +101,7 @@ class Issue {
   final String columnBody;
   final String? columnAuthorName;
   final String? columnAuthorImageUrl;
+  final String? columnistId;
   final String? imageUrl;
   final List<String> keyPoints;
   final String? category;
@@ -127,6 +130,7 @@ class Issue {
   final String? publishedAt;
   final String? firstSeenAt;
   final String? updatedAt;
+  final String? contentUpdatedAt;
   final bool isFollowing;
   final bool hasNewUpdate;
   final String? myLastSeenAt;
@@ -148,6 +152,7 @@ class Issue {
       columnBody: '${json['column_body'] ?? ''}',
       columnAuthorName: json['column_author_name'] as String?,
       columnAuthorImageUrl: json['column_author_image_url'] as String?,
+      columnistId: json['columnist_id'] as String?,
       imageUrl: json['image_url'] as String?,
       keyPoints: keyPointsRaw is List
           ? keyPointsRaw.map((e) => '$e').toList()
@@ -190,6 +195,7 @@ class Issue {
       publishedAt: json['published_at'] as String?,
       firstSeenAt: json['first_seen_at'] as String?,
       updatedAt: json['updated_at'] as String?,
+      contentUpdatedAt: json['content_updated_at'] as String?,
       isFollowing: json['is_following'] == true,
       hasNewUpdate: json['has_new_update'] == true,
       myLastSeenAt: json['my_last_seen_at'] as String?,
@@ -211,6 +217,7 @@ class Issue {
       columnBody: columnBody,
       columnAuthorName: columnAuthorName,
       columnAuthorImageUrl: columnAuthorImageUrl,
+      columnistId: columnistId,
       imageUrl: imageUrl,
       keyPoints: keyPoints,
       category: category,
@@ -239,6 +246,7 @@ class Issue {
       publishedAt: publishedAt,
       firstSeenAt: firstSeenAt,
       updatedAt: updatedAt,
+      contentUpdatedAt: contentUpdatedAt,
       isFollowing: isFollowing ?? this.isFollowing,
       hasNewUpdate: hasNewUpdate,
       myLastSeenAt: myLastSeenAt,
@@ -421,6 +429,96 @@ class UserSettings {
       briefAlarmTime: json['brief_alarm_time'] as String?,
       timezone: json['timezone'] as String?,
       ttsVoiceGender: json['tts_voice_gender'] as String?,
+    );
+  }
+}
+
+class ColumnistIssueCard {
+  ColumnistIssueCard({
+    required this.id,
+    required this.title,
+    required this.summary,
+    this.category,
+    this.imageUrl,
+    this.publishedAt,
+    this.contentUpdatedAt,
+  });
+
+  final String id;
+  final String title;
+  final String summary;
+  final String? category;
+  final String? imageUrl;
+  final String? publishedAt;
+  final String? contentUpdatedAt;
+
+  factory ColumnistIssueCard.fromJson(Map<String, dynamic> json) {
+    return ColumnistIssueCard(
+      id: '${json['id'] ?? ''}',
+      title: '${json['title'] ?? ''}',
+      summary: '${json['summary'] ?? ''}',
+      category: json['category'] as String?,
+      imageUrl: json['image_url'] as String?,
+      publishedAt: json['published_at'] as String?,
+      contentUpdatedAt: json['content_updated_at'] as String?,
+    );
+  }
+}
+
+class ColumnistProfile {
+  ColumnistProfile({
+    required this.id,
+    required this.displayName,
+    this.headline = '',
+    this.bio = '',
+    this.specialties = const [],
+    this.email,
+    this.imageUrl,
+    this.status = 'active',
+    this.issueCount = 0,
+    this.issues = const [],
+  });
+
+  final String id;
+  final String displayName;
+  final String headline;
+  final String bio;
+  final List<String> specialties;
+  final String? email;
+  final String? imageUrl;
+  final String status;
+  final int issueCount;
+  final List<ColumnistIssueCard> issues;
+
+  factory ColumnistProfile.fromJson(Map<String, dynamic> json) {
+    final raw = json['issues'];
+    final specs = json['specialties'];
+    return ColumnistProfile(
+      id: '${json['id'] ?? ''}',
+      displayName: '${json['display_name'] ?? ''}',
+      headline: '${json['headline'] ?? ''}',
+      bio: '${json['bio'] ?? ''}',
+      specialties: specs is List
+          ? specs
+              .map((e) => '$e'.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : const [],
+      email: (json['email'] as String?)?.trim(),
+      imageUrl: json['image_url'] as String?,
+      status: '${json['status'] ?? 'active'}',
+      issueCount: (json['issue_count'] as num?)?.toInt() ??
+          (raw is List ? raw.length : 0),
+      issues: raw is List
+          ? raw
+              .whereType<Map>()
+              .map(
+                (e) => ColumnistIssueCard.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
+              .toList()
+          : const [],
     );
   }
 }

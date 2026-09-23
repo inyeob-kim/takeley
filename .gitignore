@@ -5,17 +5,23 @@ Thumbs.db
 .vscode/
 *.swp
 *~
+*.log
 
 # —— Secrets / local env ——
 .env
 .env.*
 !.env.example
 !**/.env.example
-backend/.env
-backend/firebase-credentials.json
-backend/**/firebase-credentials*.json
-mobile/android/app/google-services.json
-mobile/ios/Runner/GoogleService-Info.plist
+*.pem
+*.p8
+*.p12
+*.jks
+*.keystore
+credentials.json
+*-credentials.json
+**/firebase-credentials*.json
+**/google-services.json
+**/GoogleService-Info*.plist
 
 # —— Python / backend ——
 __pycache__/
@@ -28,13 +34,13 @@ build/
 .venv/
 venv/
 backend/.venv/
+.pytest_cache/
 backend/.pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 *.db
-backend/takeley.db
 backend/storage/
 
 # —— Admin (Vite) ——
@@ -42,7 +48,26 @@ admin/node_modules/
 admin/dist/
 admin/.vite/
 
-# —— Flutter / mobile (root-level catch-alls; see also mobile/.gitignore) ——
+# —— AWS / Terraform deploy ——
+# Keep: .tf, examples, scripts, nginx/systemd, .terraform.lock.hcl
+deploy/bin/
+deploy/terraform/.terraform/
+deploy/terraform/*.tfstate
+deploy/terraform/*.tfstate.*
+deploy/terraform/.terraform.tfstate.lock.info
+deploy/terraform/*.tfplan
+deploy/terraform/tfplan
+deploy/terraform/*.tfvars
+deploy/terraform/*.auto.tfvars
+deploy/terraform/override.tf
+deploy/terraform/override.tf.json
+deploy/terraform/*_override.tf
+deploy/terraform/*_override.tf.json
+!deploy/terraform/*.example
+deploy/env/*
+!deploy/env/*.example
+
+# —— Flutter / mobile (also mobile/.gitignore) ——
 mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
@@ -56,9 +81,11 @@ mobile/android/.gradle/
 mobile/android/local.properties
 mobile/android/**/captures/
 mobile/android/.cxx/
+mobile/android/**/key.properties
 mobile/ios/Pods/
 mobile/ios/.symlinks/
 mobile/ios/Flutter/Flutter.podspec
 mobile/ios/Flutter/Generated.xcconfig
 mobile/ios/Flutter/ephemeral/
 mobile/ios/Flutter/flutter_export_environment.sh
+mobile/ios/**/xcuserdata/

@@ -286,6 +286,20 @@ button {
   color: #fff;
 }
 
+.tabs button.tabs__ghost {
+  margin-left: auto;
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tabs button.tabs__ghost:hover {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+
 /* —— Layout / panels —— */
 
 .layout {
@@ -752,6 +766,13 @@ button {
   background: #e5e7eb;
 }
 
+.image-field__preview--avatar {
+  width: 88px;
+  height: 88px;
+  max-height: none;
+  border-radius: 50%;
+}
+
 .image-field__empty {
   padding: 28px 12px;
   text-align: center;
@@ -760,6 +781,22 @@ button {
   border: 1px dashed rgba(0, 0, 0, 0.14);
   border-radius: 10px;
   background: #fff;
+}
+
+.image-field__empty--avatar {
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border-style: solid;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .image-field__row {
@@ -843,6 +880,23 @@ button {
 
 .actions .primary {
   min-height: 44px;
+}
+
+.actions .ghost {
+  background: #fff;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 650;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.actions .ghost:hover {
+  border-color: rgba(45, 91, 227, 0.28);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .actions .danger {

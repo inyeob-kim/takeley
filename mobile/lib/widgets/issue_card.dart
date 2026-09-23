@@ -57,7 +57,13 @@ class _IssueCardState extends State<IssueCard> {
   @override
   Widget build(BuildContext context) {
     final issue = widget.issue;
-    final when = formatNewsTime(issue.publishedAt ?? issue.firstSeenAt);
+    final when = formatNewsTime(
+      issueStoryTimestamp(
+        publishedAt: issue.publishedAt,
+        firstSeenAt: issue.firstSeenAt,
+        contentUpdatedAt: issue.contentUpdatedAt,
+      ),
+    );
     final canVote = issue.participationSuitable &&
         (issue.participationQuestion?.isNotEmpty ?? false);
     final cat = categoryLabel(issue.category);
@@ -84,15 +90,7 @@ class _IssueCardState extends State<IssueCard> {
                 children: [
                   Text(cat, style: Theme.of(context).textTheme.labelLarge),
                   const Spacer(),
-                  if (issue.hasNewUpdate)
-                    Text(
-                      '새로운 소식',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: TakeleyColors.accent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    )
-                  else if (trend == 'TRENDING')
+                  if (trend == 'TRENDING')
                     Text(
                       '🔥 지금 뜨는',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(

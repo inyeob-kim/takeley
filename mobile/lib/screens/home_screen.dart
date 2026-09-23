@@ -43,7 +43,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _tab = 'all';
   List<Issue> _items = [];
-  List<Issue> _watching = [];
   bool _loading = true;
   bool _collecting = false;
   String? _error;
@@ -90,24 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
         userId: userId,
       );
 
-      List<Issue> watching = [];
-      if (userId != null && _tab == 'all') {
-        try {
-          final activity =
-              await widget.issuesApi.fetchMyActivity(userId: userId);
-          final byId = <String, Issue>{};
-          for (final item in [...activity.followed, ...activity.participations]) {
-            if (!item.hasNewUpdate) continue;
-            byId.putIfAbsent(item.id, () => item);
-          }
-          watching = byId.values.take(3).toList();
-        } catch (_) {}
-      }
-
       if (!mounted) return;
       setState(() {
         _items = result.items;
-        _watching = watching;
         _loading = false;
       });
 
@@ -140,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final showWatching = _tab == 'all' && _watching.isNotEmpty;
     final showTopBar = !_loading && _collecting && _items.isNotEmpty;
 
     return RefreshIndicator(
@@ -179,29 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          if (showWatching)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '내가 보고 있던 이슈',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    ..._watching.map(
-                      (issue) => IssueCard(
-                        issue: issue,
-                        onOpen: (i) => widget.onIssueOpen(i.id),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                  ],
-                ),
-              ),
-            ),
           if (_loading)
             const SliverFillRemaining(
               hasScrollBody: false,
@@ -218,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onAction: () => _loadFeed(),
               ),
             )
-          else if (_items.isEmpty && !showWatching)
+          else if (_items.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: DataState(

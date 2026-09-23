@@ -17,6 +17,7 @@ export type AdminIssue = {
   column_body?: string;
   column_author_name?: string | null;
   column_author_image_url?: string | null;
+  columnist_id?: string | null;
   image_url?: string | null;
   key_points: string[];
   category: string | null;
@@ -50,6 +51,8 @@ export type AdminIssueUpdate = {
   column_author_name: string | null;
   column_author_image_url: string | null;
   clear_column_author_image?: boolean;
+  columnist_id?: string | null;
+  clear_columnist?: boolean;
   image_url: string | null;
   clear_image?: boolean;
   key_points: string[];
@@ -116,6 +119,20 @@ export function fetchIssues(
 
 export function fetchIssue(key: string, id: string): Promise<AdminIssue> {
   return adminFetch(`/api/v1/admin/issues/${encodeURIComponent(id)}`, key);
+}
+
+export function createIssue(
+  key: string,
+  body?: {
+    title?: string;
+    columnist_id?: string | null;
+    category?: string | null;
+  },
+): Promise<AdminIssue> {
+  return adminFetch("/api/v1/admin/issues", key, {
+    method: "POST",
+    body: JSON.stringify(body || {}),
+  });
 }
 
 export function updateIssue(
@@ -357,6 +374,101 @@ export function rejectContributorTake(
       body: JSON.stringify({ reason: reason || null }),
     },
   );
+}
+
+export type ColumnistStatus = "active" | "archived";
+
+export type AdminColumnist = {
+  id: string;
+  display_name: string;
+  headline: string;
+  bio: string;
+  specialties?: string[];
+  contact_email?: string | null;
+  show_email?: boolean;
+  image_url: string | null;
+  status: ColumnistStatus;
+  sort_order: number;
+  created_at?: string | null;
+};
+
+export function fetchColumnists(
+  key: string,
+  status?: ColumnistStatus,
+): Promise<{ items: AdminColumnist[]; count: number }> {
+  const q = status ? `?status=${status}` : "";
+  return adminFetch(`/api/v1/admin/columnists${q}`, key);
+}
+
+export function createColumnist(
+  key: string,
+  body: {
+    display_name: string;
+    headline?: string;
+    bio?: string;
+    specialties?: string[];
+    contact_email?: string | null;
+    show_email?: boolean;
+    image_url?: string | null;
+    status?: ColumnistStatus;
+  },
+): Promise<AdminColumnist> {
+  return adminFetch("/api/v1/admin/columnists", key, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateColumnist(
+  key: string,
+  id: string,
+  body: {
+    display_name?: string;
+    headline?: string;
+    bio?: string;
+    specialties?: string[];
+    contact_email?: string | null;
+    show_email?: boolean;
+    image_url?: string | null;
+    clear_image?: boolean;
+    status?: ColumnistStatus;
+  },
+): Promise<AdminColumnist> {
+  return adminFetch(`/api/v1/admin/columnists/${encodeURIComponent(id)}`, key, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function uploadColumnistImage(
+  key: string,
+  id: string,
+  file: File,
+): Promise<AdminColumnist> {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/admin/columnists/${encodeURIComponent(id)}/image`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "X-Admin-Key": key,
+      },
+      body: form,
+    },
+  );
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const data = await response.json();
+      if (typeof data?.detail === "string") detail = data.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+  return (await response.json()) as AdminColumnist;
 }
 
 /** Backend policy: published → rejected. */

@@ -11,7 +11,7 @@ import '../utils/format_news_time.dart';
 import '../utils/tab_visibility_reload.dart';
 import '../widgets/data_state.dart';
 import '../widgets/issue_card.dart';
-import '../widgets/page_header.dart';
+import '../widgets/profile_chrome.dart';
 
 /// Mirrors `frontend/src/screens/ActivityScreen.tsx`.
 class ActivityScreen extends StatefulWidget {
@@ -125,7 +125,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const PageHeader(
+        const ScreenTopBar(
           title: '내 이슈',
         ),
         if (_loading)

@@ -22,6 +22,12 @@ class AdminRejectIn(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 
 
+class AdminIssueCreateIn(BaseModel):
+    title: str | None = Field(default=None, max_length=512)
+    columnist_id: str | None = Field(default=None, max_length=36)
+    category: str | None = Field(default=None, max_length=64)
+
+
 class AdminIssueUpdateIn(BaseModel):
     title: str | None = Field(default=None, max_length=512)
     summary: str | None = None
@@ -30,6 +36,8 @@ class AdminIssueUpdateIn(BaseModel):
     column_author_name: str | None = Field(default=None, max_length=128)
     column_author_image_url: str | None = None
     clear_column_author_image: bool = False
+    columnist_id: str | None = Field(default=None, max_length=36)
+    clear_columnist: bool = False
     image_url: str | None = None
     clear_image: bool = False
     key_points: list[str] | None = None
@@ -57,6 +65,22 @@ class AdminColumnMediaOut(BaseModel):
 @router.get("/counts", response_model=AdminCountsOut)
 def admin_issue_counts(db: Session = Depends(get_db)) -> AdminCountsOut:
     return AdminCountsOut(**AdminIssueService(db).counts())
+
+
+@router.post("", response_model=IssueOut)
+def admin_create_issue(
+    body: AdminIssueCreateIn | None = None,
+    db: Session = Depends(get_db),
+) -> IssueOut:
+    payload = body or AdminIssueCreateIn()
+    try:
+        return AdminIssueService(db).create_manual(
+            title=payload.title,
+            columnist_id=payload.columnist_id,
+            category=payload.category,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("", response_model=IssueListOut)
@@ -92,6 +116,8 @@ def admin_update_issue(
             column_author_name=body.column_author_name,
             column_author_image_url=body.column_author_image_url,
             clear_column_author_image=body.clear_column_author_image,
+            columnist_id=body.columnist_id,
+            clear_columnist=body.clear_columnist,
             image_url=body.image_url,
             clear_image=body.clear_image,
             key_points=body.key_points,
