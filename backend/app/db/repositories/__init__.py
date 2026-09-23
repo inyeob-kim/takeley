@@ -431,6 +431,31 @@ class CursorRepository:
             )
         self.db.commit()
 
+    def delete(self, provider: str, cursor_key: str) -> None:
+        row = (
+            self.db.query(IngestCursor)
+            .filter(
+                IngestCursor.provider == provider,
+                IngestCursor.cursor_key == cursor_key,
+            )
+            .one_or_none()
+        )
+        if row is None:
+            return
+        self.db.delete(row)
+        self.db.commit()
+
+    def list_prefix(self, provider: str, prefix: str) -> list[tuple[str, str]]:
+        rows = (
+            self.db.query(IngestCursor)
+            .filter(
+                IngestCursor.provider == provider,
+                IngestCursor.cursor_key.like(f"{prefix}%"),
+            )
+            .all()
+        )
+        return [(row.cursor_key, row.cursor_value) for row in rows]
+
 
 class MacroEventRepository:
     def __init__(self, db: Session) -> None:

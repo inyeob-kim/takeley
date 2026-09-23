@@ -4,6 +4,7 @@ from app.api.v1 import (
     admin_columnists,
     admin_contributor,
     admin_issues,
+    admin_x_ingest,
     billing,
     columnists,
     contributor,
@@ -16,6 +17,7 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 api_router.include_router(admin_issues.router)
+api_router.include_router(admin_x_ingest.router)
 api_router.include_router(admin_columnists.router)
 api_router.include_router(admin_contributor.router)
 api_router.include_router(columnists.router)

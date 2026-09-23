@@ -165,6 +165,7 @@ class TopicLane(NamedTuple):
     industry_key: str
     source_lane: str
     query: str
+    max_results: int | None = None
 
 
 def _strip_has_replies(query: str) -> str:

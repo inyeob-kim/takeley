@@ -66,6 +66,22 @@ def run_heavy_cycle() -> None:
 
         t = time.monotonic()
         process_result = run_process_signals(db)
+        from app.pipeline.dynamic_query import settle_dynamic_polls
+        from app.pipeline.x_schedule import settle_hot_polls
+        from app.services.x_ingest_admin import get_or_create as get_x_ingest_config
+        from app.db.repositories import CursorRepository
+
+        x_config = get_x_ingest_config(db)
+        settle_hot_polls(
+            CursorRepository(db),
+            meaningful=set(process_result.get("meaningful_lanes") or []),
+            idle_limit=int(x_config.hot_idle_scans or 2),
+        )
+        settle_dynamic_polls(
+            CursorRepository(db),
+            meaningful=set(process_result.get("meaningful_lanes") or []),
+            idle_limit=int(x_config.hot_idle_scans or 2),
+        )
         logger.info(
             "process summary raw=%s events=%s created=%s rejected=%s "
             "published_today=%s quota_remaining=%s elapsed_s=%.1f",
@@ -115,18 +131,37 @@ def run_cycle() -> None:
     run_heavy_cycle()
 
 
+def _scheduled_wake_seconds() -> int:
+    """Scheduled mode checks slots often. X is still skipped outside a slot."""
+    from app.db.session import SessionLocal
+    from app.services.x_ingest_admin import get_or_create as get_x_ingest_config
+
+    init_db()
+    db = SessionLocal()
+    try:
+        config = get_x_ingest_config(db)
+        if config.scan_mode == "scheduled":
+            return 15 * 60
+    except Exception:
+        logger.exception("x ingest config unavailable; keeping ingest interval")
+    finally:
+        db.close()
+    return settings.ingest_interval_seconds
+
+
 def main(once: bool = False) -> None:
     if once or "--once" in sys.argv:
         logger.info("worker mode=once")
         run_heavy_cycle()
         return
 
+    wake_seconds = _scheduled_wake_seconds()
     logger.info(
         "worker mode=forever heavy_interval_s=%s",
-        settings.ingest_interval_seconds,
+        wake_seconds,
     )
     heavy = JobScheduler(
-        interval_seconds=settings.ingest_interval_seconds,
+        interval_seconds=wake_seconds,
         name="heavy_cycle",
     )
     heavy.run_forever(run_heavy_cycle)

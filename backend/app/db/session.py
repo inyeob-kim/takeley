@@ -496,3 +496,21 @@ def _ensure_sqlite_schema_patches() -> None:
             conn.exec_driver_sql(
                 "ALTER TABLE assets ADD COLUMN market VARCHAR(16) DEFAULT 'US'"
             )
+
+        ingest = conn.exec_driver_sql("PRAGMA table_info(x_ingest_config)").fetchall()
+        ingest_cols = {r[1] for r in ingest}
+        if ingest_cols and "track_accounts" not in ingest_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE x_ingest_config ADD COLUMN track_accounts VARCHAR(512) "
+                "NOT NULL DEFAULT 'DeItaone,StockMKTNewz,FirstSquawk'"
+            )
+        if ingest_cols and "opposite_lane_count" not in ingest_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE x_ingest_config ADD COLUMN opposite_lane_count "
+                "INTEGER NOT NULL DEFAULT 2"
+            )
+        if ingest_cols and "daily_post_budget" not in ingest_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE x_ingest_config ADD COLUMN daily_post_budget "
+                "INTEGER NOT NULL DEFAULT 400"
+            )

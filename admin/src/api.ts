@@ -474,6 +474,119 @@ export async function uploadColumnistImage(
   return (await response.json()) as AdminColumnist;
 }
 
+export type XIngestConfig = {
+  scan_mode: string;
+  scan_hours_kst: string;
+  scan_window_minutes: number;
+  morning_lane: string;
+  afternoon_lane: string;
+  night_lane: string;
+  lanes_per_scan: number;
+  max_results: number;
+  industries: string;
+  accounts_on: string;
+  track_accounts: string;
+  dynamic_mode: string;
+  hot_enabled: boolean;
+  hot_interval_minutes: number;
+  hot_idle_scans: number;
+  hot_max_hours: number;
+  hot_reply_spike: number;
+  understand_budget: number;
+  industry_slot_reserve: boolean;
+  usd_per_post: number;
+  usd_per_user: number;
+  opposite_lane_count: number;
+  daily_post_budget: number;
+  updated_at: string | null;
+};
+
+export type IndustrySearch = {
+  industry_key: string;
+  label: string;
+  enabled: boolean;
+  keywords_ko: string;
+  keywords_en: string;
+  exclude_ko: string;
+  exclude_en: string;
+  priority: string;
+  frequency: string;
+  max_results: number | null;
+};
+
+export type XIngestStats = {
+  days: number;
+  posts_fetched: number;
+  search_calls: number;
+  timeline_calls: number;
+  user_lookups: number;
+  new_issues: number;
+  updates: number;
+  estimated_usd: number;
+  usd_per_new_issue: number | null;
+  korea_posts: number;
+  global_posts: number;
+  dynamic_queries: number;
+  hot_scans: number;
+  slots: {
+    slot: string;
+    posts: number;
+    issues: number;
+    estimated_usd: number;
+    usd_per_issue: number | null;
+  }[];
+  industries: {
+    industry: string;
+    label: string;
+    posts: number;
+    korea_posts: number;
+    global_posts: number;
+    processed: number;
+    issues: number;
+    updates: number;
+    api_calls: number;
+    estimated_usd: number;
+    usd_per_issue: number | null;
+  }[];
+  hot: { industry: string; lane: string; idle: number; until: string | null }[];
+  last_slot_key: string | null;
+};
+
+export function fetchXIngestConfig(key: string): Promise<XIngestConfig> {
+  return adminFetch("/api/v1/admin/x-ingest/config", key);
+}
+
+export function saveXIngestConfig(
+  key: string,
+  body: XIngestConfig,
+): Promise<XIngestConfig> {
+  return adminFetch("/api/v1/admin/x-ingest/config", key, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchIndustrySearch(key: string): Promise<IndustrySearch[]> {
+  return adminFetch("/api/v1/admin/x-ingest/industries", key);
+}
+
+export function saveIndustrySearch(
+  key: string,
+  body: IndustrySearch[],
+): Promise<IndustrySearch[]> {
+  return adminFetch("/api/v1/admin/x-ingest/industries", key, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchXIngestStats(
+  key: string,
+  days = 7,
+): Promise<XIngestStats> {
+  return adminFetch(`/api/v1/admin/x-ingest/stats?days=${days}`, key);
+}
+
 /** Backend policy: published → rejected. */
 export function unpublishContributorTake(
   key: string,

@@ -65,8 +65,11 @@ class CostPricingSettings(BaseSettings):
     cost_llm_input_usd_per_1m: float | None = None
     cost_llm_output_usd_per_1m: float | None = None
     cost_tts_usd_per_1m_chars: float | None = None
-    # X is often a flat monthly plan — per-request rate optional
+    # X is often a flat monthly plan — per-request rate optional.
+    # Pay-per-use bills posts returned, not HTTP calls.
     cost_x_usd_per_request: float | None = None
+    cost_x_usd_per_post: float | None = None
+    cost_x_usd_per_user: float | None = None
     cost_finnhub_usd_per_request: float | None = None
     # Free HTTP (RSS / calendar / Yahoo / article HTML)
     cost_http_usd_per_request: float | None = None
@@ -118,6 +121,16 @@ def pricing_table() -> dict[str, UnitPrice]:
             s.cost_x_usd_per_request,
             "request",
             "COST_X_USD_PER_REQUEST (or use flat plan outside this model)",
+        ),
+        "x_posts": _per_request(
+            s.cost_x_usd_per_post,
+            "post",
+            "COST_X_USD_PER_POST",
+        ),
+        "x_user_lookups": _per_request(
+            s.cost_x_usd_per_user,
+            "user",
+            "COST_X_USD_PER_USER",
         ),
         "finnhub_requests": _per_request(
             s.cost_finnhub_usd_per_request,

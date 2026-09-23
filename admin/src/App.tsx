@@ -22,6 +22,7 @@ import { ColumnEditor } from "./ColumnEditor";
 import { ColumnistsPanel } from "./ColumnistsPanel";
 import { ContributorApplicationsPanel } from "./ContributorApplicationsPanel";
 import { DeepThoughtsPanel } from "./DeepThoughtsPanel";
+import { IngestPanel } from "./IngestPanel";
 import { ToastHost } from "./ToastHost";
 import { ADMIN_KEY_STORAGE } from "./config";
 
@@ -38,7 +39,12 @@ const CATEGORIES = [
   "엔터",
 ] as const;
 
-type AdminSection = "issues" | "columnists" | "applications" | "takes";
+type AdminSection =
+  | "issues"
+  | "columnists"
+  | "applications"
+  | "takes"
+  | "ingest";
 
 type EditForm = {
   title: string;
@@ -586,6 +592,13 @@ export default function App() {
         >
           깊이 있는 생각
         </button>
+        <button
+          type="button"
+          className={section === "ingest" ? "is-active" : ""}
+          onClick={() => requestSection("ingest")}
+        >
+          X 수집
+        </button>
       </nav>
 
       {section === "columnists" ? (
@@ -605,6 +618,13 @@ export default function App() {
 
       {section === "takes" ? (
         <DeepThoughtsPanel
+          adminKey={key}
+          onAuthFailure={() => setAuthed(false)}
+        />
+      ) : null}
+
+      {section === "ingest" ? (
+        <IngestPanel
           adminKey={key}
           onAuthFailure={() => setAuthed(false)}
         />

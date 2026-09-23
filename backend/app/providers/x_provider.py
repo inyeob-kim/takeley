@@ -156,75 +156,117 @@ class XProvider(SourceProvider):
         query: str,
         since_id: Optional[str] = None,
         limit: int = 10,
+        extra_page: bool = False,
     ) -> list[RawItem]:
         """Recent search by keyword query (no account map required)."""
         client = self._get_client()
+        self.last_search_pages = 0
         if client is None:
             return []
 
         items: list[RawItem] = []
         try:
-            kwargs = {
-                "query": query,
-                "max_results": min(max(limit, 10), 100),
-                "tweet_fields": [
-                    "created_at",
-                    "lang",
-                    "text",
-                    "author_id",
-                    "public_metrics",
-                ],
-                "sort_order": "relevancy",
-            }
-            if since_id and since_id.isdigit():
-                kwargs["since_id"] = since_id
-            logger.info(
-                "x_api call=search_recent_tweets max=%s since_id=%s query=%s",
-                kwargs["max_results"],
-                since_id or "-",
-                query[:160],
+            page, next_token = self._search_page(
+                client,
+                query=query,
+                since_id=since_id,
+                limit=limit,
             )
-            resp = client.search_recent_tweets(**kwargs)
-            if not resp or not resp.data:
-                logger.info(
-                    "x_api done=search_recent_tweets results=0 query=%s",
-                    query[:120],
+            self.last_search_pages = 1
+            items.extend(page)
+            from app.pipeline.x_schedule import allow_extra_page
+
+            if allow_extra_page(
+                mode="hot" if extra_page else "normal",
+                page_full=bool(next_token) and len(page) >= min(max(limit, 10), 100),
+            ):
+                more, _token = self._search_page(
+                    client,
+                    query=query,
+                    since_id=since_id,
+                    limit=limit,
+                    next_token=next_token,
                 )
-                return []
-            for tweet in resp.data:
-                text = tweet.text or ""
-                author = str(getattr(tweet, "author_id", "") or "unknown")
-                metrics = getattr(tweet, "public_metrics", None) or {}
-                if hasattr(metrics, "items"):
-                    metrics = dict(metrics)
-                elif not isinstance(metrics, dict):
-                    metrics = {}
-                items.append(
-                    RawItem(
-                        provider=SourceType.X,
-                        external_id=str(tweet.id),
-                        url=f"https://x.com/i/web/status/{tweet.id}",
-                        author=author,
-                        text=text,
-                        language=getattr(tweet, "lang", None),
-                        published_at=getattr(tweet, "created_at", None),
-                        fetched_at=datetime.utcnow(),
-                        raw_payload={
-                            "search_query": query,
-                            "author_id": author,
-                            "public_metrics": metrics,
-                        },
-                    )
-                )
-            logger.info(
-                "x_api done=search_recent_tweets results=%s query=%s",
-                len(items),
-                query[:120],
-            )
+                self.last_search_pages = 2
+                items.extend(more)
             _log_fetch_samples(items, context=f"x.search:{query[:40]}")
         except Exception:
             logger.exception("XProvider search failed query=%s", query[:80])
         return items
+
+    def _search_page(
+        self,
+        client,
+        *,
+        query: str,
+        since_id: Optional[str],
+        limit: int,
+        next_token: Optional[str] = None,
+    ) -> tuple[list[RawItem], Optional[str]]:
+        kwargs = {
+            "query": query,
+            "max_results": min(max(limit, 10), 100),
+            "tweet_fields": [
+                "created_at",
+                "lang",
+                "text",
+                "author_id",
+                "public_metrics",
+            ],
+            "sort_order": "relevancy",
+        }
+        if since_id and since_id.isdigit():
+            kwargs["since_id"] = since_id
+        if next_token:
+            kwargs["next_token"] = next_token
+        logger.info(
+            "x_api call=search_recent_tweets max=%s since_id=%s page=%s query=%s",
+            kwargs["max_results"],
+            since_id or "-",
+            "next" if next_token else "first",
+            query[:160],
+        )
+        resp = client.search_recent_tweets(**kwargs)
+        meta = getattr(resp, "meta", None) or {}
+        token = meta.get("next_token") if isinstance(meta, dict) else None
+        if not resp or not resp.data:
+            logger.info(
+                "x_api done=search_recent_tweets results=0 query=%s",
+                query[:120],
+            )
+            return [], token
+        items: list[RawItem] = []
+        for tweet in resp.data:
+            text = tweet.text or ""
+            author = str(getattr(tweet, "author_id", "") or "unknown")
+            metrics = getattr(tweet, "public_metrics", None) or {}
+            if hasattr(metrics, "items"):
+                metrics = dict(metrics)
+            elif not isinstance(metrics, dict):
+                metrics = {}
+            items.append(
+                RawItem(
+                    provider=SourceType.X,
+                    external_id=str(tweet.id),
+                    url=f"https://x.com/i/web/status/{tweet.id}",
+                    author=author,
+                    text=text,
+                    language=getattr(tweet, "lang", None),
+                    published_at=getattr(tweet, "created_at", None),
+                    fetched_at=datetime.utcnow(),
+                    raw_payload={
+                        "search_query": query,
+                        "author_id": author,
+                        "public_metrics": metrics,
+                    },
+                )
+            )
+        logger.info(
+            "x_api done=search_recent_tweets results=%s query=%s",
+            len(items),
+            query[:120],
+        )
+        return items, token
 
     def _demo_items(self, query: Optional[str] = None) -> list[RawItem]:
         now = datetime.utcnow()

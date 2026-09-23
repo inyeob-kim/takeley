@@ -758,3 +758,62 @@ class PushNotificationTemplate(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+class XIngestConfig(Base):
+    """Singleton row (id=default) edited from the admin ingest page.
+
+    Scheduler state (last slot, hot topics) stays in ingest_cursors.
+    """
+
+    __tablename__ = "x_ingest_config"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default="default")
+    scan_mode: Mapped[str] = mapped_column(String(16), default="scheduled")
+    scan_hours_kst: Mapped[str] = mapped_column(String(128), default="06:30,16:00,22:30")
+    scan_window_minutes: Mapped[int] = mapped_column(Integer, default=40)
+    morning_lane: Mapped[str] = mapped_column(String(16), default="korea")
+    afternoon_lane: Mapped[str] = mapped_column(String(16), default="global")
+    night_lane: Mapped[str] = mapped_column(String(16), default="auto")
+    lanes_per_scan: Mapped[int] = mapped_column(Integer, default=10)
+    max_results: Mapped[int] = mapped_column(Integer, default=10)
+    industries: Mapped[str] = mapped_column(
+        String(255),
+        default="politics,economy,finance,tech,ai,society,world,culture,sports,entertainment",
+    )
+    accounts_on: Mapped[str] = mapped_column(String(16), default="night")
+    track_accounts: Mapped[str] = mapped_column(
+        String(512),
+        default="DeItaone,StockMKTNewz,FirstSquawk",
+    )
+    dynamic_mode: Mapped[str] = mapped_column(String(16), default="hot")
+    hot_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    hot_interval_minutes: Mapped[int] = mapped_column(Integer, default=45)
+    hot_idle_scans: Mapped[int] = mapped_column(Integer, default=2)
+    hot_max_hours: Mapped[int] = mapped_column(Integer, default=6)
+    hot_reply_spike: Mapped[int] = mapped_column(Integer, default=15)
+    understand_budget: Mapped[int] = mapped_column(Integer, default=12)
+    industry_slot_reserve: Mapped[bool] = mapped_column(Boolean, default=True)
+    usd_per_post: Mapped[float] = mapped_column(Float, default=0.005)
+    usd_per_user: Mapped[float] = mapped_column(Float, default=0.01)
+    opposite_lane_count: Mapped[int] = mapped_column(Integer, default=2)
+    daily_post_budget: Mapped[int] = mapped_column(Integer, default=400)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class IndustrySearchConfig(Base):
+    """Per-industry search words. Empty table means industries.py defaults."""
+
+    __tablename__ = "industry_search_config"
+
+    industry_key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    keywords_ko: Mapped[str] = mapped_column(Text, default="")
+    keywords_en: Mapped[str] = mapped_column(Text, default="")
+    exclude_ko: Mapped[str] = mapped_column(Text, default="")
+    exclude_en: Mapped[str] = mapped_column(Text, default="")
+    priority: Mapped[str] = mapped_column(String(16), default="normal")
+    frequency: Mapped[str] = mapped_column(String(16), default="every_scan")
+    max_results: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

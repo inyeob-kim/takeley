@@ -99,3 +99,36 @@ def rank_for_pool(
     budget = max(1, budget)
     ordered = sorted(items, key=lambda c: c.priority_score, reverse=True)
     return ordered[:budget]
+
+
+def rank_for_pool_reserved(
+    items: list[ScoredCandidate],
+    *,
+    budget: int,
+) -> list[ScoredCandidate]:
+    """Keep the best post of each industry, then fill the rest by score.
+
+    Industries with no posts are skipped. This does not reject by keyword.
+    """
+    budget = max(1, budget)
+    ordered = sorted(items, key=lambda c: c.priority_score, reverse=True)
+    picked: list[ScoredCandidate] = []
+    seen: set[str] = set()
+    best_by_industry: dict[str, ScoredCandidate] = {}
+    for candidate in ordered:
+        industry = str((candidate.payload or {}).get("issue_industry") or "")
+        if industry and industry not in best_by_industry:
+            best_by_industry[industry] = candidate
+    for candidate in best_by_industry.values():
+        if len(picked) >= budget:
+            break
+        picked.append(candidate)
+        seen.add(candidate.raw_id)
+    for candidate in ordered:
+        if len(picked) >= budget:
+            break
+        if candidate.raw_id in seen:
+            continue
+        picked.append(candidate)
+        seen.add(candidate.raw_id)
+    return picked

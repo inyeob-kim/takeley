@@ -29,7 +29,7 @@ from app.pipeline.analyze import analyze_cluster
 from app.pipeline.candidate import ScoredCandidate, priority_score, rank_for_pool
 from app.pipeline.cheap_filter import cheap_filter_text
 from app.pipeline.cluster import Cluster, ClusterItem, cluster_items
-from app.pipeline.dynamic_query import remember_topics
+from app.pipeline.dynamic_query import arm_dynamic_topic, remember_topics
 from app.pipeline.embeddings import rank_ids_by_embedding
 from app.pipeline.evidence import trust_tier_for_provider
 from app.pipeline.issue_heat import max_reply_count_from_payloads
@@ -160,6 +160,32 @@ def _apply_velocity(db: Session, signal: Signal, payloads: list[dict | None]) ->
     db.commit()
 
 
+def _lane_tags(payloads: list) -> dict:
+    tags: dict[str, str] = {}
+    for payload in payloads or []:
+        if not isinstance(payload, dict):
+            continue
+        if payload.get("issue_industry") and "industry" not in tags:
+            tags["industry"] = str(payload["issue_industry"])
+        if payload.get("source_lane") and "source_lane" not in tags:
+            tags["source_lane"] = str(payload["source_lane"])
+        if payload.get("scan_slot") and "scan_slot" not in tags:
+            tags["scan_slot"] = str(payload["scan_slot"])
+    return tags
+
+
+def _lane_keys(payloads: list) -> set[str]:
+    keys: set[str] = set()
+    for payload in payloads or []:
+        if not isinstance(payload, dict):
+            continue
+        industry = payload.get("issue_industry")
+        lane = payload.get("source_lane")
+        if industry and lane:
+            keys.add(f"{industry}:{lane}")
+    return keys
+
+
 def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
     settings = get_settings()
     raw_repo = RawItemRepository(db)
@@ -213,7 +239,21 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
 
     db.commit()
     budget = settings.issue_llm_understand_budget_per_cycle
-    pool = rank_for_pool(scored, budget=budget)
+    reserve = False
+    try:
+        from app.services.x_ingest_admin import get_or_create as get_x_ingest_config
+
+        x_config = get_x_ingest_config(db)
+        budget = int(x_config.understand_budget or budget)
+        reserve = bool(x_config.industry_slot_reserve)
+    except Exception:
+        logger.exception("x ingest config unavailable; using env understand budget")
+    if reserve:
+        from app.pipeline.candidate import rank_for_pool_reserved
+
+        pool = rank_for_pool_reserved(scored, budget=budget)
+    else:
+        pool = rank_for_pool(scored, budget=budget)
     pool_ids = {c.raw_id for c in pool}
     # Candidates not in Top-N stay unprocessed for a later cycle (cost control).
     for c in scored:
@@ -239,7 +279,9 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
     created = 0
     updated = 0
     rejected = 0
+    _meaningful: set[str] = set()
     remembered_topics: list[str] = []
+    armed_topics: list[tuple[str, str, str]] = []
 
     for pregroup in pregroups:
         # Representative: highest priority member
@@ -262,6 +304,16 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
             rejected += 1
             record_usage(UNDERSTANDING_REJECTED, 1, db=db)
             continue
+
+        if understanding.topic:
+            origin = payload_by_id.get(rep.raw_id) or {}
+            armed_topics.append(
+                (
+                    understanding.topic,
+                    str(origin.get("issue_industry") or "dynamic"),
+                    str(origin.get("source_lane") or "global"),
+                )
+            )
 
         query_blob = " ".join(
             [
@@ -308,7 +360,13 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
                 db.commit()
                 _apply_velocity(db, existing, payloads)
                 updated += 1
-                record_usage(ISSUE_UPDATED, 1, db=db)
+                _meaningful |= _lane_keys(payloads)
+                record_usage(
+                    ISSUE_UPDATED,
+                    1,
+                    db=db,
+                    tags=_lane_tags(payloads),
+                )
                 record_usage(DUPLICATE_ISSUE_PREVENTED, 1, db=db)
                 try:
                     enqueue_issue_update(
@@ -451,11 +509,21 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
             db.commit()
         _apply_velocity(db, signal, payloads)
         created += 1
-        record_usage(ISSUE_CREATED, 1, db=db)
+        _meaningful |= _lane_keys(payloads)
+        record_usage(ISSUE_CREATED, 1, db=db, tags=_lane_tags(payloads))
         # Push / feed exposure waits for admin publish — no ISSUE_PUBLISHED / enqueue.
 
     if remembered_topics:
         remember_topics(CursorRepository(db), remembered_topics)
+    if armed_topics:
+        cursors = CursorRepository(db)
+        for topic, industry, lane in armed_topics:
+            arm_dynamic_topic(
+                cursors,
+                topic=topic,
+                industry=industry,
+                source_lane=lane,
+            )
 
     raw_repo.mark_processed(list(dict.fromkeys(handled)))
     cards_today = signal_repo.count_issue_cards_today()
@@ -467,6 +535,7 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         "signals_created": created,
         "signals_updated": updated,
         "signals_rejected": rejected,
+        "meaningful_lanes": sorted(_meaningful),
         "cheap_filter_dropped": cheap_dropped,
         "published_today": cards_today,
         "quota_remaining": max(
