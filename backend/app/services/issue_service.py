@@ -660,6 +660,7 @@ class IssueService:
             "share_cancelled",
             "share_link_copied",
             "shared_link_opened",
+            "store_click",
         }
         # impression: counters only — never IssueView / content_updated_at
         if event == "impression":

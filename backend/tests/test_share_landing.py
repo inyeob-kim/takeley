@@ -86,7 +86,9 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "더 간다" in body
     assert "꺾인다" in body
     assert "??" in body
-    assert "내 생각 남기고, 남들 분포도 앱에서 보기" in body
+    assert "선택하면 결과가 이 페이지에 보여요" in body
+    assert "data-option-id=" in body
+    assert body.index('id="teaser"') < body.index("반도체 수요가 다시 살아나고 있습니다.")
     assert "42명이 봤어요" in body
     # Must not leak real vote percentages / bar widths in the teaser block.
     teaser_block = body.split("teaser-opts")[1].split("teaser-lock")[0]
@@ -132,7 +134,7 @@ def test_record_share_events_with_attribution():
         user_id="u-share",
         share_id="sid-1",
         ref_user_id="u-inviter",
-        share_intent="ask",
+        share_intent="issue_only",
     )
     assert out is not None
     assert out["ok"] is True
@@ -147,7 +149,7 @@ def test_record_share_events_with_attribution():
     )
     assert row.share_id == "sid-1"
     assert row.ref_user_id == "u-inviter"
-    assert row.share_intent == "ask"
+    assert row.share_intent == "issue_only"
 
     opened = svc.record_event(
         signal.id,
@@ -157,3 +159,62 @@ def test_record_share_events_with_attribution():
         ref_user_id="u-inviter",
     )
     assert opened["ok"] is True
+
+
+def test_web_participate_does_not_use_demo_user():
+    db = _session()
+    signal = Signal(
+        title="웹 투표",
+        summary="요약",
+        status="published",
+        published_at=datetime.utcnow(),
+        participation_suitable=True,
+        participation_question="어느 쪽?",
+    )
+    db.add(signal)
+    db.commit()
+    db.refresh(signal)
+    opt = ParticipationOption(signal_id=signal.id, label="이쪽", display_order=0)
+    db.add(opt)
+    db.commit()
+    db.refresh(opt)
+
+    def _override():
+        try:
+            yield db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override
+    client = TestClient(app)
+    registered = client.post(
+        "/api/v1/devices/register",
+        json={"device_id": "web-device-123456", "platform": "web"},
+    )
+    assert registered.status_code == 200
+    user_id = registered.json()["user"]["id"]
+    assert user_id != "demo-user"
+
+    voted = client.post(
+        f"/api/v1/issues/{signal.id}/participate",
+        json={"option_id": opt.id, "user_id": user_id},
+    )
+    assert voted.status_code == 200
+    body = voted.json()
+    assert body["my_option_id"] == opt.id
+    assert body["options"][0]["count"] == 1
+
+    again = client.post(
+        f"/api/v1/issues/{signal.id}/participate",
+        json={"option_id": opt.id, "user_id": user_id},
+    )
+    assert again.status_code == 200
+    assert again.json()["participation_count"] == 1
+
+    from app.db.models import Participation
+
+    rows = db.query(Participation).filter(Participation.signal_id == signal.id).all()
+    assert len(rows) == 1
+    assert rows[0].user_id == user_id
+
+    app.dependency_overrides.clear()

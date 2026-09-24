@@ -454,6 +454,48 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   Future<void> _share() async {
     final issue = _issue;
     if (issue == null || _shareBusy) return;
+    final votedLabel = _votedLabel(issue);
+    var includeTake = false;
+    if (votedLabel != null) {
+      final choice = await showModalBottomSheet<bool>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('이 이슈, 너는 어떻게 생각해?'),
+                onTap: () => Navigator.pop(context, false),
+              ),
+              ListTile(
+                title: const Text('내 의견 포함해서 공유'),
+                onTap: () => Navigator.pop(context, true),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (choice == null || !mounted) return;
+      includeTake = choice;
+    }
+    await _sendShare(includeTake: includeTake, takeLabel: votedLabel);
+  }
+
+  String? _votedLabel(Issue issue) {
+    final id = issue.myOptionId;
+    if (id == null || id.isEmpty) return null;
+    for (final opt in issue.options) {
+      if (opt.id == id) return opt.label;
+    }
+    return null;
+  }
+
+  Future<void> _sendShare({
+    required bool includeTake,
+    String? takeLabel,
+  }) async {
+    final issue = _issue;
+    if (issue == null || _shareBusy) return;
     setState(() => _shareBusy = true);
     final payload = buildSharePayload(
       id: issue.id,
@@ -462,6 +504,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       trendStatus: issue.trendStatus,
       isTrending: issue.isTrending,
       refUserId: _userId,
+      includeTake: includeTake,
+      takeLabel: takeLabel,
     );
     final intent = shareIntentName(payload.intent);
     unawaited(widget.issuesApi.recordEvent(
@@ -476,20 +520,22 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       final result = await SharePlus.instance.share(
         ShareParams(text: payload.text, subject: payload.title),
       );
+      // unavailable means the platform could not say whether anything was sent.
       final event = switch (result.status) {
         ShareResultStatus.success => 'share_completed',
         ShareResultStatus.dismissed => 'share_cancelled',
-        // Platform can't report outcome — treat as completed once sheet returns.
-        ShareResultStatus.unavailable => 'share_completed',
+        ShareResultStatus.unavailable => null,
       };
-      unawaited(widget.issuesApi.recordEvent(
-        id: widget.issueId,
-        event: event,
-        userId: _userId,
-        shareId: payload.shareId,
-        refUserId: _userId,
-        shareIntent: intent,
-      ));
+      if (event != null) {
+        unawaited(widget.issuesApi.recordEvent(
+          id: widget.issueId,
+          event: event,
+          userId: _userId,
+          shareId: payload.shareId,
+          refUserId: _userId,
+          shareIntent: intent,
+        ));
+      }
     } catch (_) {
       /* share sheet failed — click already recorded */
     } finally {

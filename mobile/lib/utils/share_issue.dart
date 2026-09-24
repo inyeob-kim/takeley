@@ -2,7 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../config.dart';
 
-enum ShareIntent { ask, trend, info }
+enum ShareIntent { issueOnly, withTake, trend, info }
 
 class SharePayload {
   SharePayload({
@@ -25,7 +25,7 @@ ShareIntent resolveShareIntent({
   String? trendStatus,
   bool isTrending = false,
 }) {
-  if (participationSuitable) return ShareIntent.ask;
+  if (participationSuitable) return ShareIntent.issueOnly;
   final status = (trendStatus ?? '').toUpperCase();
   if (status == 'TRENDING' || status == 'RISING' || isTrending) {
     return ShareIntent.trend;
@@ -47,12 +47,18 @@ SharePayload buildSharePayload({
   bool isTrending = false,
   String? shareId,
   String? refUserId,
+  bool includeTake = false,
+  String? takeLabel,
 }) {
-  final intent = resolveShareIntent(
+  var intent = resolveShareIntent(
     participationSuitable: participationSuitable,
     trendStatus: trendStatus,
     isTrending: isTrending,
   );
+  final label = (takeLabel ?? '').trim();
+  if (includeTake && label.isNotEmpty && participationSuitable) {
+    intent = ShareIntent.withTake;
+  }
   final sid = shareId ?? const Uuid().v4();
   final base = kShareOrigin.replaceAll(RegExp(r'/$'), '');
   final uri = Uri.parse('$base/i/${Uri.encodeComponent(id)}').replace(
@@ -64,9 +70,10 @@ SharePayload buildSharePayload({
   final short = _truncateTitle(title);
   final String text;
   switch (intent) {
-    case ShareIntent.ask:
-      text =
-          '이거 너라면 어떻게 생각해?\n\n$short\n\nTAKELEY에서 봤는데 궁금해서 보내.\n$uri';
+    case ShareIntent.issueOnly:
+      text = '이 이슈, 너는 어떻게 생각해?\n\n$short\n\n$uri';
+    case ShareIntent.withTake:
+      text = '나는 ‘$label’에 한 표 했어. 너는 어떻게 생각해?\n\n$uri';
     case ShareIntent.trend:
       text = '이거 지금 관심을 많이 받고 있어.\n\n$short\n\nTAKELEY에서 발견.\n$uri';
     case ShareIntent.info:
@@ -83,8 +90,10 @@ SharePayload buildSharePayload({
 
 String shareIntentName(ShareIntent intent) {
   switch (intent) {
-    case ShareIntent.ask:
-      return 'ask';
+    case ShareIntent.issueOnly:
+      return 'issue_only';
+    case ShareIntent.withTake:
+      return 'with_take';
     case ShareIntent.trend:
       return 'trend';
     case ShareIntent.info:

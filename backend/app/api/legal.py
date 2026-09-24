@@ -135,3 +135,51 @@ def support() -> HTMLResponse:
     <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a></p>
     """
     return HTMLResponse(_page("고객지원", body))
+
+
+@router.get("/data-deletion", response_class=HTMLResponse)
+def data_deletion() -> HTMLResponse:
+    """Play Console delete-data URL. Steps, scope, and retention must be obvious."""
+    settings = get_settings()
+    origin = (settings.public_share_origin or "https://api.takeley.co").rstrip("/")
+    body = f"""
+    <h1>데이터 삭제</h1>
+    <p>TAKELEY(테이클리)에서 이 기기에 연결된 데이터를 삭제하는 방법입니다.</p>
+
+    <h2>삭제 방법</h2>
+    <ol>
+      <li>TAKELEY 앱을 엽니다.</li>
+      <li>아래 탭에서 <strong>프로필</strong>을 누릅니다.</li>
+      <li>오른쪽 위 <strong>설정</strong> 톱니바퀴를 누릅니다.</li>
+      <li><strong>내 데이터 삭제</strong>를 누르고 확인합니다.</li>
+    </ol>
+    <p>앱을 열 수 없으면 <a href="mailto:hello@takeley.co">hello@takeley.co</a>로
+    기기에서 쓰던 닉네임을 적어 삭제를 요청해 주세요.</p>
+
+    <h2>삭제되는 데이터</h2>
+    <ul>
+      <li>기기 세션과 닉네임</li>
+      <li>투표, 댓글, 반응, 팔로우, 이슈를 연 기록</li>
+      <li>알림 토큰과 알림 기록</li>
+      <li>관심 목록과 앱 설정</li>
+    </ul>
+    <p>확인을 누르면 바로 삭제합니다. 그 뒤에 더 보관하지 않습니다.</p>
+
+    <h2>남는 데이터</h2>
+    <ul>
+      <li>이슈 카드와 다른 사람이 남긴 글</li>
+      <li>이미 공개된 칼럼 글. 계정과의 연결만 끊습니다.</li>
+    </ul>
+
+    <h2>Delete your data</h2>
+    <p>Open TAKELEY, go to Profile, tap the settings gear, then tap
+    <strong>내 데이터 삭제</strong> and confirm. This immediately deletes the device
+    session, nickname, votes, comments, reactions, follows, view history,
+    notification tokens, and app settings. Issue cards, other people's posts,
+    and already published columns stay. Columns are only unlinked from the account.
+    Nothing deleted is kept afterward. If you cannot open the app, email
+    <a href="mailto:hello@takeley.co">hello@takeley.co</a>.</p>
+
+    <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a></p>
+    """
+    return HTMLResponse(_page("데이터 삭제", body))

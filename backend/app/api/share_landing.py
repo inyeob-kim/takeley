@@ -255,7 +255,7 @@ def _teaser_html(
         rows_html: list[str] = []
         for o in options:
             rows_html.append(
-                f"""<button type="button" class="teaser-opt js-open-app">
+                f"""<button type="button" class="teaser-opt js-vote" data-option-id="{esc(o.id, quote=True)}">
   <span class="teaser-opt__label">{esc(o.label)}</span>
   <span class="teaser-opt__bar" aria-hidden="true">
     <span class="teaser-opt__fill"></span>
@@ -267,14 +267,19 @@ def _teaser_html(
             f'<p class="teaser-proof">{esc(proof)}</p>' if proof else ""
         )
         teaser = f"""
-<section class="teaser" aria-label="다른 사람 생각">
+<section class="teaser" id="teaser" aria-label="다른 사람 생각">
   <p class="teaser-kicker">다른 사람 생각</p>
   <p class="teaser-q">{esc(question)}</p>
   {proof_html}
   <div class="teaser-opts">
     {"".join(rows_html)}
   </div>
-  <p class="teaser-lock">내 생각 남기고, 남들 분포도 앱에서 보기</p>
+  <p class="teaser-lock">선택하면 결과가 이 페이지에 보여요</p>
+  <p class="voted-note" hidden>내 생각을 남겼어요.</p>
+  <div class="web-share" id="web-share" hidden>
+    <button type="button" class="web-share__btn js-share" data-share-mode="issue_only">이 이슈, 너는 어떻게 생각해?</button>
+    <button type="button" class="web-share__btn js-share" data-share-mode="with_take">내 의견 포함해서 공유</button>
+  </div>
 </section>
 """
         return teaser, "이 이슈, 어떻게 생각해?"
@@ -336,7 +341,8 @@ def issue_share_landing(
         image = f"{share_origin}/static/og-default.png"
 
     app_url = _app_scheme_url(issue_id, sid=sid, ref=ref)
-    column_html = _render_column_html(_column_source(row), share_origin)
+    column_raw = _column_source(row)
+    column_html = _render_column_html(column_raw, share_origin)
     counts = _option_counts(db, row.id)
     total = sum(counts.values())
     teaser_html, cta_label = _teaser_html(row, counts=counts, total=total)
@@ -350,9 +356,23 @@ def issue_share_landing(
         if image
         else ""
     )
-    body_section = column_html or (
-        '<p class="column-empty">본문이 아직 준비되지 않았어요.</p>'
+    author = (getattr(row, "column_author_name", None) or "").strip()
+    author_html = (
+        f'<p class="column-author">{esc(author)}</p>' if author and column_html else ""
     )
+    collapsed = " is-collapsed" if column_html and len(column_raw) > 280 else ""
+    more_html = (
+        '<button type="button" class="column-more" id="column-more">전체 칼럼 읽기</button>'
+        if collapsed
+        else ""
+    )
+    if column_html:
+        body_section = (
+            f'<section class="column-block{collapsed}" id="column-block">'
+            f"{author_html}{column_html}{more_html}</section>"
+        )
+    else:
+        body_section = '<p class="column-empty">본문이 아직 준비되지 않았어요.</p>'
 
     store_links: list[str] = []
     if android_store:
@@ -586,6 +606,56 @@ def issue_share_landing(
       color: var(--muted);
       text-align: center;
     }}
+    .teaser.is-voted .teaser-opt__pct,
+    .teaser.is-voted .teaser-opt__bar {{
+      filter: none;
+      opacity: 1;
+    }}
+    .teaser-opt.is-mine {{ border-color: var(--accent); }}
+    .voted-note {{
+      margin: 0.85rem 0 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }}
+    .web-share {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.75rem;
+    }}
+    .web-share__btn {{
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      padding: 0.35rem;
+    }}
+    .column-block {{ margin-top: 2rem; }}
+    .column-block.is-collapsed .column {{
+      max-height: 12rem;
+      overflow: hidden;
+    }}
+    .column-author {{
+      margin: 0 0 0.65rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--muted);
+    }}
+    .column-more {{
+      display: block;
+      margin: 0.25rem 0 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }}
     .footer {{
       position: fixed;
       left: 50%;
@@ -665,8 +735,8 @@ def issue_share_landing(
     <h1>{esc(title)}</h1>
     <p class="summary">{esc(summary_full)}</p>
     {cover_html}
-    {body_section}
     {teaser_html}
+    {body_section}
   </div>
   <div class="footer">
     <div class="footer-inner">
@@ -683,8 +753,16 @@ def issue_share_landing(
       var appUrl = {json.dumps(app_url)};
       var androidStore = {json.dumps(android_store)};
       var iosStore = {json.dumps(ios_store)};
+      var issueId = {json.dumps(issue_id)};
+      var shareId = {json.dumps(sid or "")};
+      var refUserId = {json.dumps(ref or "")};
+      var issueTitle = {json.dumps(title)};
+      var pageUrl = {json.dumps(canonical)};
       var panel = document.getElementById("store-panel");
+      var teaser = document.getElementById("teaser");
       var timer = null;
+      var myLabel = "";
+      var voting = false;
 
       function isIOS() {{
         return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -722,6 +800,135 @@ def issue_share_landing(
       }});
       document.querySelectorAll(".js-open-app").forEach(function (el) {{
         el.addEventListener("click", openApp);
+      }});
+
+      function postEvent(name, intent) {{
+        return ensureUser().then(function (userId) {{
+          if (!userId) return;
+          var body = {{ event: name, user_id: userId }};
+          if (shareId) body.share_id = shareId;
+          if (refUserId) body.ref_user_id = refUserId;
+          if (intent) body.share_intent = intent;
+          return fetch("/api/v1/issues/" + encodeURIComponent(issueId) + "/events", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }},
+            body: JSON.stringify(body)
+          }});
+        }});
+      }}
+      function ensureUser() {{
+        var deviceKey = "takeley_web_device_id";
+        var userKey = "takeley_web_user_id";
+        var deviceId = localStorage.getItem(deviceKey);
+        var userId = localStorage.getItem(userKey);
+        if (userId && deviceId && deviceId.length >= 8) return Promise.resolve(userId);
+        if (!deviceId || deviceId.length < 8) {{
+          deviceId = "web-" + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+          localStorage.setItem(deviceKey, deviceId);
+        }}
+        return fetch("/api/v1/devices/register", {{
+          method: "POST",
+          headers: {{ "Content-Type": "application/json" }},
+          body: JSON.stringify({{ device_id: deviceId, platform: "web" }})
+        }}).then(function (res) {{
+          if (!res.ok) return "";
+          return res.json();
+        }}).then(function (data) {{
+          var id = data && data.user && data.user.id;
+          if (!id) return "";
+          localStorage.setItem(userKey, id);
+          return id;
+        }}).catch(function () {{ return ""; }});
+      }}
+      function reveal(options, myId) {{
+        if (!teaser || !options) return;
+        var total = 0;
+        options.forEach(function (o) {{ total += Number(o.count) || 0; }});
+        teaser.classList.add("is-voted");
+        var note = teaser.querySelector(".voted-note");
+        var lock = teaser.querySelector(".teaser-lock");
+        if (note) note.hidden = false;
+        if (lock) lock.hidden = true;
+        teaser.querySelectorAll(".js-vote").forEach(function (btn) {{
+          var id = btn.getAttribute("data-option-id");
+          var match = null;
+          options.forEach(function (o) {{ if (o.id === id) match = o; }});
+          if (!match) return;
+          var count = Number(match.count) || 0;
+          var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          var pctEl = btn.querySelector(".teaser-opt__pct");
+          var fill = btn.querySelector(".teaser-opt__fill");
+          if (pctEl) pctEl.textContent = pct + "%";
+          if (fill) fill.style.width = pct + "%";
+          btn.classList.toggle("is-mine", id === myId);
+          if (id === myId) myLabel = (btn.querySelector(".teaser-opt__label") || {{}}).textContent || "";
+        }});
+        var shareBox = document.getElementById("web-share");
+        if (shareBox && navigator.share) shareBox.hidden = false;
+      }}
+      function vote(optionId) {{
+        if (voting || !optionId) return;
+        voting = true;
+        ensureUser().then(function (userId) {{
+          if (!userId) {{ voting = false; return; }}
+          return fetch("/api/v1/issues/" + encodeURIComponent(issueId) + "/participate", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }},
+            body: JSON.stringify({{ option_id: optionId, user_id: userId }})
+          }}).then(function (res) {{
+            if (!res.ok) return null;
+            return res.json();
+          }}).then(function (data) {{
+            if (data && data.options) reveal(data.options, data.my_option_id || optionId);
+          }}).finally(function () {{ voting = false; }});
+        }});
+      }}
+      document.querySelectorAll(".js-vote").forEach(function (btn) {{
+        btn.addEventListener("click", function () {{
+          vote(btn.getAttribute("data-option-id"));
+        }});
+      }});
+      document.querySelectorAll(".js-share").forEach(function (btn) {{
+        btn.addEventListener("click", function () {{
+          var mode = btn.getAttribute("data-share-mode") || "issue_only";
+          var text = "이 이슈, 너는 어떻게 생각해?\\n\\n" + issueTitle + "\\n\\n" + pageUrl;
+          if (mode === "with_take" && myLabel) {{
+            text = "나는 '" + myLabel + "'에 한 표 했어. 너는 어떻게 생각해?\\n\\n" + pageUrl;
+          }}
+          postEvent("share_clicked", mode);
+          if (!navigator.share) return;
+          navigator.share({{ text: text }}).catch(function (err) {{
+            if (err && err.name === "AbortError") postEvent("share_cancelled", mode);
+          }});
+        }});
+      }});
+      document.querySelectorAll("a.store").forEach(function (a) {{
+        a.addEventListener("click", function () {{
+          if (a.getAttribute("href")) postEvent("store_click", "");
+        }});
+      }});
+      var more = document.getElementById("column-more");
+      if (more) {{
+        more.addEventListener("click", function () {{
+          var block = document.getElementById("column-block");
+          if (block) block.classList.remove("is-collapsed");
+          more.hidden = true;
+        }});
+      }}
+      ensureUser().then(function (userId) {{
+        if (!userId) return;
+        if (shareId) {{
+          var key = "share_open:" + issueId + ":" + shareId;
+          if (!sessionStorage.getItem(key)) {{
+            sessionStorage.setItem(key, "1");
+            postEvent("shared_link_opened", "");
+          }}
+        }}
+        return fetch("/api/v1/issues/" + encodeURIComponent(issueId) + "?user_id=" + encodeURIComponent(userId))
+          .then(function (res) {{ return res.ok ? res.json() : null; }})
+          .then(function (data) {{
+            if (data && data.my_option_id && data.options) reveal(data.options, data.my_option_id);
+          }});
       }});
     }})();
   </script>
