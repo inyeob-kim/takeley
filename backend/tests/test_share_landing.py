@@ -86,7 +86,9 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "더 간다" in body
     assert "꺾인다" in body
     assert "??" in body
-    assert "선택하면 결과가 이 페이지에 보여요" in body
+    assert "선택한 뒤에 다른 사람 생각을 볼 수 있어요." in body
+    assert "결과 보기" in body
+    assert "js-confirm-vote" in body
     assert "data-option-id=" in body
     assert body.index('id="teaser"') < body.index("반도체 수요가 다시 살아나고 있습니다.")
     assert "42명이 봤어요" in body
@@ -95,6 +97,7 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert 'style="width:' not in teaser_block
     assert ">0%<" not in teaser_block
     assert ">50%<" not in teaser_block
+    assert "이 이슈, 너는 어떻게 생각해?" in body
     assert "이 이슈, 어떻게 생각해?" in body
     assert "결과는 앱에서 확인할 수 있어요" not in body
     assert "명이 생각을 남겼어요" not in body
@@ -107,6 +110,14 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "http-equiv=\"refresh\"" not in body.lower()
     assert "location.replace" not in body
     assert "play.google.com" in body
+    assert 'class="cover"' not in body
+    assert "og-default.png" in body
+    assert "나는 ‘더 간다’에 한 표" not in body
+
+    voted = client.get(f"/i/{signal.id}?take=%EB%8D%94+%EA%B0%84%EB%8B%A4")
+    assert voted.status_code == 200
+    assert "나는 ‘더 간다’에 한 표 했어" in voted.text
+    assert 'class="cover"' not in voted.text
 
     missing = client.get("/i/does-not-exist")
     assert missing.status_code == 404
@@ -211,10 +222,24 @@ def test_web_participate_does_not_use_demo_user():
     assert again.status_code == 200
     assert again.json()["participation_count"] == 1
 
+    other = ParticipationOption(signal_id=signal.id, label="저쪽", display_order=1)
+    db.add(other)
+    db.commit()
+    db.refresh(other)
+    switched = client.post(
+        f"/api/v1/issues/{signal.id}/participate",
+        json={"option_id": other.id, "user_id": user_id},
+    )
+    assert switched.status_code == 200
+    switched_body = switched.json()
+    assert switched_body["my_option_id"] == opt.id
+    assert switched_body["participation_count"] == 1
+
     from app.db.models import Participation
 
     rows = db.query(Participation).filter(Participation.signal_id == signal.id).all()
     assert len(rows) == 1
     assert rows[0].user_id == user_id
+    assert rows[0].option_id == opt.id
 
     app.dependency_overrides.clear()

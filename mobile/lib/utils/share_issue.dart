@@ -11,6 +11,7 @@ class SharePayload {
     required this.text,
     required this.url,
     required this.shareId,
+    required this.shareAsUri,
   });
 
   final ShareIntent intent;
@@ -18,6 +19,9 @@ class SharePayload {
   final String text;
   final String url;
   final String shareId;
+
+  /// Kakao/iOS: share the landing URL only so OG is one card, not hook + raw link.
+  final bool shareAsUri;
 }
 
 ShareIntent resolveShareIntent({
@@ -61,30 +65,28 @@ SharePayload buildSharePayload({
   }
   final sid = shareId ?? const Uuid().v4();
   final base = kShareOrigin.replaceAll(RegExp(r'/$'), '');
-  final uri = Uri.parse('$base/i/${Uri.encodeComponent(id)}').replace(
-    queryParameters: {
-      'sid': sid,
-      if (refUserId != null && refUserId.isNotEmpty) 'ref': refUserId,
-    },
-  );
+  // Query-less URL so Kakao shows one OG card, not sid/ref/take text.
+  final uri = Uri.parse('$base/i/${Uri.encodeComponent(id)}');
   final short = _truncateTitle(title);
+  final href = uri.toString();
   final String text;
   switch (intent) {
     case ShareIntent.issueOnly:
-      text = '이 이슈, 너는 어떻게 생각해?\n\n$short\n\n$uri';
+      text = '이 이슈, 너는 어떻게 생각해?';
     case ShareIntent.withTake:
-      text = '나는 ‘$label’에 한 표 했어. 너는 어떻게 생각해?\n\n$uri';
+      text = '나는 ‘$label’에 한 표 했어. 너는 어떻게 생각해?';
     case ShareIntent.trend:
-      text = '이거 지금 관심을 많이 받고 있어.\n\n$short\n\nTAKELEY에서 발견.\n$uri';
+      text = '이거 지금 관심을 많이 받고 있어.';
     case ShareIntent.info:
-      text = '이거 한번 봐봐.\n\n$short\n\nTAKELEY에서 봄.\n$uri';
+      text = '이거 한번 봐봐.';
   }
   return SharePayload(
     intent: intent,
     title: 'TAKELEY · $short',
     text: text,
-    url: uri.toString(),
+    url: href,
     shareId: sid,
+    shareAsUri: true,
   );
 }
 

@@ -63,10 +63,11 @@ def test_issue_list_and_participate():
 
     again = svc.participate(signal.id, user_id="u1", option_id=listed.items[0].options[1].id)
     assert again["participation_count"] == 1
+    assert again["my_option_id"] == opt.id
 
     detail = svc.get_issue(signal.id, user_id="u1")
     assert detail is not None
-    assert detail.my_option_id == listed.items[0].options[1].id
+    assert detail.my_option_id == opt.id
     assert detail.content_updated_at == signal.content_updated_at
 
     comment = svc.add_comment(signal.id, user_id="u1", content="실적이 중요해요")

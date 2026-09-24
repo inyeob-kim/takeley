@@ -23,6 +23,7 @@ import '../widgets/column_markdown.dart';
 import '../widgets/columnist_avatar.dart';
 import '../widgets/data_state.dart';
 import '../widgets/deep_thought_card.dart';
+import '../widgets/share_choice_sheet.dart';
 import '../widgets/takeley_buttons.dart';
 import 'deep_thought_detail_screen.dart';
 import 'deep_thought_list_screen.dart';
@@ -93,6 +94,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   final _commentCtrl = TextEditingController();
   bool _submitting = false;
   bool _voting = false;
+  String? _pendingOptionId;
   bool _shareBusy = false;
   bool _didOpenInitialFocus = false;
   List<IssueTake> _publishedTakes = [];
@@ -130,6 +132,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     if (oldWidget.issueId != widget.issueId) {
       setState(() {
         _didOpenInitialFocus = false;
+        _pendingOptionId = null;
       });
       _load();
     }
@@ -395,8 +398,22 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     }
   }
 
-  Future<void> _vote(String optionId) async {
-    if (_voting || _issue == null) return;
+  void _pickOption(String optionId) {
+    if (_voting || _issue == null || (_issue!.myOptionId?.isNotEmpty ?? false)) {
+      return;
+    }
+    setState(() => _pendingOptionId = optionId);
+  }
+
+  Future<void> _confirmVote() async {
+    final optionId = _pendingOptionId;
+    if (_voting ||
+        _issue == null ||
+        optionId == null ||
+        optionId.isEmpty ||
+        (_issue!.myOptionId?.isNotEmpty ?? false)) {
+      return;
+    }
     setState(() => _voting = true);
     try {
       final userId = _userId;
@@ -414,6 +431,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           : _issue!.options;
       if (!mounted) return;
       setState(() {
+        _pendingOptionId = null;
         _issue = _issue!.copyWith(
           myOptionId: '${data['my_option_id'] ?? optionId}',
           participationCount:
@@ -423,6 +441,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           isFollowing: data['is_following'] == true || _issue!.isFollowing,
         );
       });
+      final picked = _votedLabel(_issue!);
+      if (mounted && picked != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('‘$picked’를 선택했어요. 선택은 바꿀 수 없어요.')),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -457,23 +481,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final votedLabel = _votedLabel(issue);
     var includeTake = false;
     if (votedLabel != null) {
-      final choice = await showModalBottomSheet<bool>(
-        context: context,
-        builder: (context) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('이 이슈, 너는 어떻게 생각해?'),
-                onTap: () => Navigator.pop(context, false),
-              ),
-              ListTile(
-                title: const Text('내 의견 포함해서 공유'),
-                onTap: () => Navigator.pop(context, true),
-              ),
-            ],
-          ),
-        ),
+      final choice = await showShareChoiceSheet(
+        context,
+        takeLabel: votedLabel,
       );
       if (choice == null || !mounted) return;
       includeTake = choice;
@@ -518,7 +528,17 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     ));
     try {
       final result = await SharePlus.instance.share(
-        ShareParams(text: payload.text, subject: payload.title),
+        payload.shareAsUri
+            ? ShareParams(
+                uri: Uri.parse(payload.url),
+                subject: payload.title,
+                title: payload.title,
+              )
+            : ShareParams(
+                text: payload.text,
+                subject: payload.title,
+                title: payload.title,
+              ),
       );
       // unavailable means the platform could not say whether anything was sent.
       final event = switch (result.status) {
@@ -787,6 +807,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final canVote = issue.participationSuitable &&
         (issue.participationQuestion?.isNotEmpty ?? false);
     if (!canVote) return const SizedBox.shrink();
+    final hasTake = issue.myOptionId != null && issue.myOptionId!.isNotEmpty;
     final totalVotes = issue.participationCount;
     final fmt = NumberFormat.decimalPattern('ko_KR');
     return Container(
@@ -820,12 +841,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           ),
           const SizedBox(height: 12),
           ...issue.options.map((opt) {
-            final selected = issue.myOptionId == opt.id;
+            final selected = hasTake
+                ? issue.myOptionId == opt.id
+                : _pendingOptionId == opt.id;
             final pct =
                 totalVotes > 0 ? ((opt.count / totalVotes) * 100).round() : 0;
-            final meta = totalVotes > 0
+            final meta = hasTake && totalVotes > 0
                 ? '$pct% · ${fmt.format(opt.count)}'
-                : '선택';
+                : '';
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: TakeleyVoteOptionButton(
@@ -833,12 +856,25 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 meta: meta,
                 selected: selected,
                 enabled: !_voting,
-                onPressed: () => _vote(opt.id),
+                onPressed: hasTake ? null : () => _pickOption(opt.id),
               ),
             );
           }),
+          if (!hasTake && _pendingOptionId != null) ...[
+            const SizedBox(height: 4),
+            TakeleyOffsetPillButton(
+              label: _voting ? '결과 여는 중…' : '결과 보기',
+              enabled: !_voting,
+              onPressed: _confirmVote,
+            ),
+            const SizedBox(height: 10),
+          ],
           Text(
-            '${fmt.format(issue.participationCount)}명 생각 남김',
+            hasTake
+                ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                : _pendingOptionId == null
+                    ? '선택한 뒤에 다른 사람 생각을 볼 수 있어요.'
+                    : '다른 선택지를 누르면 바꿀 수 있어요.',
             style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
           ),
         ],

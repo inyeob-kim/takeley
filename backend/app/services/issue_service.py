@@ -745,16 +745,23 @@ class IssueService:
             .first()
         )
         if existing:
-            existing.option_id = option_id
-            existing.updated_at = datetime.utcnow()
-        else:
-            self.db.add(
-                Participation(
-                    signal_id=issue_id,
-                    user_id=user_id,
-                    option_id=option_id,
-                )
+            # Take a side: first take is locked. Repeat taps are idempotent.
+            out = _to_issue_out(self.db, signal, user_id=user_id)
+            return {
+                "issue_id": issue_id,
+                "my_option_id": existing.option_id,
+                "participation_count": out.participation_count,
+                "options": out.options,
+                "is_following": out.is_following,
+            }
+
+        self.db.add(
+            Participation(
+                signal_id=issue_id,
+                user_id=user_id,
+                option_id=option_id,
             )
+        )
         _append_user_event(self.db, user_id=user_id, signal_id=issue_id, event="vote")
         from app.pipeline.trend_status import apply_trend_status
 

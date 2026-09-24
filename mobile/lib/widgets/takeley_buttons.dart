@@ -144,14 +144,15 @@ class TakeleyVoteOptionButton extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      meta,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: TakeleyColors.muted,
+                    if (meta.isNotEmpty)
+                      Text(
+                        meta,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: TakeleyColors.muted,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

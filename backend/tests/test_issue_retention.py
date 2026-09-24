@@ -235,7 +235,7 @@ def test_vote_option_change_keeps_single_participation():
     svc.participate(signal.id, user_id=uid, option_id=o0.id)
     again = svc.participate(signal.id, user_id=uid, option_id=o1.id)
     assert again is not None
-    assert again["my_option_id"] == o1.id
+    assert again["my_option_id"] == o0.id
     assert again["participation_count"] == 1
     assert (
         db.query(Participation)
