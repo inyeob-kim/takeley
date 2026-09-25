@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../api/contributor_api.dart';
+import '../api/safety_api.dart';
 import '../navigation/cupertino_nav.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/contributor_ui.dart';
@@ -17,6 +18,7 @@ class DeepThoughtListScreen extends StatefulWidget {
   const DeepThoughtListScreen({
     super.key,
     required this.contributorApi,
+    required this.safetyApi,
     required this.issueId,
     required this.onBack,
     this.userId,
@@ -26,6 +28,7 @@ class DeepThoughtListScreen extends StatefulWidget {
   });
 
   final ContributorApi contributorApi;
+  final SafetyApi safetyApi;
   final String issueId;
   final String? userId;
   final List<IssueTake> initialTakes;
@@ -60,6 +63,7 @@ class _DeepThoughtListScreenState extends State<DeepThoughtListScreen> {
       final takes = await widget.contributorApi.fetchIssueTakes(
         widget.issueId,
         limit: 50,
+        userId: widget.userId,
       );
       if (!mounted) return;
       setState(() {
@@ -80,6 +84,7 @@ class _DeepThoughtListScreenState extends State<DeepThoughtListScreen> {
       context,
       DeepThoughtDetailScreen(
         contributorApi: widget.contributorApi,
+        safetyApi: widget.safetyApi,
         issueId: widget.issueId,
         takeId: takeId,
         userId: widget.userId,

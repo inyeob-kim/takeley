@@ -18,3 +18,9 @@ const String kAppVersion = String.fromEnvironment(
 String get kPrivacyUrl => '${kShareOrigin.replaceAll(RegExp(r'/$'), '')}/privacy';
 
 String get kSupportUrl => '${kShareOrigin.replaceAll(RegExp(r'/$'), '')}/support';
+
+String get kTermsUrl => '${kShareOrigin.replaceAll(RegExp(r'/$'), '')}/terms';
+
+const String kReportEmail = 'hello@takeley.co';
+
+const String kTermsAcceptedKey = 'takeley_terms_v1';

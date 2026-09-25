@@ -331,6 +331,53 @@ class IssueCommentListOut(BaseModel):
     count: int
 
 
+class SafetyOkOut(BaseModel):
+    ok: bool = True
+
+
+class ContentReportIn(BaseModel):
+    target_type: str = Field(..., pattern="^(comment|take)$")
+    target_id: str = Field(..., min_length=1)
+    reason: str = Field(..., pattern="^(hate|sexual|violence|spam|other)$")
+    details: Optional[str] = Field(default=None, max_length=500)
+    user_id: Optional[str] = None
+
+
+class ContentHideIn(BaseModel):
+    target_type: str = Field(..., pattern="^(comment|take)$")
+    target_id: str = Field(..., min_length=1)
+    user_id: Optional[str] = None
+
+
+class UserBlockIn(BaseModel):
+    blocked_user_id: str = Field(..., min_length=1)
+    user_id: Optional[str] = None
+
+
+class ContentReportOut(BaseModel):
+    id: str
+    reporter_id: str
+    target_type: str
+    target_id: str
+    target_user_id: str
+    reason: str
+    details: Optional[str] = None
+    status: str
+    preview: str = ""
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+
+
+class ContentReportListOut(BaseModel):
+    items: list[ContentReportOut]
+    count: int
+
+
+class AdminReportResolveIn(BaseModel):
+    action: str = Field(..., pattern="^(remove|dismiss)$")
+    eject: bool = False
+
+
 class IssueEventIn(BaseModel):
     event: str = Field(
         ...,

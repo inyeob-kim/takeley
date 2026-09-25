@@ -130,9 +130,15 @@ def support() -> HTMLResponse:
       <li>알림은 설정에서 켜고 끌 수 있습니다.</li>
       <li>내 투표·댓글·알림 토큰은 설정 → 내 데이터 삭제에서 지울 수 있습니다.</li>
     </ul>
+    <h2>부적절한 활동 신고</h2>
+    <p>앱에서 댓글·글을 신고하거나
+    <a href="mailto:hello@takeley.co">hello@takeley.co</a>로 바로 알려 주세요.
+    접수된 신고는 24시간 안에 검토하고, 문제가 확인되면 해당 글을 내리고
+    해당 이용자를 제한합니다.</p>
     <h2>문의</h2>
     <p><a href="mailto:hello@takeley.co">hello@takeley.co</a></p>
-    <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a></p>
+    <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a>
+    · <a href="{origin}/terms">이용약관</a></p>
     """
     return HTMLResponse(_page("고객지원", body))
 
@@ -183,3 +189,51 @@ def data_deletion() -> HTMLResponse:
     <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a></p>
     """
     return HTMLResponse(_page("데이터 삭제", body))
+
+
+@router.get("/terms", response_class=HTMLResponse)
+def terms_of_use() -> HTMLResponse:
+    settings = get_settings()
+    origin = (settings.public_share_origin or "https://api.takeley.co").rstrip("/")
+    body = f"""
+    <h1>이용약관</h1>
+    <p class="muted">시행일: 2026년 9월 25일 · 만 18세 이상만 이용할 수 있습니다.</p>
+    <p>TAKELEY(테이클리)는 이슈를 읽고 익명으로 의견·댓글·글을 남기는 서비스입니다.
+    앱을 쓰려면 이 약관에 동의해야 합니다.</p>
+
+    <h2>1. 연령</h2>
+    <p>본 서비스는 만 18세 이상만 이용할 수 있습니다.</p>
+
+    <h2>2. 금지 행위 — 무관용</h2>
+    <p>혐오, 차별, 음란, 성적 착취, 폭력·위협, 괴롭힘, 스팸, 불법 콘텐츠는
+    허용하지 않습니다. 위반이 확인되면 해당 글을 즉시 내리고 해당 이용자의
+    이용을 제한합니다. 재발 시 영구 제한할 수 있습니다.</p>
+
+    <h2>3. 신고·차단·숨기기</h2>
+    <ul>
+      <li>이용자는 부적절한 글을 신고할 수 있습니다.</li>
+      <li>이용자는 다른 이용자를 차단할 수 있습니다.</li>
+      <li>이용자는 원하지 않는 글을 자신의 피드에서 바로 숨길 수 있습니다.</li>
+    </ul>
+
+    <h2>4. 운영 대응 (24시간)</h2>
+    <p>신고가 접수되면 운영자는 24시간 안에 검토합니다.
+    문제가 확인되면 해당 콘텐츠를 삭제하고, 해당 이용자를 서비스에서
+    제한(eject)합니다.</p>
+
+    <h2>5. 연락처</h2>
+    <p>부적절한 활동 신고 및 문의:
+    <a href="mailto:hello@takeley.co">hello@takeley.co</a></p>
+
+    <h2>Terms of Use (English)</h2>
+    <p>TAKELEY is for users 18 and older. There is <strong>no tolerance</strong>
+    for objectionable content or abusive users, including hate, sexual content,
+    harassment, threats, or spam. Users can report, block, and immediately hide
+    posts from their feed. We review reports within 24 hours and, when a
+    violation is confirmed, remove the content and eject the user who posted it.
+    Contact: <a href="mailto:hello@takeley.co">hello@takeley.co</a>.</p>
+
+    <p class="muted"><a href="{origin}/privacy">개인정보 처리방침</a>
+    · <a href="{origin}/support">고객지원</a></p>
+    """
+    return HTMLResponse(_page("이용약관", body))

@@ -334,9 +334,62 @@ class IssueComment(Base):
     user_id: Mapped[str] = mapped_column(String(64), index=True)
     content: Mapped[str] = mapped_column(Text)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="visible", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     signal: Mapped["Issue"] = relationship(back_populates="comments")
+
+
+class ContentReport(Base):
+    """User flag on a comment or published take. Admin acts within 24h."""
+
+    __tablename__ = "content_reports"
+    __table_args__ = (
+        Index("idx_content_reports_status_created", "status", "created_at"),
+        Index("idx_content_reports_target", "target_type", "target_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    reporter_id: Mapped[str] = mapped_column(String(64), index=True)
+    target_type: Mapped[str] = mapped_column(String(16), index=True)
+    target_id: Mapped[str] = mapped_column(String(36), index=True)
+    target_user_id: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(String(32))
+    details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+
+class UserBlock(Base):
+    """Viewer hides another anonymous user's posts from their feed."""
+
+    __tablename__ = "user_blocks"
+    __table_args__ = (
+        UniqueConstraint("blocker_id", "blocked_id", name="uq_user_block_pair"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    blocker_id: Mapped[str] = mapped_column(String(64), index=True)
+    blocked_id: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class HiddenContent(Base):
+    """Per-user hide so a post leaves their feed immediately."""
+
+    __tablename__ = "hidden_contents"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "target_type", "target_id", name="uq_hidden_content_user_target"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    target_type: Mapped[str] = mapped_column(String(16))
+    target_id: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class IssueFollow(Base):

@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.db.models import (
     Columnist,
+    ContentReport,
     DeviceToken,
+    HiddenContent,
     IssueComment,
     IssueFollow,
     IssueTakeReaction,
@@ -15,6 +17,7 @@ from app.db.models import (
     Participation,
     PushNotification,
     PushNotificationLog,
+    UserBlock,
     UserPreference,
     WatchlistItem,
 )
@@ -46,6 +49,15 @@ class DeviceService:
         if user is None or user.device_id != device_id.strip():
             raise ValueError("device_mismatch")
         uid = user.id
+        self.db.query(ContentReport).filter(ContentReport.reporter_id == uid).delete(
+            synchronize_session=False
+        )
+        self.db.query(HiddenContent).filter(HiddenContent.user_id == uid).delete(
+            synchronize_session=False
+        )
+        self.db.query(UserBlock).filter(
+            (UserBlock.blocker_id == uid) | (UserBlock.blocked_id == uid)
+        ).delete(synchronize_session=False)
         for model in (
             IssueTakeReaction,
             IssueComment,

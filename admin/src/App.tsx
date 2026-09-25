@@ -23,6 +23,7 @@ import { ColumnistsPanel } from "./ColumnistsPanel";
 import { ContributorApplicationsPanel } from "./ContributorApplicationsPanel";
 import { DeepThoughtsPanel } from "./DeepThoughtsPanel";
 import { IngestPanel } from "./IngestPanel";
+import { ReportsPanel } from "./ReportsPanel";
 import { ToastHost } from "./ToastHost";
 import { ADMIN_KEY_STORAGE } from "./config";
 
@@ -44,6 +45,7 @@ type AdminSection =
   | "columnists"
   | "applications"
   | "takes"
+  | "reports"
   | "ingest";
 
 type EditForm = {
@@ -594,6 +596,13 @@ export default function App() {
         </button>
         <button
           type="button"
+          className={section === "reports" ? "is-active" : ""}
+          onClick={() => requestSection("reports")}
+        >
+          신고
+        </button>
+        <button
+          type="button"
           className={section === "ingest" ? "is-active" : ""}
           onClick={() => requestSection("ingest")}
         >
@@ -618,6 +627,13 @@ export default function App() {
 
       {section === "takes" ? (
         <DeepThoughtsPanel
+          adminKey={key}
+          onAuthFailure={() => setAuthed(false)}
+        />
+      ) : null}
+
+      {section === "reports" ? (
+        <ReportsPanel
           adminKey={key}
           onAuthFailure={() => setAuthed(false)}
         />

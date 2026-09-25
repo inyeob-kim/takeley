@@ -4,6 +4,7 @@ from app.api.v1 import (
     admin_columnists,
     admin_contributor,
     admin_issues,
+    admin_reports,
     admin_x_ingest,
     billing,
     columnists,
@@ -12,6 +13,7 @@ from app.api.v1 import (
     issues,
     pipeline,
     push,
+    safety,
     settings,
 )
 
@@ -20,6 +22,7 @@ api_router.include_router(admin_issues.router)
 api_router.include_router(admin_x_ingest.router)
 api_router.include_router(admin_columnists.router)
 api_router.include_router(admin_contributor.router)
+api_router.include_router(admin_reports.router)
 api_router.include_router(columnists.router)
 api_router.include_router(contributor.router)
 # Issue-takes before issues so static paths like .../takes/mine resolve cleanly
@@ -30,3 +33,4 @@ api_router.include_router(pipeline.router)
 api_router.include_router(billing.router)
 api_router.include_router(settings.router)
 api_router.include_router(push.router)
+api_router.include_router(safety.router)

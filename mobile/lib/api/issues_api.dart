@@ -106,9 +106,10 @@ class IssuesApi {
     return Issue.fromJson(data);
   }
 
-  Future<List<IssueComment>> fetchComments(String id) async {
+  Future<List<IssueComment>> fetchComments(String id, {String? userId}) async {
     final data = await _api.getJson(
       '/api/v1/issues/${Uri.encodeComponent(id)}/comments',
+      query: _userQuery(userId),
     );
     final raw = data['items'];
     if (raw is! List) return const [];

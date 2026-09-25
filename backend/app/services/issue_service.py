@@ -265,7 +265,10 @@ def _bulk_comment_counts(db: Session, signal_ids: list[str]) -> dict[str, int]:
         return {}
     rows = (
         db.query(IssueComment.signal_id, func.count(IssueComment.id))
-        .filter(IssueComment.signal_id.in_(signal_ids))
+        .filter(
+            IssueComment.signal_id.in_(signal_ids),
+            IssueComment.status == "visible",
+        )
         .group_by(IssueComment.signal_id)
         .all()
     )
@@ -370,7 +373,10 @@ def _to_issue_out(
     if comment_count is None:
         comment_count = int(
             db.query(func.count(IssueComment.id))
-            .filter(IssueComment.signal_id == signal.id)
+            .filter(
+                IssueComment.signal_id == signal.id,
+                IssueComment.status == "visible",
+            )
             .scalar()
             or 0
         )
@@ -776,15 +782,26 @@ class IssueService:
             "is_following": out.is_following,
         }
 
-    def list_comments(self, issue_id: str, *, limit: int = 50) -> list[IssueCommentOut]:
+    def list_comments(
+        self, issue_id: str, *, user_id: str | None = None, limit: int = 50
+    ) -> list[IssueCommentOut]:
         limit = max(1, min(limit, 100))
-        rows = (
+        from app.services.safety_service import blocked_user_ids, hidden_target_ids
+
+        blocked = blocked_user_ids(self.db, user_id)
+        hidden = hidden_target_ids(self.db, user_id, target_type="comment")
+        query = (
             self.db.query(IssueComment)
-            .filter(IssueComment.signal_id == issue_id)
-            .order_by(IssueComment.created_at.desc())
-            .limit(limit)
-            .all()
+            .filter(
+                IssueComment.signal_id == issue_id,
+                IssueComment.status == "visible",
+            )
         )
+        if blocked:
+            query = query.filter(~IssueComment.user_id.in_(blocked))
+        if hidden:
+            query = query.filter(~IssueComment.id.in_(hidden))
+        rows = query.order_by(IssueComment.created_at.desc()).limit(limit).all()
         names = _user_display_names(self.db, [r.user_id for r in rows])
         return [
             _comment_out(r, display_name=names.get(r.user_id))
@@ -794,6 +811,12 @@ class IssueService:
     def add_comment(
         self, issue_id: str, *, user_id: str, content: str
     ) -> IssueCommentOut | None:
+        from app.db.models import User
+        from app.services.content_moderation import (
+            ObjectionableContent,
+            reject_objectionable,
+        )
+
         signal = (
             self.db.query(Signal)
             .filter(Signal.id == issue_id, Signal.status == "published")
@@ -804,7 +827,19 @@ class IssueService:
         text = (content or "").strip()
         if not text:
             raise ValueError("empty_content")
-        row = IssueComment(signal_id=issue_id, user_id=user_id, content=text[:2000])
+        author = self.db.query(User).filter(User.id == user_id).first()
+        if author is not None and (author.status or "").lower() != "active":
+            raise ValueError("user_inactive")
+        try:
+            reject_objectionable(text)
+        except ObjectionableContent as exc:
+            raise ValueError(str(exc)) from exc
+        row = IssueComment(
+            signal_id=issue_id,
+            user_id=user_id,
+            content=text[:2000],
+            status="visible",
+        )
         self.db.add(row)
         _append_user_event(
             self.db, user_id=user_id, signal_id=issue_id, event="comment"
@@ -866,7 +901,10 @@ class IssueService:
 
         comments = (
             self.db.query(IssueComment)
-            .filter(IssueComment.user_id == user_id)
+            .filter(
+                IssueComment.user_id == user_id,
+                IssueComment.status == "visible",
+            )
             .order_by(IssueComment.created_at.desc())
             .limit(limit)
             .all()

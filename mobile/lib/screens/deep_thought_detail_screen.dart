@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../api/contributor_api.dart';
+import '../api/safety_api.dart';
 import '../theme/takeley_colors.dart';
+import '../widgets/ugc_actions.dart';
 import '../utils/contributor_ui.dart';
 import '../widgets/data_state.dart';
 import '../widgets/takeley_buttons.dart';
@@ -24,6 +26,7 @@ class DeepThoughtDetailScreen extends StatefulWidget {
   const DeepThoughtDetailScreen({
     super.key,
     required this.contributorApi,
+    required this.safetyApi,
     required this.issueId,
     required this.takeId,
     this.userId,
@@ -31,6 +34,7 @@ class DeepThoughtDetailScreen extends StatefulWidget {
   });
 
   final ContributorApi contributorApi;
+  final SafetyApi safetyApi;
   final String issueId;
   final String takeId;
   final String? userId;
@@ -143,13 +147,30 @@ class _DeepThoughtDetailScreenState extends State<DeepThoughtDetailScreen> {
                   bottom: BorderSide(color: TakeleyColors.border, width: 1),
                 ),
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: widget.onBack,
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                  tooltip: '이슈로 돌아가기',
-                ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: widget.onBack,
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                    tooltip: '이슈로 돌아가기',
+                  ),
+                  const Spacer(),
+                  if (take != null && take.authorId != widget.userId)
+                    IconButton(
+                      icon: const Icon(Icons.more_horiz, size: 20),
+                      tooltip: '더보기',
+                      onPressed: () => showUgcActions(
+                        context: context,
+                        safetyApi: widget.safetyApi,
+                        targetType: 'take',
+                        targetId: take.id,
+                        authorId: take.authorId,
+                        viewerId: widget.userId,
+                        isMine: false,
+                        onRemovedFromFeed: widget.onBack,
+                      ),
+                    ),
+                ],
               ),
             ),
             Expanded(

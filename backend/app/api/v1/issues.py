@@ -129,9 +129,10 @@ def participate(
 def list_comments(
     issue_id: str,
     limit: int = Query(50, ge=1, le=100),
+    user_id: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> IssueCommentListOut:
-    items = IssueService(db).list_comments(issue_id, limit=limit)
+    items = IssueService(db).list_comments(issue_id, user_id=user_id, limit=limit)
     return IssueCommentListOut(items=items, count=len(items))
 
 

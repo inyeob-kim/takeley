@@ -130,6 +130,15 @@ class TakeService:
             raise ContributorError("issue_id mismatch", status_code=400)
         user = require_approved_contributor(self.db, user_id)
         _require_published_issue(self.db, issue_id)
+        from app.services.content_moderation import (
+            ObjectionableContent,
+            reject_objectionable,
+        )
+
+        try:
+            reject_objectionable(title, body)
+        except ObjectionableContent as exc:
+            raise ContributorError(str(exc), status_code=400) from exc
         take = IssueTake(
             issue_id=issue_id,
             author_id=user.id,
@@ -173,6 +182,15 @@ class TakeService:
             take.title = title.strip()
         if body is not None:
             take.body = body.strip()
+        from app.services.content_moderation import (
+            ObjectionableContent,
+            reject_objectionable,
+        )
+
+        try:
+            reject_objectionable(take.title, take.body)
+        except ObjectionableContent as exc:
+            raise ContributorError(str(exc), status_code=400) from exc
         if source_urls is not None:
             take.source_urls = _normalize_urls(source_urls)
         take.updated_at = datetime.utcnow()
@@ -244,16 +262,25 @@ class TakeService:
             return _take_out(take, author=author, include_admin_note=True)
         raise ContributorError("IssueTake not found", status_code=404)
 
-    def list_published(self, issue_id: str, *, limit: int = 20) -> IssueTakeListOut:
+    def list_published(
+        self, issue_id: str, *, user_id: str | None = None, limit: int = 20
+    ) -> IssueTakeListOut:
+        from app.services.safety_service import blocked_user_ids, hidden_target_ids
+
         _require_published_issue(self.db, issue_id)
         limit = max(1, min(limit, 50))
+        blocked = blocked_user_ids(self.db, user_id)
+        hidden = hidden_target_ids(self.db, user_id, target_type="take")
+        query = self.db.query(IssueTake).filter(
+            IssueTake.issue_id == issue_id,
+            IssueTake.status == "published",
+        )
+        if blocked:
+            query = query.filter(~IssueTake.author_id.in_(blocked))
+        if hidden:
+            query = query.filter(~IssueTake.id.in_(hidden))
         rows = (
-            self.db.query(IssueTake)
-            .filter(
-                IssueTake.issue_id == issue_id,
-                IssueTake.status == "published",
-            )
-            .order_by(IssueTake.published_at.desc(), IssueTake.created_at.desc())
+            query.order_by(IssueTake.published_at.desc(), IssueTake.created_at.desc())
             .limit(limit)
             .all()
         )

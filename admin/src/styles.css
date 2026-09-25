@@ -1456,6 +1456,18 @@ button {
   color: var(--muted);
 }
 
+.modal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+}
+
 .ingest-panel {
   max-width: 880px;
   margin: 0 auto;

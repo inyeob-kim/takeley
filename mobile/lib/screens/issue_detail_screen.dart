@@ -11,6 +11,7 @@ import '../api/contributor_api.dart';
 import '../api/device_session.dart';
 import '../api/issues_api.dart';
 import '../api/models.dart';
+import '../api/safety_api.dart';
 import '../navigation/cupertino_nav.dart';
 import 'columnist_profile_screen.dart';
 import '../theme/takeley_colors.dart';
@@ -25,6 +26,7 @@ import '../widgets/data_state.dart';
 import '../widgets/deep_thought_card.dart';
 import '../widgets/share_choice_sheet.dart';
 import '../widgets/takeley_buttons.dart';
+import '../widgets/ugc_actions.dart';
 import 'deep_thought_detail_screen.dart';
 import 'deep_thought_list_screen.dart';
 import 'deep_thought_writer_screen.dart';
@@ -64,6 +66,7 @@ class IssueDetailScreen extends StatefulWidget {
     required this.issueId,
     required this.issuesApi,
     required this.contributorApi,
+    required this.safetyApi,
     required this.session,
     required this.onBack,
     this.initialDeepFocus,
@@ -74,6 +77,7 @@ class IssueDetailScreen extends StatefulWidget {
   final String issueId;
   final IssuesApi issuesApi;
   final ContributorApi contributorApi;
+  final SafetyApi safetyApi;
   final DeviceSession session;
   final VoidCallback onBack;
   final IssueDeepFocus? initialDeepFocus;
@@ -253,6 +257,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       context,
       DeepThoughtListScreen(
         contributorApi: widget.contributorApi,
+        safetyApi: widget.safetyApi,
         issueId: widget.issueId,
         userId: _userId,
         initialTakes: _publishedTakes,
@@ -269,6 +274,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       context,
       DeepThoughtDetailScreen(
         contributorApi: widget.contributorApi,
+        safetyApi: widget.safetyApi,
         issueId: widget.issueId,
         takeId: takeId,
         userId: _userId,
@@ -333,6 +339,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       final takes = await widget.contributorApi.fetchIssueTakes(
         widget.issueId,
         limit: 50,
+        userId: _userId,
       );
       ContributorMe? me;
       try {
@@ -373,8 +380,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         widget.issueId,
         userId: userId,
       );
-      final comments =
-          await widget.issuesApi.fetchComments(widget.issueId);
+      final comments = await widget.issuesApi.fetchComments(
+        widget.issueId,
+        userId: userId,
+      );
       if (!mounted) return;
       setState(() {
         _issue = issue;
@@ -582,10 +591,17 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         }
       });
       FocusManager.instance.primaryFocus?.unfocus();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      final raw = '$e';
+      final blocked = raw.contains('objectionable_content') ||
+          raw.contains('user_inactive');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('댓글을 남기지 못했어요.')),
+        SnackBar(
+          content: Text(
+            blocked ? '이 내용은 등록할 수 없어요.' : '댓글을 남기지 못했어요.',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -707,6 +723,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   issueId: issueId,
                   issuesApi: widget.issuesApi,
                   contributorApi: widget.contributorApi,
+                  safetyApi: widget.safetyApi,
                   session: widget.session,
                   onBack: () => Navigator.of(context).pop(),
                 ),
@@ -1121,8 +1138,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ),
           )
         else
+          const Text(
+            '부적절한 댓글은 신고하거나 숨길 수 있어요.',
+            style: TextStyle(color: TakeleyColors.muted, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
           ..._comments.map((c) {
             final name = (c.displayName ?? '').trim();
+            final mine = _userId != null && c.userId == _userId;
             return Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14.4),
@@ -1134,13 +1157,53 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name.isEmpty ? '익명' : name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: TakeleyColors.muted,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name.isEmpty ? '익명' : name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: TakeleyColors.muted,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.more_horiz, size: 20),
+                        tooltip: '더보기',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => unawaited(
+                          showUgcActions(
+                            context: context,
+                            safetyApi: widget.safetyApi,
+                            targetType: 'comment',
+                            targetId: c.id,
+                            authorId: c.userId,
+                            viewerId: _userId,
+                            isMine: mine,
+                            onRemovedFromFeed: () {
+                              setState(() {
+                                _comments =
+                                    _comments.where((x) => x.id != c.id).toList();
+                                if (_issue != null && mine) {
+                                  _issue = _issue!.copyWith(
+                                    commentCount:
+                                        (_issue!.commentCount - 1).clamp(0, 999999),
+                                  );
+                                }
+                              });
+                            },
+                            onDeleteOwn: mine
+                                ? () => widget.safetyApi.deleteComment(
+                                      commentId: c.id,
+                                      userId: _userId,
+                                    )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(

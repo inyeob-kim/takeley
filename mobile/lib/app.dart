@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api/api_client.dart';
 import 'api/contributor_api.dart';
 import 'api/device_session.dart';
 import 'api/issues_api.dart';
 import 'api/pipeline_api.dart';
+import 'api/safety_api.dart';
 import 'api/settings_api.dart';
+import 'config.dart';
 import 'navigation/deep_link.dart';
 import 'navigation/page_transitions.dart';
 import 'screens/activity_screen.dart';
@@ -18,6 +21,7 @@ import 'screens/issue_detail_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/shell_screen.dart';
+import 'screens/terms_gate_screen.dart';
 import 'services/fcm_service.dart';
 import 'theme/takeley_theme.dart';
 import 'widgets/phone_frame.dart';
@@ -43,9 +47,12 @@ class _TakeleyAppState extends State<TakeleyApp> {
   late final ContributorApi _contributorApi = ContributorApi(widget.api);
   late final SettingsApi _settingsApi = SettingsApi(widget.api);
   late final PipelineApi _pipelineApi = PipelineApi(widget.api);
+  late final SafetyApi _safetyApi = SafetyApi(widget.api);
   late final GoRouter _router;
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
+  bool _termsReady = false;
+  bool _termsAccepted = false;
 
   @override
   void initState() {
@@ -53,6 +60,23 @@ class _TakeleyAppState extends State<TakeleyApp> {
     _router = _buildRouter();
     widget.fcm.onOpened = _handleDeepLink;
     unawaited(_initAppLinks());
+    unawaited(_loadTerms());
+  }
+
+  Future<void> _loadTerms() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _termsAccepted = prefs.getBool(kTermsAcceptedKey) ?? false;
+      _termsReady = true;
+    });
+  }
+
+  Future<void> _acceptTerms() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kTermsAcceptedKey, true);
+    if (!mounted) return;
+    setState(() => _termsAccepted = true);
   }
 
   Future<void> _initAppLinks() async {
@@ -145,6 +169,7 @@ class _TakeleyAppState extends State<TakeleyApp> {
                   builder: (context, state) => ActivityScreen(
                     issuesApi: _issuesApi,
                     session: widget.session,
+                    initialTab: state.uri.queryParameters['tab'],
                     onIssueOpen: (id) => _openIssue(context, id),
                     onDeepThoughtOpen: (issueId, focus) =>
                         _openIssue(context, issueId, focus: focus),
@@ -161,7 +186,8 @@ class _TakeleyAppState extends State<TakeleyApp> {
                     issuesApi: _issuesApi,
                     session: widget.session,
                     onOpenSettings: () => context.push('/settings'),
-                    onOpenActivity: () => context.go('/activity'),
+                    onOpenActivity: (tab) =>
+                        context.go('/activity?tab=$tab'),
                   ),
                 ),
               ],
@@ -185,6 +211,7 @@ class _TakeleyAppState extends State<TakeleyApp> {
                   issueId: id,
                   issuesApi: _issuesApi,
                   contributorApi: _contributorApi,
+                  safetyApi: _safetyApi,
                   session: widget.session,
                   initialDeepFocus: focus,
                   shareId: (sid != null && sid.isNotEmpty) ? sid : null,
@@ -230,6 +257,25 @@ class _TakeleyAppState extends State<TakeleyApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_termsReady) {
+      return MaterialApp(
+        title: 'TAKELEY',
+        debugShowCheckedModeBanner: false,
+        theme: buildTakeleyTheme(),
+        home: const Scaffold(
+          backgroundColor: Color(0xFFEEF0F3),
+          body: SizedBox.expand(),
+        ),
+      );
+    }
+    if (!_termsAccepted) {
+      return MaterialApp(
+        title: 'TAKELEY',
+        debugShowCheckedModeBanner: false,
+        theme: buildTakeleyTheme(),
+        home: TermsGateScreen(onAccepted: () => unawaited(_acceptTerms())),
+      );
+    }
     return MaterialApp.router(
       title: 'TAKELEY',
       debugShowCheckedModeBanner: false,

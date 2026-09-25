@@ -11,6 +11,7 @@ import '../theme/takeley_colors.dart';
 import '../utils/tab_visibility_reload.dart';
 import '../widgets/profile_chrome.dart';
 import '../widgets/takeley_buttons.dart';
+import 'activity_screen.dart';
 
 const _nickMin = 2;
 const _nickMax = 16;
@@ -30,7 +31,7 @@ class ProfileScreen extends StatefulWidget {
   final IssuesApi issuesApi;
   final DeviceSession session;
   final VoidCallback onOpenSettings;
-  final VoidCallback onOpenActivity;
+  final ValueChanged<String> onOpenActivity;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -221,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                           ),
                         const SizedBox(height: 16),
-                        TakeleyPrimaryButton(
+                        TakeleyOffsetPillButton(
                           label: _nickSaving ? '저장 중…' : '저장',
                           enabled: !_nickSaving && dirty && valid,
                           onPressed: _saveNickname,
@@ -328,19 +329,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                         icon: Icons.chat_bubble_outline_rounded,
                         label: '참여한 이슈',
                         count: _voteCount,
-                        onTap: widget.onOpenActivity,
+                        onTap: () => widget.onOpenActivity(ActivityTabs.votes),
                       ),
                       ProfilePillRow(
                         icon: Icons.bookmark_border_rounded,
                         label: '팔로우한 이슈',
                         count: _followCount,
-                        onTap: widget.onOpenActivity,
+                        onTap: () =>
+                            widget.onOpenActivity(ActivityTabs.followed),
                       ),
                       ProfilePillRow(
                         icon: Icons.forum_outlined,
                         label: '댓글',
                         count: _commentCount,
-                        onTap: widget.onOpenActivity,
+                        onTap: () =>
+                            widget.onOpenActivity(ActivityTabs.comments),
                       ),
                       if (_takesCount != null) ...[
                         const SizedBox(height: 16),
@@ -349,7 +352,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                           icon: Icons.article_outlined,
                           label: '깊이 있는 생각',
                           count: _takesCount!,
-                          onTap: widget.onOpenActivity,
+                          onTap: () =>
+                              widget.onOpenActivity(ActivityTabs.writes),
                         ),
                       ],
                     ],

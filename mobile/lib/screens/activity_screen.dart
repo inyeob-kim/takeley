@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../api/device_session.dart';
@@ -13,6 +14,23 @@ import '../widgets/data_state.dart';
 import '../widgets/issue_card.dart';
 import '../widgets/profile_chrome.dart';
 
+/// 내 이슈 탭 id — 프로필 바로가기와 화면이 같은 값을 쓴다.
+class ActivityTabs {
+  ActivityTabs._();
+
+  static const votes = 'votes';
+  static const followed = 'followed';
+  static const comments = 'comments';
+  static const writes = 'writes';
+
+  static const known = {votes, followed, comments, writes};
+
+  static String resolve(String? raw, {String fallback = votes}) {
+    if (raw != null && known.contains(raw)) return raw;
+    return fallback;
+  }
+}
+
 /// Mirrors `frontend/src/screens/ActivityScreen.tsx`.
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({
@@ -21,12 +39,14 @@ class ActivityScreen extends StatefulWidget {
     required this.session,
     required this.onIssueOpen,
     this.onDeepThoughtOpen,
+    this.initialTab,
   });
 
   final IssuesApi issuesApi;
   final DeviceSession session;
   final ValueChanged<String> onIssueOpen;
   final void Function(String issueId, IssueDeepFocus focus)? onDeepThoughtOpen;
+  final String? initialTab;
 
   @override
   State<ActivityScreen> createState() => _ActivityScreenState();
@@ -34,7 +54,7 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen>
     with TabVisibilityReloadMixin {
-  String _tab = 'votes';
+  late String _tab;
   List<Issue> _votes = [];
   List<Issue> _followed = [];
   List<IssueComment> _comments = [];
@@ -47,12 +67,52 @@ class _ActivityScreenState extends State<ActivityScreen>
   String get tabPath => '/activity';
 
   @override
-  void onTabBecameVisible() => _load(silent: true);
+  void onTabBecameVisible() {
+    _applyRouteTab();
+    _load(silent: true);
+  }
 
   @override
   void initState() {
     super.initState();
+    _tab = ActivityTabs.resolve(widget.initialTab);
     _load();
+  }
+
+  @override
+  void didUpdateWidget(ActivityScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != oldWidget.initialTab) {
+      _applyTab(widget.initialTab);
+    }
+  }
+
+  String? _tabFromRoute() {
+    try {
+      return GoRouter.of(context)
+          .routerDelegate
+          .currentConfiguration
+          .uri
+          .queryParameters['tab'];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _applyRouteTab() {
+    _applyTab(_tabFromRoute() ?? widget.initialTab);
+  }
+
+  void _applyTab(String? raw) {
+    final next = ActivityTabs.resolve(raw, fallback: _tab);
+    if (next == _tab) return;
+    setState(() => _tab = next);
+  }
+
+  void _selectTab(String id) {
+    if (_tab == id) return;
+    setState(() => _tab = id);
+    context.go('/activity?tab=$id');
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -76,8 +136,8 @@ class _ActivityScreenState extends State<ActivityScreen>
         _contributorStats = data.contributorStats;
         _deepThoughts = data.myDeepThoughts;
         _loading = false;
-        if (_contributorStats == null && _tab == 'writes') {
-          _tab = 'votes';
+        if (_contributorStats == null && _tab == ActivityTabs.writes) {
+          _tab = ActivityTabs.votes;
         }
       });
     } catch (_) {
@@ -109,10 +169,10 @@ class _ActivityScreenState extends State<ActivityScreen>
   @override
   Widget build(BuildContext context) {
     final tabs = <({String id, String label})>[
-      (id: 'votes', label: '참여'),
-      (id: 'followed', label: '팔로우'),
-      (id: 'comments', label: '댓글'),
-      if (_showContributor) (id: 'writes', label: '생각'),
+      (id: ActivityTabs.votes, label: '참여'),
+      (id: ActivityTabs.followed, label: '팔로우'),
+      (id: ActivityTabs.comments, label: '댓글'),
+      if (_showContributor) (id: ActivityTabs.writes, label: '생각'),
     ];
 
     final emptyAll = !_loading &&
@@ -158,7 +218,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                   child: Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: GestureDetector(
-                      onTap: () => setState(() => _tab = t.id),
+                      onTap: () => _selectTab(t.id),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
@@ -193,13 +253,13 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   Widget _buildPanel() {
     switch (_tab) {
-      case 'followed':
+      case ActivityTabs.followed:
         return _followCardList();
-      case 'comments':
+      case ActivityTabs.comments:
         return _commentList();
-      case 'writes':
+      case ActivityTabs.writes:
         return _writesList();
-      case 'votes':
+      case ActivityTabs.votes:
       default:
         return _votesCardList();
     }

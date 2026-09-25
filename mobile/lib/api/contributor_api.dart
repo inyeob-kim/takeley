@@ -152,10 +152,17 @@ class ContributorApi {
     return ContributorApplication.fromJson(data);
   }
 
-  Future<List<IssueTake>> fetchIssueTakes(String issueId, {int limit = 20}) async {
+  Future<List<IssueTake>> fetchIssueTakes(
+    String issueId, {
+    int limit = 20,
+    String? userId,
+  }) async {
     final data = await _api.getJson(
       '/api/v1/issues/${Uri.encodeComponent(issueId)}/takes',
-      query: {'limit': '$limit'},
+      query: {
+        'limit': '$limit',
+        if (userId != null && userId.isNotEmpty) 'user_id': userId,
+      },
     );
     final raw = data['items'];
     if (raw is! List) return const [];

@@ -235,6 +235,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             ProfilePillRow(
+                              icon: Icons.gavel_outlined,
+                              label: '이용약관',
+                              onTap: () => unawaited(_openUrl(kTermsUrl)),
+                            ),
+                            ProfilePillRow(
                               icon: Icons.policy_outlined,
                               label: '개인정보 처리방침',
                               onTap: () => unawaited(_openUrl(kPrivacyUrl)),
@@ -243,6 +248,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: Icons.mail_outline_rounded,
                               label: '고객지원',
                               onTap: () => unawaited(_openUrl(kSupportUrl)),
+                            ),
+                            ProfilePillRow(
+                              icon: Icons.flag_outlined,
+                              label: '부적절한 활동 신고',
+                              onTap: () => unawaited(_openReportMail()),
                             ),
                             ProfilePillRow(
                               icon: Icons.delete_outline_rounded,
@@ -268,6 +278,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _openReportMail() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: kReportEmail,
+      query: 'subject=TAKELEY 부적절한 활동 신고',
+    );
+    await _openUrl(uri.toString());
+  }
+
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -279,24 +298,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _confirmDeleteData() async {
-    final ok = await showDialog<bool>(
+    final ok = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('내 데이터를 삭제할까요?'),
-        content: const Text(
-          '이 기기의 투표, 댓글, 알림 토큰이 삭제됩니다. 앱은 익명 새 세션으로 다시 시작됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('삭제'),
-          ),
-        ],
+      backgroundColor: TakeleyColors.canvas,
+      showDragHandle: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '내 데이터를 삭제할까요?',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  color: TakeleyColors.fg,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '이 기기의 투표, 댓글, 알림이 삭제돼요. 앱은 익명으로 다시 시작돼요.',
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  color: TakeleyColors.muted,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TakeleyOffsetPillButton(
+                label: '삭제',
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
+              const SizedBox(height: 10),
+              TakeleySecondaryPillButton(
+                label: '취소',
+                minHeight: 52,
+                fontSize: 16,
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
@@ -307,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('데이터를 삭제했습니다.')),
+        const SnackBar(content: Text('데이터를 삭제했어요.')),
       );
       await _load();
     } catch (e) {

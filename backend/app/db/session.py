@@ -514,3 +514,51 @@ def _ensure_sqlite_schema_patches() -> None:
                 "ALTER TABLE x_ingest_config ADD COLUMN daily_post_budget "
                 "INTEGER NOT NULL DEFAULT 400"
             )
+
+        comments = conn.exec_driver_sql("PRAGMA table_info(issue_comments)").fetchall()
+        comment_cols = {r[1] for r in comments}
+        if comment_cols and "status" not in comment_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE issue_comments "
+                "ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'visible'"
+            )
+
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS content_reports (
+                id VARCHAR(36) PRIMARY KEY,
+                reporter_id VARCHAR(64) NOT NULL,
+                target_type VARCHAR(16) NOT NULL,
+                target_id VARCHAR(36) NOT NULL,
+                target_user_id VARCHAR(64) NOT NULL,
+                reason VARCHAR(32) NOT NULL,
+                details TEXT,
+                status VARCHAR(16) NOT NULL DEFAULT 'open',
+                created_at DATETIME NOT NULL,
+                resolved_at DATETIME
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS user_blocks (
+                id VARCHAR(36) PRIMARY KEY,
+                blocker_id VARCHAR(64) NOT NULL,
+                blocked_id VARCHAR(64) NOT NULL,
+                created_at DATETIME NOT NULL,
+                UNIQUE (blocker_id, blocked_id)
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS hidden_contents (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(64) NOT NULL,
+                target_type VARCHAR(16) NOT NULL,
+                target_id VARCHAR(36) NOT NULL,
+                created_at DATETIME NOT NULL,
+                UNIQUE (user_id, target_type, target_id)
+            )
+            """
+        )

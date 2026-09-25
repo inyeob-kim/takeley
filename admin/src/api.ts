@@ -588,6 +588,45 @@ export function fetchXIngestStats(
 }
 
 /** Backend policy: published → rejected. */
+export type ContentReport = {
+  id: string;
+  reporter_id: string;
+  target_type: "comment" | "take" | string;
+  target_id: string;
+  target_user_id: string;
+  reason: string;
+  details?: string | null;
+  status: string;
+  preview: string;
+  created_at: string;
+  resolved_at?: string | null;
+};
+
+export function fetchContentReports(
+  key: string,
+  status = "open",
+): Promise<{ items: ContentReport[]; count: number }> {
+  return adminFetch(
+    `/api/v1/admin/reports?status=${encodeURIComponent(status)}&limit=50`,
+    key,
+  );
+}
+
+export function resolveContentReport(
+  key: string,
+  id: string,
+  body: { action: "remove" | "dismiss"; eject: boolean },
+): Promise<ContentReport> {
+  return adminFetch(
+    `/api/v1/admin/reports/${encodeURIComponent(id)}/resolve`,
+    key,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 export function unpublishContributorTake(
   key: string,
   id: string,

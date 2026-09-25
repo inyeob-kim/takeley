@@ -33,10 +33,13 @@ def _raise(exc: ContributorError) -> None:
 def list_published_takes(
     issue_id: str,
     limit: int = Query(20, ge=1, le=50),
+    user_id: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> IssueTakeListOut:
     try:
-        return TakeService(db).list_published(issue_id, limit=limit)
+        return TakeService(db).list_published(
+            issue_id, user_id=user_id, limit=limit
+        )
     except ContributorError as exc:
         _raise(exc)
         raise  # pragma: no cover
