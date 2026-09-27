@@ -985,38 +985,26 @@ def _ingest_dart(
     return fetched, inserted
 
 
-def run_ingest(db: Session) -> dict:
-    settings = get_settings()
-    AssetRepository(db).get_or_create(
-        symbol=settings.mvp_asset_symbol,
-        name=settings.mvp_asset_name,
-        kind="asset",
-        name_ko=settings.mvp_asset_name_ko,
-        exchange="US",
-        market="US",
-    )
-
-    universe = active_universe(db)
-    us_universe, kr_universe = split_universe(universe)
-    logger.info(
-        "ingest start universe=%s us=%s kr=%s",
-        ",".join(u.symbol for u in universe) or "(empty)",
-        ",".join(u.symbol for u in us_universe) or "(none)",
-        ",".join(u.symbol for u in kr_universe) or "(none)",
-    )
-
-    raw_repo = RawItemRepository(db)
-    cursor_repo = CursorRepository(db)
-
-    total_fetched = 0
-    total_inserted = 0
-
+def run_x_ingest(db: Session, ctx) -> tuple[int, int]:
+    """Existing X accounts / topic / dynamic path. Called by XSourceModule only."""
+    from app.discovery.protocol import IngestContext
     from app.pipeline.x_schedule import analyzed_counts_by_lane, build_fetch_plan
     from app.services.industry_search_config import load_plans
     from app.services.x_ingest_admin import (
         get_or_create as get_x_ingest_config,
         parse_track_accounts,
     )
+
+    if not isinstance(ctx, IngestContext):
+        raise TypeError("run_x_ingest requires IngestContext")
+
+    settings = get_settings()
+    raw_repo = ctx.raw_repo
+    cursor_repo = ctx.cursor_repo
+    universe = ctx.universe
+    us_universe = ctx.us_universe
+    total_fetched = 0
+    total_inserted = 0
 
     x_config = get_x_ingest_config(db)
     daily_cap = int(getattr(x_config, "daily_post_budget", 0) or 0)
@@ -1108,7 +1096,58 @@ def run_ingest(db: Session) -> dict:
             )
             total_fetched += f
             total_inserted += i
+    return total_fetched, total_inserted
 
+
+def run_ingest(db: Session) -> dict:
+    settings = get_settings()
+    AssetRepository(db).get_or_create(
+        symbol=settings.mvp_asset_symbol,
+        name=settings.mvp_asset_name,
+        kind="asset",
+        name_ko=settings.mvp_asset_name_ko,
+        exchange="US",
+        market="US",
+    )
+
+    universe = active_universe(db)
+    us_universe, kr_universe = split_universe(universe)
+    logger.info(
+        "ingest start universe=%s us=%s kr=%s",
+        ",".join(u.symbol for u in universe) or "(empty)",
+        ",".join(u.symbol for u in us_universe) or "(none)",
+        ",".join(u.symbol for u in kr_universe) or "(none)",
+    )
+
+    raw_repo = RawItemRepository(db)
+    cursor_repo = CursorRepository(db)
+
+    total_fetched = 0
+    total_inserted = 0
+
+    from app.discovery.protocol import IngestContext
+    from app.discovery.registry import run_enabled_modules
+
+    ctx = IngestContext(
+        raw_repo=raw_repo,
+        cursor_repo=cursor_repo,
+        universe=universe,
+        us_universe=us_universe,
+        kr_universe=kr_universe,
+    )
+    for module_id, result in run_enabled_modules(db, ctx):
+        total_fetched += result.fetched
+        total_inserted += result.inserted
+        logger.info(
+            "discovery module=%s fetched=%s inserted=%s failed=%s error=%s",
+            module_id,
+            result.fetched,
+            result.inserted,
+            result.failed,
+            result.error,
+        )
+
+    # Legacy ticker Google News / DART / Reddit — not the RSS module.
     # Full-body Google News enrich is slow (per-article HTTP) and blocks Issue process.
     if not settings.issue_ingest_focus:
         f, i = _ingest_news(raw_repo, cursor_repo, us_universe)

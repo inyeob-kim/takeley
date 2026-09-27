@@ -587,6 +587,104 @@ export function fetchXIngestStats(
   return adminFetch(`/api/v1/admin/x-ingest/stats?days=${days}`, key);
 }
 
+export type DiscoveryModule = {
+  id: string;
+  enabled: boolean;
+  interval_seconds?: number | null;
+  last_started_at?: string | null;
+  last_finished_at?: string | null;
+  last_status?: string | null;
+  last_error?: string | null;
+  items_fetched: number;
+  items_inserted: number;
+  items_duplicate: number;
+  items_failed: number;
+  error_count: number;
+  implemented: boolean;
+};
+
+export type PipelineControls = {
+  process_enabled: boolean;
+  trend_enabled: boolean;
+  push_enabled: boolean;
+  updated_at?: string | null;
+};
+
+export type AdminRssFeed = {
+  id: string;
+  name: string;
+  url: string;
+  language: string;
+  category: string;
+  enabled: boolean;
+  last_run_at?: string | null;
+  last_success_at?: string | null;
+  last_error?: string | null;
+  error_count: number;
+};
+
+export function fetchDiscoveryModules(key: string): Promise<DiscoveryModule[]> {
+  return adminFetch("/api/v1/admin/discovery/modules", key);
+}
+
+export function saveDiscoveryModules(
+  key: string,
+  body: Pick<DiscoveryModule, "id" | "enabled" | "interval_seconds">[],
+): Promise<DiscoveryModule[]> {
+  return adminFetch("/api/v1/admin/discovery/modules", key, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchPipelineControls(key: string): Promise<PipelineControls> {
+  return adminFetch("/api/v1/admin/discovery/pipeline", key);
+}
+
+export function savePipelineControls(
+  key: string,
+  body: PipelineControls,
+): Promise<PipelineControls> {
+  return adminFetch("/api/v1/admin/discovery/pipeline", key, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchRssFeeds(key: string): Promise<AdminRssFeed[]> {
+  return adminFetch("/api/v1/admin/discovery/rss-feeds", key);
+}
+
+export function createRssFeed(
+  key: string,
+  body: Partial<AdminRssFeed>,
+): Promise<AdminRssFeed> {
+  return adminFetch("/api/v1/admin/discovery/rss-feeds", key, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateRssFeed(
+  key: string,
+  id: string,
+  body: Partial<AdminRssFeed>,
+): Promise<AdminRssFeed> {
+  return adminFetch(
+    `/api/v1/admin/discovery/rss-feeds/${encodeURIComponent(id)}`,
+    key,
+    { method: "PATCH", body: JSON.stringify(body) },
+  );
+}
+
+export function deleteRssFeed(key: string, id: string): Promise<{ ok: boolean }> {
+  return adminFetch(
+    `/api/v1/admin/discovery/rss-feeds/${encodeURIComponent(id)}`,
+    key,
+    { method: "DELETE" },
+  );
+}
+
 /** Backend policy: published → rejected. */
 export type ContentReport = {
   id: string;

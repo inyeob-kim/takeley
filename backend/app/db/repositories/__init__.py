@@ -172,7 +172,7 @@ class RawItemRepository:
         return (
             self.db.query(RawItem)
             .filter(RawItem.processed == 0)
-            .order_by(RawItem.fetched_at.asc())
+            .order_by(RawItem.fetched_at.desc())
             .limit(limit)
             .all()
         )

@@ -56,6 +56,15 @@ def test_dynamic_query_remember_and_build():
     assert "lang:en" in qs[0]
 
 
+def test_remember_topics_fits_cursor_column():
+    db = _session()
+    repo = CursorRepository(db)
+    remember_topics(repo, [f"topic number {i} about markets and policy" for i in range(20)])
+    stored = repo.get("x", "dynamic:topics") or ""
+    assert stored
+    assert len(stored) <= 255
+
+
 def test_embedding_rank_fallback_without_api():
     ids = rank_ids_by_embedding(
         "nvidia blackwell",

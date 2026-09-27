@@ -151,11 +151,22 @@ def test_golden_e_cross_source_same_event():
     m = heuristic_match(u, existing)
     assert m.decision == DECISION_UPDATE
 
+    rss = heuristic_understand(
+        text="BBC: Federal Reserve keeps interest rates unchanged at meeting",
+        provider="news",
+    )
+    rss.event = "Federal Reserve left interest rates unchanged"
+    rss.topic = "Fed rates hold"
+    rss.is_issue_candidate = True
+    rss_match = heuristic_match(rss, existing)
+    assert rss_match.decision == DECISION_UPDATE
+
 
 def test_trust_tier_mapping():
     assert trust_tier_for_provider("official") == "OFFICIAL"
     assert trust_tier_for_provider("news") == "NEWS"
     assert trust_tier_for_provider("x") == "SOCIAL"
+    assert trust_tier_for_provider("hacker_news") == "COMMUNITY"
 
 
 def test_issue_quality_read_only_when_bad_options():

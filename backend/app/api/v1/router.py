@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     admin_columnists,
     admin_contributor,
+    admin_discovery,
     admin_issues,
     admin_reports,
     admin_x_ingest,
@@ -20,6 +21,7 @@ from app.api.v1 import (
 api_router = APIRouter()
 api_router.include_router(admin_issues.router)
 api_router.include_router(admin_x_ingest.router)
+api_router.include_router(admin_discovery.router)
 api_router.include_router(admin_columnists.router)
 api_router.include_router(admin_contributor.router)
 api_router.include_router(admin_reports.router)

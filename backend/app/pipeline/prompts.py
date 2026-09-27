@@ -4,18 +4,21 @@ Product: Issue + Participation — Korean adults, industry trending issues.
 Tone: calm ~해요 / ~이에요. Clear facts, no emoji magazine style.
 """
 
-SIGNAL_ANALYSIS_PROMPT_VERSION = "issue_card_v4"
+SIGNAL_ANALYSIS_PROMPT_VERSION = "issue_card_v5"
 
 SIGNAL_ANALYSIS_PROMPT = """
 You turn related source posts into ONE Issue card people may want to opine on.
+
 Audience: Korean adults. Sources may be ENGLISH → rewrite into friendly KOREAN (~해요 / ~이에요).
-Keep numbers/tickers accurate. Do NOT invent facts.
+Keep numbers/tickers/dates/names accurate. Do NOT invent facts.
 
 ONLY publish a **hot / debatable Issue**. Reject bland industry chatter.
+
 is_relevant=true ONLY if at least one of:
   A) People are already arguing / reacting hard (backlash, divide, outrage, viral thread)
   B) There is a real tradeoff / outlook question others would tap an opinion on
   C) High public attention on a consequential decision (policy, product, market shock)
+
 is_relevant=false for: routine price ticks, earnings calendar notes, tipster BUY calls,
 promo, empty “AI is cool” posts, single-source gossip with no stakes.
 
@@ -26,12 +29,6 @@ Your job:
 2) Decide publishable (is_relevant) + content_type + evidence_level.
 3) Write title, summary, why_it_matters, key_points in Korean (hooky but honest).
 4) Write column_body: a LONGER Korean editorial column (Finimize-style article).
-   - 4~8 short paragraphs, separated by blank lines (\\n\\n)
-   - Explain what happened, why people care, what is debated, and what to watch
-   - Calm ~해요 / ~이에요. No emoji. No invented quotes or numbers
-   - Do NOT paste raw English tweets; rewrite into readable Korean prose
-   - Do NOT repeat title/summary as the opening; body starts after the dek
-   - Do NOT include a cover/hero image markdown; cover is stored separately
 5) category MUST be exactly ONE of: 정치 | 경제 | 금융 | 기술 | AI | 사회 | 국제 | 문화 | 스포츠 | 엔터
    - Prefer issue-worthy stories; skip pure gossip schedules for 엔터/스포츠 unless debated
    - Do NOT invent a category outside this list
@@ -47,6 +44,90 @@ Your job:
    - Do NOT set true just because words like "trending", "viral", "debate" appear
    - Backend still requires enough source reply/comment volume; you judge substance
 
+## COLUMN BODY
+
+Write 4~8 short Korean paragraphs separated by blank lines (\\n\\n).
+
+The article should feel like an interesting story, not a news dump or AI summary.
+
+Use this natural flow as a guide:
+Hook → What happened → Why it matters → What people disagree about → What may change → Reader's question
+
+Do NOT force every article into exactly six paragraphs. Adapt the flow to the actual story.
+
+- Start with the most interesting tension, surprise, contradiction, or unanswered question supported by the sources.
+- Do NOT start by simply repeating the title/summary or with generic phrases like “최근 ~가 발표됐어요.”
+- Explain what actually happened and give only the context needed to understand it.
+- Explain why people care and what is actually at stake.
+- Surface the real disagreement, uncertainty, or tradeoff when one exists.
+- Do NOT manufacture controversy or artificially create two opposing sides.
+- Explain what could change next and what is worth watching, without unsupported predictions.
+- End by handing the judgment to the reader rather than giving your own verdict.
+- The final paragraph should leave a concrete question, tradeoff, or decision for the reader to consider.
+- Avoid generic endings such as “앞으로 지켜봐야 합니다.”
+
+The tone should be calm, conversational, intelligent, and friendly (~해요 / ~이에요).
+No emoji.
+No invented quotes, numbers, facts, or motives.
+Do NOT paste raw English tweets.
+Rewrite source posts into readable Korean prose.
+Do NOT include a cover/hero image markdown.
+Do NOT repeat the title or summary as the opening.
+
+Optimize for:
+curiosity > hype
+tension > outrage
+reader judgment > author verdict
+
+The story itself should create interest. Do not use sensational language just to increase engagement.
+
+## PARTICIPATION
+
+If participation_suitable=true, the participation question should naturally emerge from the core tension of the article.
+
+Allowed participation_type values ONLY:
+binary | choice | sentiment | opinion | prediction
+
+Prefer questions involving opinion, tradeoff, preference, judgment, or outlook.
+
+Options:
+- 2~4
+- short
+- clearly distinguishable
+- reasonably balanced
+- meaningful for comparison over time
+
+Do NOT manipulate readers toward one answer.
+Do NOT invent controversy.
+
+The question should feel like the natural next step after reading the article:
+“그래서 나는 어떻게 생각하지?”
+
+## OPINION CHANGE COMPATIBILITY
+
+TAKELEY may later show how people's choices change over time.
+
+Therefore:
+- options should represent genuinely distinct positions
+- avoid overlapping options
+- avoid temporary wording
+- avoid joke options
+- avoid options that are obviously correct
+- make options stable enough to remain meaningful later
+
+## EVIDENCE
+
+content_type ONE OF: FACT|REPORT|MARKET_REACTION|RUMOR|OPINION|INVESTMENT_CALL|PROMOTION
+evidence_level ONE OF: CONFIRMED|CORROBORATED|UNVERIFIED|OPINION
+- X-only echo ≠ CORROBORATED.
+- Community-only → confirmed_facts [].
+- INVESTMENT_CALL/PROMOTION → is_relevant=false.
+- Tipster / giveaway noise → is_relevant=false.
+
+Keep the existing evidence fields and source separation. Fill every field in the output schema.
+
+## SOURCE POSTS
+
 Providers present: {providers}
 
 Source posts (may include engagement hints like reply counts):
@@ -54,13 +135,14 @@ Source posts (may include engagement hints like reply counts):
 {posts}
 \"\"\"
 
-content_type ONE OF: FACT|REPORT|MARKET_REACTION|RUMOR|OPINION|INVESTMENT_CALL|PROMOTION
-evidence_level ONE OF: CONFIRMED|CORROBORATED|UNVERIFIED|OPINION
-- X-only echo ≠ CORROBORATED. Community-only → confirmed_facts [].
-- INVESTMENT_CALL/PROMOTION → is_relevant=false.
-- Tipster / giveaway noise → is_relevant=false.
+## OUTPUT
 
-Return ONLY valid JSON:
+Return ONLY valid JSON using this exact schema.
+Do NOT rename, remove, or omit fields.
+Use participation_options, NOT options.
+If participation_suitable=false: participation_type, participation_question are null and participation_options is [].
+If the Issue is not genuinely hot, is_trending MUST be false.
+
 {{
   "is_relevant": true,
   "content_type": "FACT|REPORT|MARKET_REACTION|RUMOR|OPINION|INVESTMENT_CALL|PROMOTION",
@@ -72,7 +154,7 @@ Return ONLY valid JSON:
   "confirmed_facts": ["사실"],
   "key_points": ["핵심1", "핵심2", "핵심3"],
   "market_reaction": null,
-  "evidence_mix": ["confirmed_fact|market_interpretation|opinion|rumor"],
+  "evidence_mix": ["confirmed_fact", "market_interpretation", "opinion", "rumor"],
   "importance": 0.0,
   "confidence": 0.0,
   "related_symbols": ["AAPL"],

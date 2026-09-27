@@ -40,6 +40,140 @@ if settings.test_fast_ingest:
     )
 
 
+def run_isolated_stage(name: str, fn):
+    """Run one heavy-cycle stage. Exception is logged; later stages may continue."""
+    try:
+        return fn(), None
+    except Exception as exc:
+        logger.exception("%s stage failed", name)
+        return None, exc
+
+
+def run_heavy_cycle_body(db) -> dict:
+    """One heavy cycle against an open session. Stages fail independently."""
+    from app.discovery.state import get_pipeline_controls
+
+    controls = get_pipeline_controls(db)
+    stages: dict[str, str] = {}
+
+    t = time.monotonic()
+    ingest_result, ingest_err = run_isolated_stage("ingest", lambda: run_ingest(db))
+    if ingest_err is not None:
+        stages["ingest"] = "error"
+    else:
+        stages["ingest"] = "ok"
+        logger.info(
+            "ingest summary fetched=%s inserted=%s universe=%s elapsed_s=%.1f",
+            ingest_result.get("fetched"),
+            ingest_result.get("inserted"),
+            ingest_result.get("universe"),
+            time.monotonic() - t,
+        )
+        logger.debug("ingest detail=%s", ingest_result)
+
+    process_result = None
+    if not controls.process_enabled:
+        stages["process"] = "disabled"
+        logger.info("process skipped reason=disabled")
+    else:
+        t = time.monotonic()
+        process_result, process_err = run_isolated_stage(
+            "process", lambda: run_process_signals(db)
+        )
+        if process_err is not None:
+            stages["process"] = "error"
+            try:
+                db.rollback()
+            except Exception:
+                logger.exception("process rollback failed")
+        else:
+            stages["process"] = "ok"
+            logger.info(
+                "process summary raw=%s events=%s created=%s rejected=%s "
+                "published_today=%s quota_remaining=%s elapsed_s=%.1f",
+                process_result.get("processed_raw"),
+                process_result.get("events_upserted"),
+                process_result.get("signals_created"),
+                process_result.get("signals_rejected"),
+                process_result.get("published_today"),
+                process_result.get("quota_remaining"),
+                time.monotonic() - t,
+            )
+            logger.debug("process detail=%s", process_result)
+
+    # settle_hot/dynamic need this cycle's meaningful_lanes from process.
+    if process_result is None:
+        stages["settle"] = "skipped"
+        logger.info("settle skipped reason=process_unavailable")
+    else:
+        def _settle() -> None:
+            from app.db.repositories import CursorRepository
+            from app.pipeline.dynamic_query import settle_dynamic_polls
+            from app.pipeline.x_schedule import settle_hot_polls
+            from app.services.x_ingest_admin import (
+                get_or_create as get_x_ingest_config,
+            )
+
+            x_config = get_x_ingest_config(db)
+            settle_hot_polls(
+                CursorRepository(db),
+                meaningful=set(process_result.get("meaningful_lanes") or []),
+                idle_limit=int(x_config.hot_idle_scans or 2),
+            )
+            settle_dynamic_polls(
+                CursorRepository(db),
+                meaningful=set(process_result.get("meaningful_lanes") or []),
+                idle_limit=int(x_config.hot_idle_scans or 2),
+            )
+
+        _, settle_err = run_isolated_stage("settle", _settle)
+        stages["settle"] = "error" if settle_err is not None else "ok"
+
+    # Trend reads published Issues only — does not need this cycle's process.
+    if not controls.trend_enabled:
+        stages["trend"] = "disabled"
+        logger.info("trend skipped reason=disabled")
+    else:
+        t = time.monotonic()
+
+        def _trend() -> int:
+            from app.pipeline.trend_status import refresh_published_trend_statuses
+
+            return refresh_published_trend_statuses(db)
+
+        refreshed, trend_err = run_isolated_stage("trend", _trend)
+        if trend_err is not None:
+            stages["trend"] = "error"
+        else:
+            stages["trend"] = "ok"
+            logger.info(
+                "trend refresh published=%s elapsed_s=%.1f",
+                refreshed,
+                time.monotonic() - t,
+            )
+
+    if not controls.push_enabled:
+        stages["push"] = "disabled"
+        logger.info("push skipped reason=disabled")
+    else:
+        t = time.monotonic()
+        push_result, push_err = run_isolated_stage(
+            "push", lambda: run_pending_push(db)
+        )
+        if push_err is not None:
+            stages["push"] = "error"
+        else:
+            stages["push"] = "ok"
+            logger.info(
+                "push summary result=%s elapsed_s=%.1f",
+                push_result,
+                time.monotonic() - t,
+            )
+
+    run_isolated_stage("rollup", lambda: log_rollup(db, hours=24))
+    return stages
+
+
 def run_heavy_cycle() -> None:
     """Ingest + Issue process + pending push (+ rollup)."""
     init_db()
@@ -52,69 +186,7 @@ def run_heavy_cycle() -> None:
             local_now_iso(),
             utc_now_iso(),
         )
-
-        t = time.monotonic()
-        ingest_result = run_ingest(db)
-        logger.info(
-            "ingest summary fetched=%s inserted=%s universe=%s elapsed_s=%.1f",
-            ingest_result.get("fetched"),
-            ingest_result.get("inserted"),
-            ingest_result.get("universe"),
-            time.monotonic() - t,
-        )
-        logger.debug("ingest detail=%s", ingest_result)
-
-        t = time.monotonic()
-        process_result = run_process_signals(db)
-        from app.pipeline.dynamic_query import settle_dynamic_polls
-        from app.pipeline.x_schedule import settle_hot_polls
-        from app.services.x_ingest_admin import get_or_create as get_x_ingest_config
-        from app.db.repositories import CursorRepository
-
-        x_config = get_x_ingest_config(db)
-        settle_hot_polls(
-            CursorRepository(db),
-            meaningful=set(process_result.get("meaningful_lanes") or []),
-            idle_limit=int(x_config.hot_idle_scans or 2),
-        )
-        settle_dynamic_polls(
-            CursorRepository(db),
-            meaningful=set(process_result.get("meaningful_lanes") or []),
-            idle_limit=int(x_config.hot_idle_scans or 2),
-        )
-        logger.info(
-            "process summary raw=%s events=%s created=%s rejected=%s "
-            "published_today=%s quota_remaining=%s elapsed_s=%.1f",
-            process_result.get("processed_raw"),
-            process_result.get("events_upserted"),
-            process_result.get("signals_created"),
-            process_result.get("signals_rejected"),
-            process_result.get("published_today"),
-            process_result.get("quota_remaining"),
-            time.monotonic() - t,
-        )
-        logger.debug("process detail=%s", process_result)
-
-        t = time.monotonic()
-        from app.pipeline.trend_status import refresh_published_trend_statuses
-
-        refreshed = refresh_published_trend_statuses(db)
-        logger.info(
-            "trend refresh published=%s elapsed_s=%.1f",
-            refreshed,
-            time.monotonic() - t,
-        )
-
-        t = time.monotonic()
-        push_result = run_pending_push(db)
-        logger.info(
-            "push summary result=%s elapsed_s=%.1f",
-            push_result,
-            time.monotonic() - t,
-        )
-
-        log_rollup(db, hours=24)
-
+        run_heavy_cycle_body(db)
         logger.info(
             "heavy cycle work done total_elapsed_s=%.1f local=%s utc=%s",
             time.monotonic() - t0,

@@ -40,6 +40,7 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_sqlite_schema_patches()
     _ensure_columnist_schema()
+    _ensure_discovery_schema()
     db = SessionLocal()
     try:
         ensure_default_templates(db)
@@ -126,6 +127,70 @@ def _ensure_columnist_schema() -> None:
                         "ALTER TABLE columnists ADD COLUMN profile_public BOOLEAN NOT NULL DEFAULT TRUE"
                     )
                 )
+
+
+def _ensure_discovery_schema() -> None:
+    """Source-module tables for SQLite and Postgres (idempotent)."""
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        if "discovery_modules" not in tables:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE discovery_modules (
+                        id VARCHAR(32) PRIMARY KEY,
+                        enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                        interval_seconds INTEGER,
+                        last_started_at TIMESTAMP,
+                        last_finished_at TIMESTAMP,
+                        last_status VARCHAR(16),
+                        last_error TEXT,
+                        items_fetched INTEGER NOT NULL DEFAULT 0,
+                        items_inserted INTEGER NOT NULL DEFAULT 0,
+                        items_duplicate INTEGER NOT NULL DEFAULT 0,
+                        items_failed INTEGER NOT NULL DEFAULT 0,
+                        error_count INTEGER NOT NULL DEFAULT 0
+                    )
+                    """
+                )
+            )
+        if "pipeline_controls" not in tables:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE pipeline_controls (
+                        id VARCHAR(32) PRIMARY KEY,
+                        process_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        trend_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        push_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        updated_at TIMESTAMP
+                    )
+                    """
+                )
+            )
+        if "rss_feeds" not in tables:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE rss_feeds (
+                        id VARCHAR(36) PRIMARY KEY,
+                        name VARCHAR(128) NOT NULL,
+                        url VARCHAR(1024) NOT NULL,
+                        language VARCHAR(16) NOT NULL DEFAULT '',
+                        category VARCHAR(32) NOT NULL DEFAULT '',
+                        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        etag VARCHAR(256),
+                        last_modified VARCHAR(128),
+                        cursor_value VARCHAR(255),
+                        last_run_at TIMESTAMP,
+                        last_success_at TIMESTAMP,
+                        last_error TEXT,
+                        error_count INTEGER NOT NULL DEFAULT 0
+                    )
+                    """
+                )
+            )
 
 
 def _ensure_sqlite_schema_patches() -> None:
@@ -559,6 +624,54 @@ def _ensure_sqlite_schema_patches() -> None:
                 target_id VARCHAR(36) NOT NULL,
                 created_at DATETIME NOT NULL,
                 UNIQUE (user_id, target_type, target_id)
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS discovery_modules (
+                id VARCHAR(32) PRIMARY KEY,
+                enabled BOOLEAN NOT NULL DEFAULT 0,
+                interval_seconds INTEGER,
+                last_started_at DATETIME,
+                last_finished_at DATETIME,
+                last_status VARCHAR(16),
+                last_error TEXT,
+                items_fetched INTEGER NOT NULL DEFAULT 0,
+                items_inserted INTEGER NOT NULL DEFAULT 0,
+                items_duplicate INTEGER NOT NULL DEFAULT 0,
+                items_failed INTEGER NOT NULL DEFAULT 0,
+                error_count INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS pipeline_controls (
+                id VARCHAR(32) PRIMARY KEY,
+                process_enabled BOOLEAN NOT NULL DEFAULT 1,
+                trend_enabled BOOLEAN NOT NULL DEFAULT 1,
+                push_enabled BOOLEAN NOT NULL DEFAULT 1,
+                updated_at DATETIME
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS rss_feeds (
+                id VARCHAR(36) PRIMARY KEY,
+                name VARCHAR(128) NOT NULL,
+                url VARCHAR(1024) NOT NULL,
+                language VARCHAR(16) NOT NULL DEFAULT '',
+                category VARCHAR(32) NOT NULL DEFAULT '',
+                enabled BOOLEAN NOT NULL DEFAULT 1,
+                etag VARCHAR(256),
+                last_modified VARCHAR(128),
+                cursor_value VARCHAR(255),
+                last_run_at DATETIME,
+                last_success_at DATETIME,
+                last_error TEXT,
+                error_count INTEGER NOT NULL DEFAULT 0
             )
             """
         )

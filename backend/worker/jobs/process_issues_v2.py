@@ -171,6 +171,8 @@ def _lane_tags(payloads: list) -> dict:
             tags["source_lane"] = str(payload["source_lane"])
         if payload.get("scan_slot") and "scan_slot" not in tags:
             tags["scan_slot"] = str(payload["scan_slot"])
+        if payload.get("source") and "source" not in tags:
+            tags["source"] = str(payload["source"])
     return tags
 
 
@@ -191,6 +193,12 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
     raw_repo = RawItemRepository(db)
     signal_repo = SignalRepository(db)
     event_repo = EventRepository(db)
+
+    from app.discovery.expire import expire_stale_rss_items
+
+    expired = expire_stale_rss_items(db)
+    if expired:
+        logger.info("expire_stale_rss_items count=%s", expired)
 
     rows = raw_repo.unprocessed(limit=limit)
     if not rows:
@@ -513,17 +521,21 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         record_usage(ISSUE_CREATED, 1, db=db, tags=_lane_tags(payloads))
         # Push / feed exposure waits for admin publish — no ISSUE_PUBLISHED / enqueue.
 
-    if remembered_topics:
-        remember_topics(CursorRepository(db), remembered_topics)
-    if armed_topics:
-        cursors = CursorRepository(db)
-        for topic, industry, lane in armed_topics:
-            arm_dynamic_topic(
-                cursors,
-                topic=topic,
-                industry=industry,
-                source_lane=lane,
-            )
+    try:
+        if remembered_topics:
+            remember_topics(CursorRepository(db), remembered_topics)
+        if armed_topics:
+            cursors = CursorRepository(db)
+            for topic, industry, lane in armed_topics:
+                arm_dynamic_topic(
+                    cursors,
+                    topic=topic,
+                    industry=industry,
+                    source_lane=lane,
+                )
+    except Exception:
+        logger.exception("dynamic topic persist failed; continue mark_processed")
+        db.rollback()
 
     raw_repo.mark_processed(list(dict.fromkeys(handled)))
     cards_today = signal_repo.count_issue_cards_today()

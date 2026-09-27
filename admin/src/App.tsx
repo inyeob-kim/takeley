@@ -606,7 +606,7 @@ export default function App() {
           className={section === "ingest" ? "is-active" : ""}
           onClick={() => requestSection("ingest")}
         >
-          X 수집
+          수집
         </button>
       </nav>
 

@@ -16,6 +16,7 @@ _CURSOR_PROVIDER = "x"
 _CURSOR_KEY = "dynamic:topics"
 _ROWS_KEY = "dynamic:rows"
 _MAX_TOPICS = 12
+_CURSOR_VALUE_MAX = 255
 _DEFAULT_MAX_ACTIVE = 4
 _DEFAULT_TTL_HOURS = 12
 _DEFAULT_IDLE_LIMIT = 2
@@ -43,7 +44,15 @@ def remember_topics(cursor_repo: CursorRepository, topics: list[str]) -> None:
         if clean not in existing:
             existing.insert(0, clean)
     existing = existing[:_MAX_TOPICS]
-    cursor_repo.set(_CURSOR_PROVIDER, _CURSOR_KEY, "|".join(existing))
+    packed: list[str] = []
+    used = 0
+    for topic in existing:
+        extra = len(topic) + (1 if packed else 0)
+        if used + extra > _CURSOR_VALUE_MAX:
+            break
+        packed.append(topic)
+        used += extra
+    cursor_repo.set(_CURSOR_PROVIDER, _CURSOR_KEY, "|".join(packed))
 
 
 def dynamic_search_queries(

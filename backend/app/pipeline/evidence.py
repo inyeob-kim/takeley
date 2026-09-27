@@ -17,6 +17,6 @@ def trust_tier_for_provider(provider: str | None) -> str:
         return TRUST_NEWS
     if p == "x":
         return TRUST_SOCIAL
-    if p == "reddit":
+    if p in ("reddit", "hacker_news"):
         return TRUST_COMMUNITY
     return TRUST_UNKNOWN

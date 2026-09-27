@@ -46,6 +46,7 @@ class SourceType(str, Enum):
     SEC = "sec"
     IR = "ir"
     WEB = "web"
+    HACKER_NEWS = "hacker_news"
     CALENDAR = "calendar"
 
 

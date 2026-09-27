@@ -26,10 +26,18 @@ def test_signal_prompt_asks_for_detail_length():
     assert "NEVER invent controversy" in text or "participation_suitable" in text
 
 
-def test_signal_prompt_version_is_issue_card_v4():
+def test_signal_prompt_version_is_issue_card_v5():
     from app.pipeline.prompts import SIGNAL_ANALYSIS_PROMPT_VERSION
 
-    assert SIGNAL_ANALYSIS_PROMPT_VERSION == "issue_card_v4"
+    assert SIGNAL_ANALYSIS_PROMPT_VERSION == "issue_card_v5"
+
+
+def test_signal_prompt_column_is_story_not_dump():
+    text = SIGNAL_ANALYSIS_PROMPT
+    assert "COLUMN BODY" in text
+    assert "앞으로 지켜봐야 합니다" in text
+    assert "participation_options" in text
+    assert '"options"' not in text or "NOT options" in text
 
 
 def test_signal_prompt_trending_is_ai_not_keyword():

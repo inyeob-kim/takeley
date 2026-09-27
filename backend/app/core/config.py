@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     test_fast_ingest: bool = False
     test_ingest_interval_seconds: int = 60
     # Soft daily Issue publish pool (0 → use daily_signal_cap).
-    daily_issue_soft_cap: int = 0
+    # Draft+published create cap per UTC day. Publish to the app is still manual.
+    daily_issue_soft_cap: int = 40
     # Embeddings assist Match shortlist only (LLM still decides same-Issue).
     issue_embedding_enabled: bool = True
     issue_embedding_model: str = "text-embedding-3-small"
@@ -75,7 +76,8 @@ class Settings(BaseSettings):
     # Absolute published-today max a bootstrap focus symbol may reach via bypass.
     bootstrap_per_symbol_max: int = 3
     # Absolute max published Signals per UTC day (all paths). Stops watchlist explosion.
-    daily_signal_hard_ceiling: int = 30
+    # Absolute max draft+published cards per UTC day (create brake, not home feed).
+    daily_signal_hard_ceiling: int = 60
     # Optional HIGH escape using existing importance (set >1.0 to disable).
     priority_importance_threshold: float = 0.85
     min_signal_importance: float = 0.4
@@ -165,6 +167,15 @@ class Settings(BaseSettings):
     dart_lookback_days: int = 14
     dart_interval_seconds: int = 3600
     dart_corp_code_cache_path: str = "./storage/dart_corp_codes.json"
+    # Discovery modules (not ticker Google News / leftover Reddit stub).
+    reddit_subreddits: str = "worldnews,news,business,economics,technology"
+    reddit_limit_per_sub: int = 15
+    reddit_client_id: str = ""
+    reddit_client_secret: str = ""
+    hn_top_limit: int = 30
+    trends_geos: str = "KR,US"
+    official_sec_enabled: bool = True
+    official_dart_symbol_cap: int = 12
     # Korean Google News RSS for KRX symbols. Seohak MVP default OFF (US sources only).
     kr_news_enabled: bool = False
     kr_news_interval_seconds: int = 3600
@@ -233,7 +244,7 @@ class Settings(BaseSettings):
         return tuple(parts) if parts else ("SPY", "QQQ")
 
     def effective_daily_issue_soft_cap(self) -> int:
-        """Soft publish pool for Issues; falls back to daily_signal_cap."""
+        """Soft daily create cap for Issue drafts. Not the home-feed publish target."""
         if self.daily_issue_soft_cap > 0:
             return self.daily_issue_soft_cap
         return self.daily_signal_cap

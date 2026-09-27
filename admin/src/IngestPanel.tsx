@@ -1,14 +1,26 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  createRssFeed,
+  deleteRssFeed,
+  fetchDiscoveryModules,
   fetchIndustrySearch,
+  fetchPipelineControls,
+  fetchRssFeeds,
   fetchXIngestConfig,
   fetchXIngestStats,
+  saveDiscoveryModules,
   saveIndustrySearch,
+  savePipelineControls,
   saveXIngestConfig,
+  updateRssFeed,
+  type AdminRssFeed,
+  type DiscoveryModule,
   type IndustrySearch,
+  type PipelineControls,
   type XIngestConfig,
   type XIngestStats,
 } from "./api";
+import { ConfirmModal } from "./ConfirmModal";
 import {
   doneThroughMinutes,
   formatHm,
@@ -42,6 +54,57 @@ const INDUSTRY_OPTIONS = [
 
 const INDUSTRY_LABEL = Object.fromEntries(INDUSTRY_OPTIONS);
 
+const MODULE_LABEL: Record<string, string> = {
+  x: "X",
+  rss: "RSS",
+  trends: "Search Trends",
+  reddit: "Reddit",
+  hacker_news: "Hacker News",
+  official: "Official",
+};
+
+const MODULE_HINT: Record<string, string> = {
+  x: "계정·검색. 아래 X 탭에서 시각을 정합니다.",
+  rss: "관리하는 공개 피드. 과금 없습니다.",
+  trends: "Google Trends KR/US. 스포츠·연예는 걸러집니다.",
+  reddit: "승인 전에는 꺼 두세요.",
+  hacker_news: "공개 상위 스토리.",
+  official: "SEC 주요 공시. DART는 키가 있을 때만.",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  ok: "정상",
+  error: "오류",
+  skipped: "건너뜀",
+  running: "실행 중",
+};
+
+type IngestTab = "sources" | "rss" | "x" | "process" | "stats";
+
+function formatAgo(iso: string | null | undefined): string {
+  if (!iso) return "아직 없음";
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return iso;
+  const minutes = Math.round((Date.now() - at.getTime()) / 60_000);
+  if (minutes < 1) return "방금";
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  return at.toLocaleString("ko-KR", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function intervalLabel(seconds: number | null | undefined): string {
+  if (!seconds || seconds <= 0) return "매 주기";
+  if (seconds < 3600) return `${Math.round(seconds / 60)}분마다`;
+  if (seconds % 3600 === 0) return `${seconds / 3600}시간마다`;
+  return `${Math.round(seconds / 60)}분마다`;
+}
+
 export function IngestPanel({ adminKey, onAuthFailure }: Props) {
   const [form, setForm] = useState<XIngestConfig | null>(null);
   const [industries, setIndustries] = useState<IndustrySearch[]>([]);
@@ -52,17 +115,29 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [openIndustry, setOpenIndustry] = useState<string | null>(null);
+  const [modules, setModules] = useState<DiscoveryModule[]>([]);
+  const [pipeline, setPipeline] = useState<PipelineControls | null>(null);
+  const [feeds, setFeeds] = useState<AdminRssFeed[]>([]);
+  const [newFeedName, setNewFeedName] = useState("");
+  const [newFeedUrl, setNewFeedUrl] = useState("");
+  const [tab, setTab] = useState<IngestTab>("sources");
 
   async function load(nextDays = days) {
     try {
-      const [config, report, words] = await Promise.all([
+      const [config, report, words, sourceModules, pipe, rss] = await Promise.all([
         fetchXIngestConfig(adminKey),
         fetchXIngestStats(adminKey, nextDays),
         fetchIndustrySearch(adminKey),
+        fetchDiscoveryModules(adminKey),
+        fetchPipelineControls(adminKey),
+        fetchRssFeeds(adminKey),
       ]);
       setForm(config);
       setStats(report);
       setIndustries(words.map(presentIndustry));
+      setModules(sourceModules);
+      setPipeline(pipe);
+      setFeeds(rss);
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "불러오지 못했습니다";
@@ -108,6 +183,21 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
     setNotice(null);
     try {
       const saved = await saveXIngestConfig(adminKey, form);
+      if (modules.length) {
+        setModules(
+          await saveDiscoveryModules(
+            adminKey,
+            modules.map((row) => ({
+              id: row.id,
+              enabled: row.enabled,
+              interval_seconds: row.interval_seconds,
+            })),
+          ),
+        );
+      }
+      if (pipeline) {
+        setPipeline(await savePipelineControls(adminKey, pipeline));
+      }
       const savedWords = await saveIndustrySearch(
         adminKey,
         industries.map((row) => ({
@@ -145,15 +235,17 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
   const morningWhen = windowLabel(slots[0], form.scan_window_minutes);
   const accountNight = windowLabel(slots[slots.length - 1], form.scan_window_minutes);
   const allWhen = slots.map((slot) => formatHm(slot.hour, slot.minute)).join(", ");
+  const onCount = modules.filter((row) => row.enabled).length;
+  const errorCount = modules.filter((row) => row.last_status === "error").length;
+  const rssOn = modules.some((row) => row.id === "rss" && row.enabled);
 
   return (
     <section className="ingest-panel">
       <header className="ingest-head">
         <div>
-          <h2>X 수집</h2>
+          <h2>수집</h2>
           <p>
-            워커가 X에서 글을 가져오는 시각과 양입니다. 앱 화면의 급상승
-            표시와는 별개입니다.
+            소스만 켜고 끄면 됩니다. X 시각·검색어는 X 탭, 피드는 RSS 탭입니다.
           </p>
         </div>
         <button
@@ -168,6 +260,179 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
       {notice ? <p className="ingest-notice">{notice}</p> : null}
       {error ? <p className="ingest-error">{error}</p> : null}
 
+      <nav className="section-nav ingest-tabs" aria-label="수집 구역">
+        {(
+          [
+            ["sources", `소스 ${onCount}/${modules.length}`],
+            ["rss", `RSS ${feeds.length}`],
+            ["x", "X"],
+            ["process", "처리"],
+            ["stats", "실적"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={tab === id ? "is-active" : undefined}
+            onClick={() => setTab(id)}
+          >
+            {label}
+            {id === "sources" && errorCount ? (
+              <span className="ingest-tab-warn">오류 {errorCount}</span>
+            ) : null}
+          </button>
+        ))}
+      </nav>
+
+      {tab === "sources" ? (
+        <section className="ingest-block ingest-block--flush">
+          <p className="ingest-lead">
+            꺼 두면 그 소스의 신규 수집만 멈춥니다. 이미 만든 이슈는 그대로입니다.
+          </p>
+          <div className="source-grid">
+            {modules.map((row) => (
+              <article
+                key={row.id}
+                className={
+                  row.enabled ? "source-card" : "source-card is-off"
+                }
+              >
+                <div className="source-card__top">
+                  <label className="ingest-switch source-card__switch">
+                    <input
+                      type="checkbox"
+                      checked={row.enabled}
+                      disabled={!row.implemented}
+                      onChange={(event) =>
+                        setModules((prev) =>
+                          prev.map((item) =>
+                            item.id === row.id
+                              ? { ...item, enabled: event.target.checked }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                    <span>
+                      <strong>{MODULE_LABEL[row.id] || row.id}</strong>
+                      <small>{MODULE_HINT[row.id] || ""}</small>
+                    </span>
+                  </label>
+                  <span
+                    className={`source-chip is-${row.last_status || "idle"}`}
+                  >
+                    {!row.implemented
+                      ? "준비 중"
+                      : STATUS_LABEL[row.last_status || ""] || "대기"}
+                  </span>
+                </div>
+                <p className="source-card__meta">
+                  {intervalLabel(row.interval_seconds)}
+                  {" · "}
+                  {formatAgo(row.last_finished_at)}
+                  {row.implemented
+                    ? ` · 가져옴 ${row.items_fetched} · 저장 ${row.items_inserted}`
+                    : ""}
+                </p>
+                {row.id !== "x" && row.implemented ? (
+                  <label className="source-card__interval">
+                    <span>간격</span>
+                    <select
+                      value={String(row.interval_seconds || 3600)}
+                      onChange={(event) =>
+                        setModules((prev) =>
+                          prev.map((item) =>
+                            item.id === row.id
+                              ? {
+                                  ...item,
+                                  interval_seconds: Number(event.target.value),
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                    >
+                      <option value="1800">30분</option>
+                      <option value="3600">1시간</option>
+                      <option value="7200">2시간</option>
+                    </select>
+                  </label>
+                ) : null}
+                {row.last_error ? (
+                  <p className="source-card__error">{row.last_error}</p>
+                ) : null}
+                {row.id === "rss" ? (
+                  <button
+                    type="button"
+                    className="source-card__link"
+                    onClick={() => setTab("rss")}
+                  >
+                    피드 {feeds.length}개 관리
+                  </button>
+                ) : null}
+                {row.id === "x" ? (
+                  <button
+                    type="button"
+                    className="source-card__link"
+                    onClick={() => setTab("x")}
+                  >
+                    시각·검색어 설정
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "rss" ? (
+        <RssFeedsBlock
+          adminKey={adminKey}
+          feeds={feeds}
+          rssOn={rssOn}
+          newName={newFeedName}
+          newUrl={newFeedUrl}
+          onName={setNewFeedName}
+          onUrl={setNewFeedUrl}
+          onChange={setFeeds}
+          onError={setError}
+        />
+      ) : null}
+
+      {tab === "process" && pipeline ? (
+        <section className="ingest-block ingest-block--flush">
+          <h3>처리 단계</h3>
+          <p className="ingest-lead">
+            수집과 따로입니다. 끄면 다음 주기부터 그 단계만 건너뜁니다.
+          </p>
+          {(
+            [
+              ["process_enabled", "초안", "이슈 초안 만들기"],
+              ["trend_enabled", "급상승", "발행된 이슈의 급상승 갱신"],
+              ["push_enabled", "알림", "대기 중인 알림 보내기"],
+            ] as const
+          ).map(([key, title, hint]) => (
+            <label className="ingest-switch" key={key}>
+              <input
+                type="checkbox"
+                checked={pipeline[key]}
+                onChange={(event) =>
+                  setPipeline((prev) =>
+                    prev ? { ...prev, [key]: event.target.checked } : prev,
+                  )
+                }
+              />
+              <span>
+                <strong>{title}</strong>
+                <small>{hint}</small>
+              </span>
+            </label>
+          ))}
+        </section>
+      ) : null}
+
+      {tab === "x" ? (
+      <>
       <DayClock
         scheduled={scheduled}
         slots={slots}
@@ -412,7 +677,10 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
           </Setting>
         </div> : null}
       </section>
+      </>
+      ) : null}
 
+      {tab === "process" ? (
       <section className="ingest-block">
         <h3>분석과 단가</h3>
         <p className="ingest-lead">
@@ -476,13 +744,28 @@ export function IngestPanel({ adminKey, onAuthFailure }: Props) {
           </Setting>
         </div>
       </section>
+      ) : null}
 
+      {tab === "stats" ? (
       <StatsBlock
         stats={stats}
         days={days}
         onDays={setDays}
         industryLabel={INDUSTRY_LABEL}
       />
+      ) : null}
+
+      <div className="ingest-savebar">
+        <p>{notice || "소스·X·처리 설정은 저장해야 반영됩니다. RSS 피드는 바로 저장됩니다."}</p>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void save()}
+          disabled={busy}
+        >
+          {busy ? "저장 중" : "저장"}
+        </button>
+      </div>
     </section>
   );
 }
@@ -510,6 +793,164 @@ function wordCount(value: string) {
     .split(/[\n,]/)
     .map((item) => item.trim())
     .filter(Boolean).length;
+}
+
+function RssFeedsBlock({
+  adminKey,
+  feeds,
+  rssOn,
+  newName,
+  newUrl,
+  onName,
+  onUrl,
+  onChange,
+  onError,
+}: {
+  adminKey: string;
+  feeds: AdminRssFeed[];
+  rssOn: boolean;
+  newName: string;
+  newUrl: string;
+  onName: (value: string) => void;
+  onUrl: (value: string) => void;
+  onChange: (feeds: AdminRssFeed[]) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [pendingDelete, setPendingDelete] = useState<AdminRssFeed | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function addFeed() {
+    if (!newUrl.trim()) {
+      onError("피드 주소를 넣어 주세요.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const created = await createRssFeed(adminKey, {
+        name: newName,
+        url: newUrl,
+        enabled: true,
+      });
+      onChange([...feeds, created]);
+      onName("");
+      onUrl("");
+      onError(null);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "피드를 추가하지 못했어요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="ingest-block ingest-block--flush">
+      <h3>RSS 피드</h3>
+      <p className="ingest-lead">
+        {rssOn
+          ? "켜 둔 피드만 1시간마다 받습니다. 추가·켜기·삭제는 바로 저장됩니다."
+          : "피드 목록은 여기서 관리합니다. 소스 탭에서 RSS를 켜야 받아옵니다."}
+      </p>
+      <div className="ingest-settings">
+        <Setting title="이름">
+          <input
+            value={newName}
+            onChange={(event) => onName(event.target.value)}
+            placeholder="연합뉴스"
+          />
+        </Setting>
+        <Setting title="주소" hint="http:// 또는 https:// RSS/Atom" wide>
+          <input
+            value={newUrl}
+            onChange={(event) => onUrl(event.target.value)}
+            placeholder="https://feeds.bbci.co.uk/news/rss.xml"
+          />
+        </Setting>
+      </div>
+      <p>
+        <button
+          type="button"
+          className="primary"
+          disabled={busy}
+          onClick={() => void addFeed()}
+        >
+          {busy ? "추가 중" : "피드 추가"}
+        </button>
+      </p>
+      {feeds.length === 0 ? (
+        <p className="ingest-status">등록된 피드가 없습니다.</p>
+      ) : (
+        <ul className="feed-list">
+          {feeds.map((feed) => (
+            <li key={feed.id} className={feed.enabled ? "feed-row" : "feed-row is-off"}>
+              <label className="feed-row__on">
+                <input
+                  type="checkbox"
+                  checked={feed.enabled}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+                    void updateRssFeed(adminKey, feed.id, { enabled })
+                      .then((saved) =>
+                        onChange(
+                          feeds.map((item) =>
+                            item.id === feed.id ? saved : item,
+                          ),
+                        ),
+                      )
+                      .catch((err) =>
+                        onError(
+                          err instanceof Error
+                            ? err.message
+                            : "피드를 바꾸지 못했어요.",
+                        ),
+                      );
+                  }}
+                />
+                <span>{feed.enabled ? "켬" : "끔"}</span>
+              </label>
+              <div className="feed-row__body">
+                <strong>{feed.name}</strong>
+                <small>{feed.url}</small>
+                <span>
+                  {feed.last_error
+                    ? feed.last_error
+                    : `최근 성공 ${formatAgo(feed.last_success_at)}`}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="feed-row__delete"
+                onClick={() => setPendingDelete(feed)}
+              >
+                삭제
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="이 피드를 삭제할까요?"
+        body={pendingDelete ? pendingDelete.name : undefined}
+        confirmLabel="삭제"
+        tone="danger"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          const feed = pendingDelete;
+          if (!feed) return;
+          void deleteRssFeed(adminKey, feed.id)
+            .then(() => {
+              onChange(feeds.filter((item) => item.id !== feed.id));
+              setPendingDelete(null);
+            })
+            .catch((err) =>
+              onError(
+                err instanceof Error ? err.message : "피드를 지우지 못했어요.",
+              ),
+            );
+        }}
+      />
+    </section>
+  );
 }
 
 function IndustryRow({

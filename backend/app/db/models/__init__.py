@@ -870,3 +870,56 @@ class IndustrySearchConfig(Base):
     priority: Mapped[str] = mapped_column(String(16), default="normal")
     frequency: Mapped[str] = mapped_column(String(16), default="every_scan")
     max_results: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+
+class DiscoveryModule(Base):
+    """Per-source ingest enablement and last-run stats. Not X schedule state."""
+
+    __tablename__ = "discovery_modules"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    interval_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    last_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_status: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    items_fetched: Mapped[int] = mapped_column(Integer, default=0)
+    items_inserted: Mapped[int] = mapped_column(Integer, default=0)
+    items_duplicate: Mapped[int] = mapped_column(Integer, default=0)
+    items_failed: Mapped[int] = mapped_column(Integer, default=0)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class PipelineControl(Base):
+    """Singleton process / trend / push switches. Source ingest is separate."""
+
+    __tablename__ = "pipeline_controls"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default="default")
+    process_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    trend_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    push_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class RssFeed(Base):
+    """Admin-managed editorial RSS feeds. Not ticker Google News."""
+
+    __tablename__ = "rss_feeds"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(128))
+    url: Mapped[str] = mapped_column(String(1024))
+    language: Mapped[str] = mapped_column(String(16), default="")
+    category: Mapped[str] = mapped_column(String(32), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    etag: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    last_modified: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    cursor_value: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_success_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)

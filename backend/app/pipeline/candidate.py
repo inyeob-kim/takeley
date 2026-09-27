@@ -37,7 +37,7 @@ def _provider_prior(provider: str) -> float:
         return 0.85
     if p == "x":
         return 0.55
-    if p == "reddit":
+    if p in ("reddit", "hacker_news"):
         return 0.4
     return 0.5
 
