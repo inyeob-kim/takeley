@@ -3,7 +3,7 @@
 Pipeline:
   External + Internal signals
     → calculate_candidate_status()   # signal-only; ignores current status
-    → apply_trend_state_transition() # upgrade fast / downgrade with grace
+    → apply_trend_state_transition() # upgrade fast / TRENDING min hold, then one-step down
     → Final trend_status
 
 SSOT: issues.trend_status in {NORMAL, RISING, TRENDING}.
@@ -364,6 +364,13 @@ def calculate_candidate_status(
     )
 
 
+def _downgrade_hold(current: str, cfg: Settings) -> timedelta:
+    """How long current status must last before a one-step drop."""
+    if current == TREND_TRENDING:
+        return timedelta(hours=float(cfg.issue_trend_trending_min_hours))
+    return timedelta(minutes=float(cfg.issue_trend_downgrade_grace_minutes))
+
+
 def apply_trend_state_transition(
     current_status: str,
     candidate_status: str,
@@ -372,7 +379,7 @@ def apply_trend_state_transition(
     settings: Settings | None = None,
     now: datetime | None = None,
 ) -> str:
-    """Compare current vs candidate; upgrade immediate, downgrade one step after grace."""
+    """Upgrade immediate. TRENDING holds min hours; otherwise grace, then one step down."""
     cfg = settings or get_settings()
     when = now or datetime.utcnow()
     current = _normalize_status(current_status)
@@ -383,14 +390,13 @@ def apply_trend_state_transition(
     if candidate == current:
         return current
 
-    # Downgrade — time-based grace only (no strikes column).
-    grace = timedelta(minutes=float(cfg.issue_trend_downgrade_grace_minutes))
+    hold = _downgrade_hold(current, cfg)
     if status_updated_at is None:
         # Legacy rows: allow one-step decay on first lifecycle refresh.
-        grace_elapsed = True
+        hold_elapsed = True
     else:
-        grace_elapsed = (when - status_updated_at) >= grace
-    if not grace_elapsed:
+        hold_elapsed = (when - status_updated_at) >= hold
+    if not hold_elapsed:
         return current
     return _STEP_DOWN[current]
 

@@ -72,7 +72,7 @@ SharePayload buildSharePayload({
   final String text;
   switch (intent) {
     case ShareIntent.issueOnly:
-      text = '이 이슈, 너는 어떻게 생각해?';
+      text = '이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.';
     case ShareIntent.withTake:
       text = '나는 ‘$label’에 한 표 했어. 너는 어떻게 생각해?';
     case ShareIntent.trend:

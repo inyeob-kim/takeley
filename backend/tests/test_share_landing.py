@@ -87,7 +87,11 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "꺾인다" in body
     assert "??" in body
     assert "선택한 뒤에 다른 사람 생각을 볼 수 있어요." in body
-    assert "결과 보기" in body
+    assert "이걸로 남기고 결과 보기" in body
+    assert "take_panel_seen" in body
+    assert "take_option_pending" in body
+    assert "take_confirm_tapped" in body
+    assert "column_open" in body
     assert "js-confirm-vote" in body
     assert "data-option-id=" in body
     assert body.index('id="teaser"') < body.index("반도체 수요가 다시 살아나고 있습니다.")
@@ -97,8 +101,10 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert 'style="width:' not in teaser_block
     assert ">0%<" not in teaser_block
     assert ">50%<" not in teaser_block
-    assert "이 이슈, 너는 어떻게 생각해?" in body
-    assert "이 이슈, 어떻게 생각해?" in body
+    assert "친구에게 보내기" in body
+    assert "앱으로 열기" in body
+    assert "고르면 결과가 열려요" in body
+    assert "이 이슈, 어떻게 생각해?" not in body
     assert "결과는 앱에서 확인할 수 있어요" not in body
     assert "명이 생각을 남겼어요" not in body
     assert "topbar" in body

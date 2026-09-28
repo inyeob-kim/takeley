@@ -384,7 +384,9 @@ class IssueEventIn(BaseModel):
         pattern=(
             "^(impression|open|update_seen|follow|unfollow|vote|comment|"
             "my_issue_open|share_clicked|share_completed|share_cancelled|"
-            "share_link_copied|shared_link_opened|store_click|push_opened)$"
+            "share_link_copied|shared_link_opened|store_click|push_opened|"
+            "take_panel_seen|take_option_pending|take_confirm_tapped|"
+            "column_open)$"
         ),
     )
     user_id: Optional[str] = None

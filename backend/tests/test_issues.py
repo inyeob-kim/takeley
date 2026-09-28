@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.db.models import ParticipationOption, Signal
+from app.db.models import IssueUserEvent, ParticipationOption, Signal
 from app.db.session import Base
 from app.services.issue_service import IssueService, replace_participation_options
 
@@ -77,3 +77,32 @@ def test_issue_list_and_participate():
 
     ev = svc.record_event(signal.id, "open")
     assert ev["open_count"] == 1
+    funnel = svc.record_event(
+        signal.id,
+        "take_option_pending",
+        user_id="u1",
+        share_intent="home_cta",
+    )
+    assert funnel is not None
+    confirm = svc.record_event(
+        signal.id, "take_confirm_tapped", user_id="u1", share_intent="home_cta"
+    )
+    assert confirm is not None
+    seen = svc.record_event(
+        signal.id, "take_panel_seen", user_id="u1", share_intent="home_body"
+    )
+    assert seen is not None
+    col = svc.record_event(
+        signal.id, "column_open", user_id="u1", share_intent="home_cta"
+    )
+    assert col is not None
+    kinds = {
+        row.event: row.share_intent
+        for row in db.query(IssueUserEvent)
+        .filter(IssueUserEvent.user_id == "u1", IssueUserEvent.signal_id == signal.id)
+        .all()
+    }
+    assert kinds["take_option_pending"] == "home_cta"
+    assert kinds["take_confirm_tapped"] == "home_cta"
+    assert kinds["take_panel_seen"] == "home_body"
+    assert kinds["column_open"] == "home_cta"

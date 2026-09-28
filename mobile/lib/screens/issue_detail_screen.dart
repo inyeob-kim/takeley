@@ -72,6 +72,8 @@ class IssueDetailScreen extends StatefulWidget {
     this.initialDeepFocus,
     this.shareId,
     this.refUserId,
+    this.scrollToTake = false,
+    this.openSource,
   });
 
   final String issueId;
@@ -83,6 +85,8 @@ class IssueDetailScreen extends StatefulWidget {
   final IssueDeepFocus? initialDeepFocus;
   final String? shareId;
   final String? refUserId;
+  final bool scrollToTake;
+  final String? openSource;
 
   @override
   State<IssueDetailScreen> createState() => _IssueDetailScreenState();
@@ -101,6 +105,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   String? _pendingOptionId;
   bool _shareBusy = false;
   bool _didOpenInitialFocus = false;
+  bool _didRecordTakePanel = false;
+  bool _didScrollToTake = false;
+  final _scroll = ScrollController();
+  final _takePanelKey = GlobalKey();
   List<IssueTake> _publishedTakes = [];
   List<IssueTake> _myTakes = [];
   String? _contributorStatus;
@@ -137,6 +145,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       setState(() {
         _didOpenInitialFocus = false;
         _pendingOptionId = null;
+        _didRecordTakePanel = false;
+        _didScrollToTake = false;
       });
       _load();
     }
@@ -145,6 +155,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -169,6 +180,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final coverImage = resolveImageUrl(issue.imageUrl);
     final sources = issue.sources.take(8).toList();
     final readMin = _estimateReadMinutes(issue);
+    _recordFunnel('column_open');
 
     await pushCupertinoPage(
       context,
@@ -390,14 +402,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         _comments = comments;
         _loading = false;
       });
+      // GET /issues/:id does not record a view. POST /view is the single open path.
       unawaited(widget.issuesApi.view(widget.issueId, userId: userId));
       await _reloadDeepThoughts();
       _maybeOpenInitialDeepFocus();
-      unawaited(widget.issuesApi.recordEvent(
-        id: widget.issueId,
-        event: 'open',
-        userId: userId,
-      ));
+      _scheduleTakePanelFocus();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -407,11 +416,55 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     }
   }
 
+  void _recordFunnel(String event) {
+    if (event == 'take_panel_seen') {
+      if (_didRecordTakePanel) return;
+      _didRecordTakePanel = true;
+    }
+    final userId = _userId;
+    if (userId == null || userId.isEmpty) return;
+    unawaited(widget.issuesApi.recordEvent(
+      id: widget.issueId,
+      event: event,
+      userId: userId,
+      shareIntent: widget.openSource,
+    ));
+  }
+
+  bool _canVote(Issue issue) {
+    return issue.participationSuitable &&
+        (issue.participationQuestion?.isNotEmpty ?? false);
+  }
+
+  void _scheduleTakePanelFocus() {
+    final issue = _issue;
+    if (issue == null) return;
+    if (_canVote(issue)) {
+      _recordFunnel('take_panel_seen');
+    }
+    if (!widget.scrollToTake || !_canVote(issue) || _didScrollToTake) return;
+    _didScrollToTake = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(milliseconds: 120), () {
+        if (!mounted) return;
+        final ctx = _takePanelKey.currentContext;
+        if (ctx == null || !ctx.mounted) return;
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          alignment: 0.08,
+        );
+      });
+    });
+  }
+
   void _pickOption(String optionId) {
     if (_voting || _issue == null || (_issue!.myOptionId?.isNotEmpty ?? false)) {
       return;
     }
     setState(() => _pendingOptionId = optionId);
+    _recordFunnel('take_option_pending');
   }
 
   Future<void> _confirmVote() async {
@@ -424,6 +477,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       return;
     }
     setState(() => _voting = true);
+    _recordFunnel('take_confirm_tapped');
     try {
       final userId = _userId;
       final data = await widget.issuesApi.participateRaw(
@@ -827,74 +881,78 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final hasTake = issue.myOptionId != null && issue.myOptionId!.isNotEmpty;
     final totalVotes = issue.participationCount;
     final fmt = NumberFormat.decimalPattern('ko_KR');
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 28),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      decoration: BoxDecoration(
-        color: TakeleyColors.soft,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '당신의 생각은?',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: TakeleyColors.accent,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            issue.participationQuestion!,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...issue.options.map((opt) {
-            final selected = hasTake
-                ? issue.myOptionId == opt.id
-                : _pendingOptionId == opt.id;
-            final pct =
-                totalVotes > 0 ? ((opt.count / totalVotes) * 100).round() : 0;
-            final meta = hasTake && totalVotes > 0
-                ? '$pct% · ${fmt.format(opt.count)}'
-                : '';
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: TakeleyVoteOptionButton(
-                label: opt.label,
-                meta: meta,
-                selected: selected,
-                enabled: !_voting,
-                onPressed: hasTake ? null : () => _pickOption(opt.id),
+    return KeyedSubtree(
+      key: _takePanelKey,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 28),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+        decoration: BoxDecoration(
+          color: TakeleyColors.soft,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '당신의 생각은?',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: TakeleyColors.accent,
               ),
-            );
-          }),
-          if (!hasTake && _pendingOptionId != null) ...[
-            const SizedBox(height: 4),
-            TakeleyOffsetPillButton(
-              label: _voting ? '결과 여는 중…' : '결과 보기',
-              enabled: !_voting,
-              onPressed: _confirmVote,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
+            Text(
+              issue.participationQuestion!,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...issue.options.map((opt) {
+              final selected = hasTake
+                  ? issue.myOptionId == opt.id
+                  : _pendingOptionId == opt.id;
+              final pct = totalVotes > 0
+                  ? ((opt.count / totalVotes) * 100).round()
+                  : 0;
+              final meta = hasTake && totalVotes > 0
+                  ? '$pct% · ${fmt.format(opt.count)}'
+                  : '';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TakeleyVoteOptionButton(
+                  label: opt.label,
+                  meta: meta,
+                  selected: selected,
+                  enabled: !_voting,
+                  onPressed: hasTake ? null : () => _pickOption(opt.id),
+                ),
+              );
+            }),
+            if (!hasTake && _pendingOptionId != null) ...[
+              const SizedBox(height: 4),
+              TakeleyOffsetPillButton(
+                label: _voting ? '결과 여는 중…' : '이걸로 남기고 결과 보기',
+                enabled: !_voting,
+                onPressed: _confirmVote,
+              ),
+              const SizedBox(height: 10),
+            ],
+            Text(
+              hasTake
+                  ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                  : _pendingOptionId == null
+                      ? '선택한 뒤에 다른 사람 생각을 볼 수 있어요.'
+                      : '다른 선택지를 누르면 바꿀 수 있어요.',
+              style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
+            ),
           ],
-          Text(
-            hasTake
-                ? '${fmt.format(issue.participationCount)}명 생각 남김'
-                : _pendingOptionId == null
-                    ? '선택한 뒤에 다른 사람 생각을 볼 수 있어요.'
-                    : '다른 선택지를 누르면 바꿀 수 있어요.',
-            style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1002,6 +1060,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final hasColumn = issue.columnBody.trim().isNotEmpty;
 
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
       children: [
         Text(
@@ -1089,12 +1148,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ),
           ),
         ],
+        _votePanel(issue),
         if (hasColumn)
           _columnCta(
             onTap: _openColumns,
             hint: '이 이슈를 긴 글로 읽어 보세요',
           ),
-        _votePanel(issue),
         _deepThoughtSection(canWriteDeep),
         _sourceCredit(sources),
         const SizedBox(height: 32),
@@ -1118,12 +1177,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
-          child: TakeleyOffsetPillButton(
-            label: '등록',
-            fullWidth: false,
-            minHeight: 44,
-            fontSize: 15,
-            shadowOffset: 3,
+          child: TakeleySecondaryPillButton(
+            label: _submitting ? '남기는 중…' : '남기기',
             enabled: !_submitting && _commentCtrl.text.trim().isNotEmpty,
             onPressed: _submitComment,
           ),

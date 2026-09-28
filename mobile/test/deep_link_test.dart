@@ -54,13 +54,23 @@ void main() {
           '?sid=s1&ref=u9',
         ),
       );
-      expect(loc, '/issues/4f34cc27-e54c-417e-86aa-f5e5f8e474d3?sid=s1&ref=u9');
+      expect(
+        loc,
+        '/issues/4f34cc27-e54c-417e-86aa-f5e5f8e474d3?sid=s1&ref=u9&src=share',
+      );
     });
 
     test('leaves in-app issue routes alone', () {
       expect(
         routerLocationForUri(Uri.parse('/issues/abc-123?sid=s1')),
         isNull,
+      );
+    });
+
+    test('maps push nid onto src=push', () {
+      expect(
+        issueRoutePath(const SignalLink('from-push', notificationId: 'n1')),
+        '/issues/from-push?src=push',
       );
     });
   });

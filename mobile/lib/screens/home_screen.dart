@@ -13,6 +13,7 @@ import '../widgets/data_state.dart';
 import '../widgets/feed_chips.dart';
 import '../widgets/issue_card.dart';
 import '../widgets/page_header.dart';
+import 'shell_screen.dart';
 
 final _feedTabs = <({String id, String label})>[
   (id: 'all', label: '전체'),
@@ -28,6 +29,7 @@ class HomeScreen extends StatefulWidget {
     required this.pipelineApi,
     required this.session,
     required this.onIssueOpen,
+    this.onIssueTake,
   });
 
   final IssuesApi issuesApi;
@@ -35,6 +37,7 @@ class HomeScreen extends StatefulWidget {
   final PipelineApi pipelineApi;
   final DeviceSession session;
   final ValueChanged<String> onIssueOpen;
+  final ValueChanged<String>? onIssueTake;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -47,12 +50,45 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _collecting = false;
   String? _error;
   String? _displayName;
+  final ScrollController _scroll = ScrollController();
+  ValueNotifier<int>? _homeRetap;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadFeed();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final retap = HomeRetapScope.maybeOf(context);
+    if (identical(retap, _homeRetap)) return;
+    _homeRetap?.removeListener(_onHomeTabRetap);
+    _homeRetap = retap;
+    _homeRetap?.addListener(_onHomeTabRetap);
+  }
+
+  @override
+  void dispose() {
+    _homeRetap?.removeListener(_onHomeTabRetap);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onHomeTabRetap() {
+    if (!mounted) return;
+    if (_scroll.hasClients) {
+      unawaited(
+        _scroll.animateTo(
+          0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    }
+    unawaited(_loadFeed(quiet: true));
   }
 
   Future<void> _loadSettings() async {
@@ -130,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
       color: TakeleyColors.accent,
       onRefresh: () => _loadFeed(),
       child: CustomScrollView(
+        controller: _scroll,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
@@ -199,6 +236,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 return IssueCard(
                   issue: issue,
                   onOpen: (i) => widget.onIssueOpen(i.id),
+                  onCta: (i) {
+                    final canVote = i.participationSuitable &&
+                        (i.participationQuestion?.isNotEmpty ?? false);
+                    if (canVote && widget.onIssueTake != null) {
+                      widget.onIssueTake!(i.id);
+                    } else {
+                      widget.onIssueOpen(i.id);
+                    }
+                  },
                 );
               },
             ),

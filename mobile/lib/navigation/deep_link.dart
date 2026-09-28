@@ -175,10 +175,16 @@ String _readNid(Map<String, String> params) {
 }
 
 String issueRoutePath(SignalLink link) {
+  final fromPush = link.notificationId != null && link.notificationId!.isNotEmpty;
+  final fromShare = link.shareId != null && link.shareId!.isNotEmpty;
   final q = <String, String>{
-    if (link.shareId != null && link.shareId!.isNotEmpty) 'sid': link.shareId!,
+    if (fromShare) 'sid': link.shareId!,
     if (link.refUserId != null && link.refUserId!.isNotEmpty)
       'ref': link.refUserId!,
+    if (fromShare)
+      'src': 'share'
+    else if (fromPush)
+      'src': 'push',
   };
   if (q.isEmpty) return '/issues/${link.signalId}';
   return Uri(path: '/issues/${link.signalId}', queryParameters: q).toString();

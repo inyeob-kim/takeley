@@ -54,7 +54,7 @@ class _ShareChoiceSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           TakeleyOffsetPillButton(
-            label: '이 이슈, 너는 어떻게 생각해?',
+            label: '이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.',
             onPressed: () => Navigator.pop(context, false),
           ),
           const SizedBox(height: 10),

@@ -124,8 +124,15 @@ class _TakeleyAppState extends State<TakeleyApp> {
     BuildContext context,
     String id, {
     IssueDeepFocus? focus,
+    bool scrollToTake = false,
+    String? source,
   }) {
-    context.push('/issues/$id', extra: focus);
+    final q = <String, String>{
+      if (scrollToTake) 'focus': 'take',
+      if (source != null && source.isNotEmpty) 'src': source,
+    };
+    final suffix = q.isEmpty ? '' : '?${Uri(queryParameters: q).query}';
+    context.push('/issues/$id$suffix', extra: focus);
   }
 
   GoRouter _buildRouter() {
@@ -157,7 +164,14 @@ class _TakeleyAppState extends State<TakeleyApp> {
                     settingsApi: _settingsApi,
                     pipelineApi: _pipelineApi,
                     session: widget.session,
-                    onIssueOpen: (id) => _openIssue(context, id),
+                    onIssueOpen: (id) =>
+                        _openIssue(context, id, source: 'home_body'),
+                    onIssueTake: (id) => _openIssue(
+                      context,
+                      id,
+                      scrollToTake: true,
+                      source: 'home_cta',
+                    ),
                   ),
                 ),
               ],
@@ -204,6 +218,8 @@ class _TakeleyAppState extends State<TakeleyApp> {
             final sid = state.uri.queryParameters['sid'] ??
                 state.uri.queryParameters['share_id'];
             final ref = state.uri.queryParameters['ref'];
+            final scrollToTake = state.uri.queryParameters['focus'] == 'take';
+            final src = state.uri.queryParameters['src'];
             return takeleySlidePage(
               key: state.pageKey,
               child: PhoneFrame(
@@ -216,6 +232,8 @@ class _TakeleyAppState extends State<TakeleyApp> {
                   initialDeepFocus: focus,
                   shareId: (sid != null && sid.isNotEmpty) ? sid : null,
                   refUserId: (ref != null && ref.isNotEmpty) ? ref : null,
+                  scrollToTake: scrollToTake,
+                  openSource: (src != null && src.isNotEmpty) ? src : null,
                   onBack: () {
                     if (context.canPop()) {
                       context.pop();

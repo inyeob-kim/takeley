@@ -11,6 +11,7 @@ void main() {
     );
     expect(payload.intent, ShareIntent.issueOnly);
     expect(payload.shareAsUri, isTrue);
+    expect(payload.text, '이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.');
     expect(payload.text.contains('http'), isFalse);
     expect(payload.url, contains('/i/issue-1'));
     expect(payload.url.contains('sid='), isFalse);

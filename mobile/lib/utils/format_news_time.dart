@@ -10,7 +10,15 @@ DateTime? parseApiDate(String? raw) {
   return then.toLocal();
 }
 
-/// First publish, then [contentUpdatedAt] after a notified content edit.
+/// Home / issue cards: first TAKELEY publish, never a later content edit.
+String? issuePublishedTimestamp({
+  String? publishedAt,
+  String? firstSeenAt,
+}) {
+  return publishedAt ?? firstSeenAt;
+}
+
+/// Column byline: first publish, then [contentUpdatedAt] after a content edit.
 String? issueStoryTimestamp({
   String? publishedAt,
   String? firstSeenAt,

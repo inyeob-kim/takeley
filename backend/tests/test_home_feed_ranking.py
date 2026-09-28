@@ -25,6 +25,7 @@ def _add_issue(
     published_at: datetime,
     trend_status: str = "NORMAL",
     is_trending: bool = False,
+    open_count: int = 0,
 ) -> Signal:
     row = Signal(
         title=title,
@@ -37,6 +38,7 @@ def _add_issue(
         trend_score=trend_score,
         trend_status=trend_status,
         is_trending=is_trending,
+        open_count=open_count,
         category=category,
         topic="t",
         participation_suitable=True,
@@ -158,6 +160,86 @@ def test_list_issues_industry_pins_within_category():
 
     tech = IssueService(db).list_issues(limit=10, sort="trending", category="기술")
     titles = [i.title for i in tech.items]
-    assert titles[0] == "tech-hot"
-    assert titles[1:] == ["tech-fresh", "tech-mid"]
+    assert titles[0] == "tech-fresh"
+    assert titles[1:] == ["tech-mid", "tech-hot"]
     assert "global-hot" not in titles
+
+
+def test_content_update_does_not_reorder_home_after_trending_pin():
+    db = _session()
+    now = datetime.utcnow()
+    older = _add_issue(
+        db,
+        title="published-first",
+        category="사회",
+        trend_score=0.2,
+        published_at=now - timedelta(hours=5),
+    )
+    older.content_updated_at = now
+    newer = _add_issue(
+        db,
+        title="published-later",
+        category="사회",
+        trend_score=0.1,
+        published_at=now - timedelta(hours=1),
+    )
+    newer.content_updated_at = now - timedelta(hours=1)
+    featured = _add_issue(
+        db,
+        title="hot",
+        category="사회",
+        trend_score=0.9,
+        published_at=now - timedelta(days=1),
+        trend_status="TRENDING",
+        is_trending=True,
+    )
+    featured.content_updated_at = now - timedelta(days=1)
+    db.commit()
+
+    ordered = order_home_feed([older, newer, featured], limit=10)
+    assert [r.title for r in ordered] == [
+        "hot",
+        "published-later",
+        "published-first",
+    ]
+
+
+def test_order_home_feed_no_trending_is_published_at_only():
+    db = _session()
+    now = datetime.utcnow()
+    old_popular = _add_issue(
+        db,
+        title="old-popular",
+        category="경제",
+        trend_score=0.9,
+        published_at=now - timedelta(days=5),
+        open_count=75,
+    )
+    rising = _add_issue(
+        db,
+        title="rising-old",
+        category="경제",
+        trend_score=0.8,
+        published_at=now - timedelta(days=2),
+        trend_status="RISING",
+        open_count=40,
+    )
+    fresh = _add_issue(
+        db,
+        title="fresh",
+        category="경제",
+        trend_score=0.1,
+        published_at=now - timedelta(hours=1),
+        open_count=2,
+    )
+    db.commit()
+
+    ordered = order_home_feed([old_popular, rising, fresh], limit=10)
+    assert [r.title for r in ordered] == ["fresh", "rising-old", "old-popular"]
+
+    listed = IssueService(db).list_issues(limit=10, sort="trending")
+    assert [i.title for i in listed.items] == [
+        "fresh",
+        "rising-old",
+        "old-popular",
+    ]

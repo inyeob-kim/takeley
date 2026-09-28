@@ -122,8 +122,11 @@ class Settings(BaseSettings):
     # Recent-interest window for Trend internal + AI/snapshot freshness (hours).
     # IssueFollow rows are never expired; only Trend counting uses this window.
     issue_trend_internal_window_hours: float = 24.0
-    # Downgrade grace (minutes). Default ≈ 2× ingest_interval_seconds; config only.
+    # Downgrade grace for RISING → NORMAL (minutes). Default ≈ 2× ingest cycle.
     issue_trend_downgrade_grace_minutes: float = 60.0
+    # TRENDING floor (hours). Upgrade stays immediate; do not drop the home pin
+    # after one quiet ingest. After this, one-step down to RISING.
+    issue_trend_trending_min_hours: float = 4.0
     # Keep at most this many hot posts per industry query after heat filter.
     issue_topic_keep_per_query: int = 8
     # Topic-sourced clusters: participation is optional (read-only Issues OK).

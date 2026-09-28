@@ -42,6 +42,7 @@ def _settings(**kwargs) -> Settings:
     base = dict(
         issue_trend_internal_window_hours=24.0,
         issue_trend_downgrade_grace_minutes=60.0,
+        issue_trend_trending_min_hours=4.0,
         issue_trend_min_unique_opens=2,
         issue_trend_min_follows=1,
         issue_trend_min_participations=1,
@@ -125,7 +126,7 @@ def test_transition_upgrade_immediate_downgrade_one_step():
         )
         == TREND_TRENDING
     )
-    # Within grace: hold
+    # Within TRENDING min hold (4h default): stay
     assert (
         apply_trend_state_transition(
             TREND_TRENDING,
@@ -136,12 +137,22 @@ def test_transition_upgrade_immediate_downgrade_one_step():
         )
         == TREND_TRENDING
     )
-    # After grace: one step only
     assert (
         apply_trend_state_transition(
             TREND_TRENDING,
             TREND_NORMAL,
-            status_updated_at=old,
+            status_updated_at=now - timedelta(hours=2),
+            settings=cfg,
+            now=now,
+        )
+        == TREND_TRENDING
+    )
+    # After TRENDING min hold: one step only
+    assert (
+        apply_trend_state_transition(
+            TREND_TRENDING,
+            TREND_NORMAL,
+            status_updated_at=now - timedelta(hours=5),
             settings=cfg,
             now=now,
         )
@@ -216,14 +227,14 @@ def test_rising_to_trending_immediate():
     assert sig.is_trending is True
 
 
-def test_trending_to_rising_after_grace_one_step():
+def test_trending_to_rising_after_min_hold_one_step():
     db = _session()
-    cfg = _settings(issue_trend_downgrade_grace_minutes=60)
+    cfg = _settings()
     now = datetime.utcnow()
     sig = _issue(
         db,
         trend_status=TREND_TRENDING,
-        trend_status_updated_at=now - timedelta(minutes=90),
+        trend_status_updated_at=now - timedelta(hours=5),
     )
     db.add(IssueFollow(user_id="u1", signal_id=sig.id))
     db.commit()
@@ -233,14 +244,14 @@ def test_trending_to_rising_after_grace_one_step():
     assert res.final_status == TREND_RISING  # one step, not NORMAL
 
 
-def test_trending_candidate_normal_holds_inside_grace():
+def test_trending_candidate_normal_holds_inside_min_hours():
     db = _session()
-    cfg = _settings(issue_trend_downgrade_grace_minutes=60)
+    cfg = _settings()
     now = datetime.utcnow()
     sig = _issue(
         db,
         trend_status=TREND_TRENDING,
-        trend_status_updated_at=now - timedelta(minutes=10),
+        trend_status_updated_at=now - timedelta(hours=2),
     )
     db.add(IssueFollow(user_id="u1", signal_id=sig.id))
     db.commit()

@@ -43,14 +43,15 @@ def _published_at_key(signal: Signal) -> datetime:
     return signal.published_at or signal.first_seen_at or _DATETIME_MIN
 
 
-def _trending_rank_key(signal: Signal) -> tuple:
-    """Higher = more trending. Prefer TRENDING/RISING, then trend_score."""
+def _is_home_trending_pin(signal: Signal) -> bool:
+    """Home pins TRENDING only. RISING / high open_count must not take the slot."""
     status = (getattr(signal, "trend_status", None) or "NORMAL").upper()
-    status_rank = {"TRENDING": 2, "RISING": 1}.get(status, 0)
-    if bool(getattr(signal, "is_trending", False)) and status_rank < 2:
-        status_rank = 2
+    return status == "TRENDING" or bool(getattr(signal, "is_trending", False))
+
+
+def _trending_rank_key(signal: Signal) -> tuple:
+    """Higher = more trending among TRENDING pins. Prefer score, then recency."""
     return (
-        status_rank,
         float(signal.trend_score or 0.0),
         float(signal.importance or 0.0),
         int(signal.open_count or 0),
@@ -59,16 +60,23 @@ def _trending_rank_key(signal: Signal) -> tuple:
 
 
 def order_home_feed(rows: list[Signal], *, limit: int) -> list[Signal]:
-    """Pin the single most-trending Issue, then order the rest by published_at desc.
+    """Pin one TRENDING Issue if any, then the rest by first publish (published_at).
 
+    If nobody is TRENDING, do not pin — published_at desc only.
+    Do not sort by content_updated_at — later evidence must not reshuffle home.
     Used for 전체 and per-industry home chips (same rule within the filtered set).
     """
     if not rows or limit <= 0:
         return []
-    featured = max(rows, key=_trending_rank_key)
-    rest = [r for r in rows if r.id != featured.id]
+    pins = [r for r in rows if _is_home_trending_pin(r)]
+    rest = list(rows)
+    if pins:
+        featured = max(pins, key=_trending_rank_key)
+        rest = [r for r in rows if r.id != featured.id]
+        rest.sort(key=_published_at_key, reverse=True)
+        return [featured, *rest][:limit]
     rest.sort(key=_published_at_key, reverse=True)
-    return [featured, *rest][:limit]
+    return rest[:limit]
 
 
 def _user_display_names(db: Session, user_ids: list[str]) -> dict[str, str | None]:
@@ -511,14 +519,25 @@ class IssueService:
             )
             rows = query.limit(limit).all()
         else:
-            # Home: 1 most-trending pinned, remainder by publish time (전체 + 산업).
-            pool_cap = max(limit * 10, 100)
-            pool = query.order_by(
-                Signal.trend_score.desc(),
-                Signal.importance.desc(),
-                Signal.first_seen_at.desc(),
-            ).limit(pool_cap).all()
-            rows = order_home_feed(pool, limit=limit)
+            # Home: newest by publish, plus any TRENDING so an older hot card can pin.
+            newest = (
+                query.order_by(
+                    Signal.published_at.desc().nullslast(),
+                    Signal.first_seen_at.desc(),
+                )
+                .limit(limit)
+                .all()
+            )
+            trending_pool = query.filter(
+                or_(
+                    Signal.trend_status == "TRENDING",
+                    Signal.is_trending.is_(True),
+                )
+            ).all()
+            by_id = {row.id: row for row in newest}
+            for row in trending_pool:
+                by_id[row.id] = row
+            rows = order_home_feed(list(by_id.values()), limit=limit)
         ids = [s.id for s in rows]
         retention = _load_retention_maps(self.db, user_id, ids)
         opt_counts = _bulk_option_counts(self.db, ids)
@@ -697,6 +716,10 @@ class IssueService:
             "comment",
             "my_issue_open",
             "push_opened",
+            "take_panel_seen",
+            "take_option_pending",
+            "take_confirm_tapped",
+            "column_open",
             *share_events,
         }:
             if user_id:

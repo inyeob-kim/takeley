@@ -274,15 +274,15 @@ def _teaser_html(
   <div class="teaser-opts">
     {"".join(rows_html)}
   </div>
-  <button type="button" class="teaser-confirm js-confirm-vote" hidden>결과 보기</button>
+  <button type="button" class="teaser-confirm js-confirm-vote" hidden>이걸로 남기고 결과 보기</button>
   <p class="teaser-lock">선택한 뒤에 다른 사람 생각을 볼 수 있어요.</p>
   <p class="voted-note" hidden>내 생각을 남겼어요.</p>
   <div class="web-share" id="web-share" hidden>
-    <button type="button" class="web-share__btn js-share" data-share-mode="issue_only">이 이슈, 너는 어떻게 생각해?</button>
+    <button type="button" class="web-share__btn js-share" data-share-mode="issue_only">친구에게 보내기</button>
   </div>
 </section>
 """
-        return teaser, "이 이슈, 어떻게 생각해?"
+        return teaser, "앱으로 열기"
 
     proof_html = f'<p class="teaser-proof">{esc(proof)}</p>' if proof else ""
     teaser = f"""
@@ -293,7 +293,7 @@ def _teaser_html(
   <p class="teaser-lock">앱에서 이어서 보고 의견을 남겨 보세요</p>
 </section>
 """
-    return teaser, "앱에서 이어서 보기"
+    return teaser, "앱으로 열기"
 
 
 @router.api_route("/i/{issue_id}", methods=["GET", "HEAD"], response_class=HTMLResponse)
@@ -329,6 +329,11 @@ def issue_share_landing(
     if take_label:
         description = _truncate(
             f"나는 ‘{take_label}’에 한 표 했어. 너는 어떻게 생각해?",
+            160,
+        )
+    elif bool(getattr(row, "participation_suitable", False)):
+        description = _truncate(
+            "이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.",
             160,
         )
     else:
@@ -937,6 +942,7 @@ def issue_share_landing(
         btn.addEventListener("click", function () {{
           if (!teaser || teaser.classList.contains("is-voted") || voting) return;
           pendingId = btn.getAttribute("data-option-id") || "";
+          postEvent("take_option_pending", "share");
           teaser.querySelectorAll(".js-vote").forEach(function (el) {{
             el.classList.toggle("is-pending", el === btn);
           }});
@@ -949,7 +955,10 @@ def issue_share_landing(
       var confirmVote = document.querySelector(".js-confirm-vote");
       if (confirmVote) {{
         confirmVote.addEventListener("click", function () {{
-          if (pendingId) vote(pendingId);
+          if (pendingId) {{
+            postEvent("take_confirm_tapped", "share");
+            vote(pendingId);
+          }}
         }});
       }}
       document.querySelectorAll(".js-share").forEach(function (btn) {{
@@ -970,6 +979,7 @@ def issue_share_landing(
       var more = document.getElementById("column-more");
       if (more) {{
         more.addEventListener("click", function () {{
+          postEvent("column_open", "share");
           var block = document.getElementById("column-block");
           if (block) block.classList.remove("is-collapsed");
           more.remove();
@@ -977,6 +987,13 @@ def issue_share_landing(
       }}
       ensureUser().then(function (userId) {{
         if (!userId) return;
+        if (teaser) {{
+          var seenKey = "take_panel_seen:" + issueId;
+          if (!sessionStorage.getItem(seenKey)) {{
+            sessionStorage.setItem(seenKey, "1");
+            postEvent("take_panel_seen", "share");
+          }}
+        }}
         if (shareId) {{
           var key = "share_open:" + issueId + ":" + shareId;
           if (!sessionStorage.getItem(key)) {{

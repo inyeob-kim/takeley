@@ -29,6 +29,7 @@ class IssueCard extends StatefulWidget {
     this.ctaLabel,
     this.takeLabel,
     this.showSummary = true,
+    this.onCta,
   });
 
   final Issue issue;
@@ -47,6 +48,9 @@ class IssueCard extends StatefulWidget {
 
   final bool showSummary;
 
+  /// Footer CTA only. Null → same as [onOpen].
+  final ValueChanged<Issue>? onCta;
+
   @override
   State<IssueCard> createState() => _IssueCardState();
 }
@@ -58,10 +62,9 @@ class _IssueCardState extends State<IssueCard> {
   Widget build(BuildContext context) {
     final issue = widget.issue;
     final when = formatNewsTime(
-      issueStoryTimestamp(
+      issuePublishedTimestamp(
         publishedAt: issue.publishedAt,
         firstSeenAt: issue.firstSeenAt,
-        contentUpdatedAt: issue.contentUpdatedAt,
       ),
     );
     final canVote = issue.participationSuitable &&
@@ -146,13 +149,24 @@ class _IssueCardState extends State<IssueCard> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  Text(
-                    widget.ctaLabel ??
-                        (canVote ? '생각 남기기 →' : '자세히 보기 →'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: TakeleyColors.accent,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final cta = widget.onCta;
+                      if (cta != null) {
+                        cta(issue);
+                      } else {
+                        widget.onOpen(issue);
+                      }
+                    },
+                    child: Text(
+                      widget.ctaLabel ??
+                          (canVote ? '생각 남기기 →' : '자세히 보기 →'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: TakeleyColors.accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                   ),
                 ],
               ),
