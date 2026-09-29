@@ -5,7 +5,7 @@ Support URL: https://api.takeley.co/support
 Bundle ID: com.takeley.app  
 Category: News  
 Age: 18+ (Korea 19+)  
-Build to upload: 1.0.0 (5)
+Build to upload: 1.0.1 (1)
 
 ## Review notes (붙여넣기)
 

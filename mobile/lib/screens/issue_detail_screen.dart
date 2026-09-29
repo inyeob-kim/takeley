@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -590,25 +592,13 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       shareIntent: intent,
     ));
     try {
-      final result = await SharePlus.instance.share(
-        payload.shareAsUri
-            ? ShareParams(
-                uri: Uri.parse(payload.url),
-                subject: payload.title,
-                title: payload.title,
-              )
-            : ShareParams(
-                text: payload.text,
-                subject: payload.title,
-                title: payload.title,
-              ),
-      );
-      // unavailable means the platform could not say whether anything was sent.
-      final event = switch (result.status) {
-        ShareResultStatus.success => 'share_completed',
-        ShareResultStatus.dismissed => 'share_cancelled',
-        ShareResultStatus.unavailable => null,
-      };
+      // share_plus throws if text and uri are both set. iOS/Android native
+      // sheets take hook text and /i/{id} as separate items.
+      final event =
+          defaultTargetPlatform == TargetPlatform.iOS ||
+                  defaultTargetPlatform == TargetPlatform.android
+              ? await _sendNativeShare(payload)
+              : await _sendSharePlus(payload);
       if (event != null) {
         unawaited(widget.issuesApi.recordEvent(
           id: widget.issueId,
@@ -620,10 +610,45 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         ));
       }
     } catch (_) {
-      /* share sheet failed — click already recorded */
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('지금은 공유할 수 없어요.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _shareBusy = false);
     }
+  }
+
+  Future<String?> _sendNativeShare(SharePayload payload) async {
+    final raw = await const MethodChannel('takeley/share').invokeMethod<String>(
+      'share',
+      {
+        'text': payload.text,
+        'url': payload.url,
+        'title': payload.title,
+      },
+    );
+    return switch (raw) {
+      'success' => 'share_completed',
+      'dismissed' => 'share_cancelled',
+      _ => null,
+    };
+  }
+
+  Future<String?> _sendSharePlus(SharePayload payload) async {
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        text: payload.text,
+        subject: payload.title,
+        title: payload.title,
+      ),
+    );
+    return switch (result.status) {
+      ShareResultStatus.success => 'share_completed',
+      ShareResultStatus.dismissed => 'share_cancelled',
+      ShareResultStatus.unavailable => null,
+    };
   }
 
   Future<void> _submitComment() async {
@@ -943,6 +968,16 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               ),
               const SizedBox(height: 10),
             ],
+            if (!hasTake && issue.participationCount > 0) ...[
+              Text(
+                '${fmt.format(issue.participationCount)}명 생각 남김',
+                style: const TextStyle(
+                  color: TakeleyColors.muted,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
             Text(
               hasTake
                   ? '${fmt.format(issue.participationCount)}명 생각 남김'
@@ -951,6 +986,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                       : '다른 선택지를 누르면 바꿀 수 있어요.',
               style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
             ),
+            if (hasTake) ...[
+              const SizedBox(height: 12),
+              TakeleySecondaryPillButton(
+                label: '친구에게 묻기',
+                enabled: !_shareBusy,
+                onPressed: _share,
+              ),
+            ],
           ],
         ),
       ),
@@ -1058,6 +1101,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     final sources = issue.sources.take(8).toList();
     final canWriteDeep = showDeepThoughtWriterCta(_contributorStatus);
     final hasColumn = issue.columnBody.trim().isNotEmpty;
+    final canVote = _canVote(issue);
 
     return ListView(
       controller: _scroll,
@@ -1115,6 +1159,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
           ),
         ],
+        if (canVote) _votePanel(issue),
         if (issue.whyItMatters.trim().isNotEmpty) ...[
           const SizedBox(height: 28),
           Text(
@@ -1148,7 +1193,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ),
           ),
         ],
-        _votePanel(issue),
+        if (!canVote) _votePanel(issue),
         if (hasColumn)
           _columnCta(
             onTap: _openColumns,

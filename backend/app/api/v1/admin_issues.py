@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -54,6 +56,12 @@ class AdminCountsOut(BaseModel):
     draft: int
     published: int
     rejected: int
+
+
+class AdminPublishIn(BaseModel):
+    """Optional future UTC time → schedule; omit/null/past → publish now."""
+
+    scheduled_at: datetime | None = None
 
 
 class AdminColumnMediaOut(BaseModel):
@@ -168,9 +176,36 @@ async def admin_upload_column_media(
 
 
 @router.post("/{issue_id}/publish", response_model=IssueOut)
-def admin_publish_issue(issue_id: str, db: Session = Depends(get_db)) -> IssueOut:
+def admin_publish_issue(
+    issue_id: str,
+    body: AdminPublishIn | None = None,
+    db: Session = Depends(get_db),
+) -> IssueOut:
+    payload = body or AdminPublishIn()
+    when = payload.scheduled_at
     try:
-        out = AdminIssueService(db).publish(issue_id)
+        if when is not None:
+            if when.tzinfo is not None:
+                when = when.astimezone(timezone.utc).replace(tzinfo=None)
+            if when > datetime.utcnow():
+                out = AdminIssueService(db).schedule(issue_id, when)
+            else:
+                out = AdminIssueService(db).publish(issue_id)
+        else:
+            out = AdminIssueService(db).publish(issue_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not out:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    return out
+
+
+@router.post("/{issue_id}/unschedule", response_model=IssueOut)
+def admin_unschedule_issue(
+    issue_id: str, db: Session = Depends(get_db)
+) -> IssueOut:
+    try:
+        out = AdminIssueService(db).clear_schedule(issue_id)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not out:

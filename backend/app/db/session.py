@@ -100,6 +100,10 @@ def _ensure_columnist_schema() -> None:
         )
         if "issues" in tables and "columnist_id" not in issue_cols:
             conn.execute(text("ALTER TABLE issues ADD COLUMN columnist_id VARCHAR(36)"))
+        if "issues" in tables and "scheduled_publish_at" not in issue_cols:
+            conn.execute(
+                text("ALTER TABLE issues ADD COLUMN scheduled_publish_at TIMESTAMP")
+            )
         if "columnists" in tables:
             col_names = {c["name"] for c in inspector.get_columns("columnists")}
             if "specialties" not in col_names:
@@ -357,6 +361,10 @@ def _ensure_sqlite_schema_patches() -> None:
             (
                 "push_body",
                 "ALTER TABLE issues ADD COLUMN push_body VARCHAR(160)",
+            ),
+            (
+                "scheduled_publish_at",
+                "ALTER TABLE issues ADD COLUMN scheduled_publish_at DATETIME",
             ),
         ):
             if issue_cols and col not in issue_cols:

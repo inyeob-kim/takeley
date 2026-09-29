@@ -445,6 +445,7 @@ def _to_issue_out(
         open_count=int(signal.open_count or 0),
         status=signal.status,
         published_at=published_at,
+        scheduled_publish_at=getattr(signal, "scheduled_publish_at", None),
         first_seen_at=signal.first_seen_at,
         updated_at=signal.updated_at,
         content_updated_at=getattr(signal, "content_updated_at", None),
@@ -968,18 +969,58 @@ class IssueService:
 def replace_participation_options(
     db: Session, signal: Signal, labels: list[str]
 ) -> None:
-    """Replace options for a signal (used at publish time)."""
-    for old in list(signal.participation_options or []):
+    """Replace or rename options for a signal.
+
+    If votes already point at options, update labels in place. Deleting those
+    rows would null ``participations.option_id`` and crash on flush.
+    """
+    cleaned: list[str] = []
+    for label in labels[:4]:
+        text = (label or "").strip()
+        if text:
+            cleaned.append(text[:200])
+
+    existing = sorted(
+        list(signal.participation_options or []),
+        key=lambda o: (o.display_order, o.created_at or _DATETIME_MIN),
+    )
+    option_ids = [o.id for o in existing]
+    has_votes = False
+    if option_ids:
+        has_votes = (
+            db.query(Participation.id)
+            .filter(Participation.option_id.in_(option_ids))
+            .first()
+            is not None
+        )
+
+    if has_votes:
+        if len(cleaned) < 2:
+            raise ValueError("participation_needs_two_options")
+        if len(cleaned) < len(existing):
+            raise ValueError("cannot_remove_options_with_votes")
+        for i, text in enumerate(cleaned):
+            if i < len(existing):
+                existing[i].label = text
+                existing[i].display_order = i
+            else:
+                db.add(
+                    ParticipationOption(
+                        signal_id=signal.id,
+                        label=text,
+                        display_order=i,
+                    )
+                )
+        return
+
+    for old in existing:
         db.delete(old)
     db.flush()
-    for i, label in enumerate(labels[:4]):
-        text = (label or "").strip()
-        if not text:
-            continue
+    for i, text in enumerate(cleaned):
         db.add(
             ParticipationOption(
                 signal_id=signal.id,
-                label=text[:200],
+                label=text,
                 display_order=i,
             )
         )

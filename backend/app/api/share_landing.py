@@ -282,7 +282,7 @@ def _teaser_html(
   </div>
 </section>
 """
-        return teaser, "앱으로 열기"
+        return teaser, "앱에서 생각 남기기"
 
     proof_html = f'<p class="teaser-proof">{esc(proof)}</p>' if proof else ""
     teaser = f"""
@@ -293,7 +293,7 @@ def _teaser_html(
   <p class="teaser-lock">앱에서 이어서 보고 의견을 남겨 보세요</p>
 </section>
 """
-    return teaser, "앱으로 열기"
+    return teaser, "앱에서 이어보기"
 
 
 @router.api_route("/i/{issue_id}", methods=["GET", "HEAD"], response_class=HTMLResponse)
@@ -798,10 +798,10 @@ def issue_share_landing(
       var shareUrl = {json.dumps(f"{share_origin}/i/{quote(issue_id, safe='')}")};
       var panel = document.getElementById("store-panel");
       var teaser = document.getElementById("teaser");
-      var timer = null;
       var myLabel = "";
       var pendingId = "";
       var voting = false;
+      var openingApp = false;
 
       function isIOS() {{
         return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -811,6 +811,7 @@ def issue_share_landing(
         return /Android/i.test(navigator.userAgent);
       }}
       function showStore() {{
+        // Reveal existing store links only; never navigate to the store.
         if (!panel) return;
         panel.hidden = false;
         panel.classList.add("is-open");
@@ -821,22 +822,24 @@ def issue_share_landing(
           if (p === "android" && !isAndroid() && iosStore) a.style.display = "none";
         }});
       }}
-      function openApp() {{
-        if (timer) clearTimeout(timer);
-        var start = Date.now();
-        timer = setTimeout(function () {{
-          if (document.visibilityState === "visible" && Date.now() - start >= 1400) {{
-            showStore();
-          }}
-        }}, 1600);
-        window.location.href = appUrl;
+      function tryOpenApp() {{
+        // Kakao in-app browser 404s if the page itself navigates to takeley://
+        var iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = appUrl;
+        document.body.appendChild(iframe);
+        setTimeout(function () {{
+          try {{ document.body.removeChild(iframe); }} catch (e) {{}}
+        }}, 1500);
       }}
-      document.addEventListener("visibilitychange", function () {{
-        if (document.visibilityState === "hidden" && timer) {{
-          clearTimeout(timer);
-          timer = null;
-        }}
-      }});
+      function openApp() {{
+        // App open + optional manual store path. No timed store redirect.
+        showStore();
+        if (openingApp) return;
+        openingApp = true;
+        tryOpenApp();
+        setTimeout(function () {{ openingApp = false; }}, 1500);
+      }}
       document.querySelectorAll(".js-open-app").forEach(function (el) {{
         el.addEventListener("click", openApp);
       }});
@@ -966,7 +969,13 @@ def issue_share_landing(
           var mode = btn.getAttribute("data-share-mode") || "issue_only";
           postEvent("share_clicked", mode);
           if (!navigator.share) return;
-          navigator.share({{ url: shareUrl }}).catch(function (err) {{
+          var shareOpts = myLabel
+            ? {{
+                text: "나는 ‘" + myLabel + "’에 한 표 했어. 너는 어떻게 생각해?",
+                url: shareUrl
+              }}
+            : {{ url: shareUrl }};
+          navigator.share(shareOpts).catch(function (err) {{
             if (err && err.name === "AbortError") postEvent("share_cancelled", mode);
           }});
         }});

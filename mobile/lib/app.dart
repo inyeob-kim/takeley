@@ -164,8 +164,12 @@ class _TakeleyAppState extends State<TakeleyApp> {
                     settingsApi: _settingsApi,
                     pipelineApi: _pipelineApi,
                     session: widget.session,
-                    onIssueOpen: (id) =>
-                        _openIssue(context, id, source: 'home_body'),
+                    onIssueOpen: (id, {scrollToTake = false}) => _openIssue(
+                      context,
+                      id,
+                      source: 'home_body',
+                      scrollToTake: scrollToTake,
+                    ),
                     onIssueTake: (id) => _openIssue(
                       context,
                       id,

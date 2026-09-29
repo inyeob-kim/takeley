@@ -9,6 +9,7 @@ import {
   rejectIssue,
   resolveMediaUrl,
   unpublishIssue,
+  unscheduleIssue,
   updateIssue,
   uploadIssueImage,
   type AdminColumnist,
@@ -69,6 +70,7 @@ type EditForm = {
 
 type ModalState =
   | { kind: "publish" }
+  | { kind: "schedule" }
   | { kind: "reject" }
   | { kind: "unpublish" }
   | { kind: "discard-select"; nextId: string }
@@ -100,13 +102,64 @@ function toForm(issue: AdminIssue): EditForm {
   };
 }
 
-function formatWhen(iso: string | null): string {
+function parseApiUtc(iso: string): Date {
+  const s = iso.trim();
+  // Backend stores naive UTC; ISO without offset must not be read as local time.
+  if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  return new Date(`${s}Z`);
+}
+
+function formatWhen(iso: string | null | undefined): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("ko-KR");
+    return parseApiUtc(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
   } catch {
     return iso;
   }
+}
+
+function formatRemaining(untilIso: string, nowMs: number): string {
+  const ms = parseApiUtc(untilIso).getTime() - nowMs;
+  if (ms <= 0) return "곧 배포됩니다";
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  if (days > 0) return `${days}일 ${hours}시간 ${mins}분 ${secs}초 남음`;
+  if (hours > 0) return `${hours}시간 ${mins}분 ${secs}초 남음`;
+  if (mins > 0) return `${mins}분 ${secs}초 남음`;
+  return `${secs}초 남음`;
+}
+
+/** datetime-local value in Asia/Seoul for the given Date (default: now+5m). */
+function kstDateTimeLocalValue(from: Date = new Date(Date.now() + 5 * 60_000)): string {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    fmt.formatToParts(from).map((p) => [p.type, p.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** Interpret datetime-local as KST and return UTC ISO string. */
+function kstLocalInputToUtcIso(local: string): string {
+  const trimmed = local.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed)) {
+    throw new Error("예약 시각을 확인해 주세요.");
+  }
+  const d = new Date(`${trimmed}:00+09:00`);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error("예약 시각을 확인해 주세요.");
+  }
+  return d.toISOString();
 }
 
 function lines(text: string): string[] {
@@ -135,7 +188,16 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [scheduleLocal, setScheduleLocal] = useState(() => kstDateTimeLocalValue());
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [columnists, setColumnists] = useState<AdminColumnist[]>([]);
+
+  useEffect(() => {
+    if (!detail?.scheduled_publish_at || detail.status !== "draft") return;
+    setNowMs(Date.now());
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [detail?.id, detail?.scheduled_publish_at, detail?.status]);
 
   function applyDetail(issue: AdminIssue | null) {
     setDetail(issue);
@@ -358,7 +420,7 @@ export default function App() {
     }
   }
 
-  async function openPublishModal() {
+  async function openPublishModal(mode: "publish" | "schedule") {
     if (!detail || busy) return;
     if (dirty) {
       setError("배포 전에 먼저 저장하세요.");
@@ -369,7 +431,10 @@ export default function App() {
     try {
       const fresh = await fetchIssue(key, detail.id);
       applyDetail(fresh);
-      setModal({ kind: "publish" });
+      if (mode === "schedule") {
+        setScheduleLocal(kstDateTimeLocalValue());
+      }
+      setModal({ kind: mode });
     } catch (err) {
       setError(err instanceof Error ? err.message : "배포 미리보기 불러오기 실패");
     } finally {
@@ -437,7 +502,7 @@ export default function App() {
     }
   }
 
-  async function confirmPublish() {
+  async function confirmPublishNow() {
     if (!detail || busy) return;
     const publishedId = detail.id;
     setBusy(true);
@@ -452,6 +517,59 @@ export default function App() {
       await refresh("published");
     } catch (err) {
       setError(err instanceof Error ? err.message : "배포 실패");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmSchedulePublish() {
+    if (!detail || busy) return;
+    const publishedId = detail.id;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const scheduledAt = kstLocalInputToUtcIso(scheduleLocal);
+      if (new Date(scheduledAt).getTime() <= Date.now()) {
+        throw new Error("예약 시각은 현재보다 이후여야 합니다.");
+      }
+      await publishIssue(key, publishedId, { scheduled_at: scheduledAt });
+      setModal(null);
+      setNotice(
+        `예약했습니다. ${formatWhen(scheduledAt)}에 앱에 공개되고 푸시가 발송됩니다.`,
+      );
+      setSelectedId(publishedId);
+      setStatus("draft");
+      await refresh("draft", key, publishedId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "예약 실패");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onUnschedule() {
+    if (!detail || busy) return;
+    if (dirty) {
+      setError("예약 취소 전에 먼저 저장하거나 변경을 버리세요.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const saved = await unscheduleIssue(key, detail.id);
+      applyDetail(saved);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === saved.id
+            ? { ...item, scheduled_publish_at: saved.scheduled_publish_at ?? null }
+            : item,
+        ),
+      );
+      setNotice("예약을 취소했습니다.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "예약 취소 실패");
     } finally {
       setBusy(false);
     }
@@ -1060,6 +1178,7 @@ export default function App() {
               </div>
 
               <div className="actions">
+                <div className="actions__buttons">
                 {canEdit ? (
                   <button
                     type="button"
@@ -1076,10 +1195,29 @@ export default function App() {
                       type="button"
                       className="primary"
                       disabled={busy || dirty}
-                      onClick={() => void openPublishModal()}
+                      onClick={() => void openPublishModal("publish")}
                     >
-                      배포
+                      즉시 배포
                     </button>
+                    {!detail.scheduled_publish_at ? (
+                      <button
+                        type="button"
+                        className="ghost"
+                        disabled={busy || dirty}
+                        onClick={() => void openPublishModal("schedule")}
+                      >
+                        예약 배포
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="ghost"
+                        disabled={busy || dirty}
+                        onClick={() => void onUnschedule()}
+                      >
+                        예약 취소
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="danger"
@@ -1110,6 +1248,17 @@ export default function App() {
                     </button>
                   </>
                 ) : null}
+                </div>
+                {detail.status === "draft" && detail.scheduled_publish_at ? (
+                  <div className="actions__schedule" aria-live="polite">
+                    <p className="actions__schedule-when">
+                      예약 {formatWhen(detail.scheduled_publish_at)}
+                    </p>
+                    <p className="actions__schedule-remain">
+                      {formatRemaining(detail.scheduled_publish_at, nowMs)}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </>
           )}
@@ -1119,13 +1268,63 @@ export default function App() {
       <ConfirmModal
         open={modal?.kind === "publish"}
         title="정말 배포할까요?"
-        body={`「${issueTitle}」를 지금 배포하면 앱 홈에 공개되고, 알림을 켠 사용자에게 아래 푸시가 발송됩니다. 내용을 한 번 더 확인해 주세요.`}
-        confirmLabel="배포하기"
+        body={
+          detail?.scheduled_publish_at
+            ? `「${issueTitle}」에 예약이 걸려 있습니다. 지금 즉시 배포하면 예약을 취소하고 앱 홈에 바로 공개되며, 알림을 켠 사용자에게 푸시가 발송됩니다.`
+            : `「${issueTitle}」를 지금 배포하면 앱 홈에 공개되고, 알림을 켠 사용자에게 아래 푸시가 발송됩니다. 내용을 한 번 더 확인해 주세요.`
+        }
+        confirmLabel="즉시 배포"
         tone="danger"
         busy={busy}
         onCancel={closeModal}
-        onConfirm={() => void confirmPublish()}
+        onConfirm={() => void confirmPublishNow()}
       >
+        <div className="push-preview" aria-label="발송될 알림 미리보기">
+          <p className="push-preview__label">
+            알림 미리보기
+            {detail?.push_kind ? (
+              <span className="push-preview__kind">
+                {detail.push_kind === "participation"
+                  ? "참여"
+                  : detail.push_kind === "trend"
+                    ? "급상승/트렌딩"
+                    : "일반"}
+                {detail.push_title || detail.push_body ? " · 직접 입력" : " · 자동"}
+              </span>
+            ) : null}
+          </p>
+          <div className="push-preview__card">
+            <p className="push-preview__title">
+              {detail?.push_preview_title || issueTitle}
+            </p>
+            <p className="push-preview__body">
+              {detail?.push_preview_body || "새롭게 나온 내용을 확인해보세요."}
+            </p>
+          </div>
+        </div>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={modal?.kind === "schedule"}
+        title="예약 배포할까요?"
+        body={`「${issueTitle}」를 예약한 시각에 앱 홈에 공개하고, 그때 알림을 켠 사용자에게 푸시가 발송됩니다.`}
+        confirmLabel="예약하기"
+        tone="danger"
+        busy={busy}
+        onCancel={closeModal}
+        onConfirm={() => void confirmSchedulePublish()}
+      >
+        <label style={{ display: "block", marginBottom: "0.75rem" }}>
+          <span className="meta">예약 시각 (한국 시간)</span>
+          <input
+            type="datetime-local"
+            value={scheduleLocal}
+            disabled={busy}
+            min={kstDateTimeLocalValue(new Date(Date.now() + 60_000))}
+            onChange={(e) => setScheduleLocal(e.target.value)}
+            style={{ display: "block", marginTop: "0.25rem", width: "100%" }}
+          />
+        </label>
         <div className="push-preview" aria-label="발송될 알림 미리보기">
           <p className="push-preview__label">
             알림 미리보기

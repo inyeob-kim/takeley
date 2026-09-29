@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
   final SettingsApi settingsApi;
   final PipelineApi pipelineApi;
   final DeviceSession session;
-  final ValueChanged<String> onIssueOpen;
+  final void Function(String id, {bool scrollToTake}) onIssueOpen;
   final ValueChanged<String>? onIssueTake;
 
   @override
@@ -235,7 +235,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 final issue = _items[index];
                 return IssueCard(
                   issue: issue,
-                  onOpen: (i) => widget.onIssueOpen(i.id),
+                  onOpen: (i) {
+                    final canVote = i.participationSuitable &&
+                        (i.participationQuestion?.isNotEmpty ?? false);
+                    widget.onIssueOpen(i.id, scrollToTake: canVote);
+                  },
                   onCta: (i) {
                     final canVote = i.participationSuitable &&
                         (i.participationQuestion?.isNotEmpty ?? false);

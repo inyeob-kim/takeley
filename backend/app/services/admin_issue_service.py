@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -318,6 +318,7 @@ class AdminIssueService:
         row.status = SignalStatus.PUBLISHED.value
         row.lifecycle = "PUBLISHED"
         row.published_at = now
+        row.scheduled_publish_at = None
         row.updated_at = now
         if not getattr(row, "content_updated_at", None):
             touch_content_updated(row, now)
@@ -343,6 +344,75 @@ class AdminIssueService:
             self.db, row, include_sources=True, expose_sources=True
         )
 
+    def schedule(self, issue_id: str, when: datetime) -> IssueOut | None:
+        """Keep draft and set scheduled_publish_at (UTC naive). No push yet."""
+        row = self.db.query(Signal).filter(Signal.id == issue_id).first()
+        if not row:
+            return None
+        if row.status == SignalStatus.REJECTED.value:
+            raise ValueError("rejected_issue_cannot_publish")
+        if row.status == SignalStatus.PUBLISHED.value:
+            raise ValueError("already_published_cannot_schedule")
+
+        now = datetime.utcnow()
+        if when.tzinfo is not None:
+            when = when.astimezone(timezone.utc).replace(tzinfo=None)
+        if when <= now:
+            return self.publish(issue_id)
+
+        row.scheduled_publish_at = when
+        row.updated_at = now
+        self.db.commit()
+        self.db.refresh(row)
+        return _admin_issue_out(
+            self.db, row, include_sources=True, expose_sources=True
+        )
+
+    def clear_schedule(self, issue_id: str) -> IssueOut | None:
+        row = self.db.query(Signal).filter(Signal.id == issue_id).first()
+        if not row:
+            return None
+        if row.status != SignalStatus.DRAFT.value:
+            raise ValueError("only_draft_can_unschedule")
+        row.scheduled_publish_at = None
+        row.updated_at = datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(row)
+        return _admin_issue_out(
+            self.db, row, include_sources=True, expose_sources=True
+        )
+
+    def publish_due(self, *, now: datetime | None = None, limit: int = 50) -> int:
+        """Publish drafts whose scheduled_publish_at has passed. Returns count."""
+        now = now or datetime.utcnow()
+        limit = max(1, min(int(limit), 100))
+        rows = (
+            self.db.query(Signal)
+            .filter(
+                Signal.status == SignalStatus.DRAFT.value,
+                Signal.scheduled_publish_at.isnot(None),
+                Signal.scheduled_publish_at <= now,
+            )
+            .order_by(Signal.scheduled_publish_at.asc())
+            .limit(limit)
+            .all()
+        )
+        published = 0
+        for row in rows:
+            try:
+                out = self.publish(row.id)
+                if out is not None and out.status == SignalStatus.PUBLISHED.value:
+                    published += 1
+            except Exception:
+                logger.exception("scheduled publish failed issue=%s", row.id)
+                try:
+                    self.db.rollback()
+                except Exception:
+                    logger.exception(
+                        "scheduled publish rollback failed issue=%s", row.id
+                    )
+        return published
+
     def reject(self, issue_id: str, *, reason: str | None = None) -> IssueOut | None:
         """Reject draft, or pull a published Issue off the consumer feed."""
         row = self.db.query(Signal).filter(Signal.id == issue_id).first()
@@ -357,6 +427,7 @@ class AdminIssueService:
         row.status = SignalStatus.REJECTED.value
         row.lifecycle = "ARCHIVED"
         row.published_at = None
+        row.scheduled_publish_at = None
         row.updated_at = now
         _ = (reason or "").strip()
         self.db.commit()
@@ -377,6 +448,7 @@ class AdminIssueService:
         row.status = SignalStatus.DRAFT.value
         row.lifecycle = "CANDIDATE"
         row.published_at = None
+        row.scheduled_publish_at = None
         row.updated_at = now
         self.db.commit()
         self.db.refresh(row)

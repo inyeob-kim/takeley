@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:takeley/utils/share_issue.dart';
 
@@ -13,8 +15,10 @@ void main() {
     expect(payload.shareAsUri, isTrue);
     expect(payload.text, '이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.');
     expect(payload.text.contains('http'), isFalse);
+    expect(payload.text.contains(payload.url), isFalse);
     expect(payload.url, contains('/i/issue-1'));
     expect(payload.url.contains('sid='), isFalse);
+    expect(payload.url.contains('?'), isFalse);
   });
 
   test('with-take share is a clean landing URI', () {
@@ -29,7 +33,17 @@ void main() {
     expect(payload.intent, ShareIntent.withTake);
     expect(payload.shareAsUri, isTrue);
     expect(payload.text.contains('http'), isFalse);
+    expect(payload.text.contains(payload.url), isFalse);
     expect(payload.url.contains('take='), isFalse);
     expect(payload.url.contains('?'), isFalse);
+  });
+
+  test('_sendShare does not pass text and uri together', () {
+    final src = File('lib/screens/issue_detail_screen.dart').readAsStringSync();
+    expect(src.contains(r"${payload.text}\n${payload.url}"), isFalse);
+    expect(src.contains("MethodChannel('takeley/share')"), isTrue);
+    expect(src.contains("'text': payload.text"), isTrue);
+    expect(src.contains("'url': payload.url"), isTrue);
+    expect(src.contains('uri: Uri.parse(payload.url)'), isFalse);
   });
 }

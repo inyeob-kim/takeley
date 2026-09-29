@@ -867,10 +867,40 @@ button {
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
   margin-top: 26px;
   padding-top: 18px;
   border-top: 1px solid var(--border);
+}
+
+.actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.actions__schedule {
+  margin-left: auto;
+  text-align: right;
+  min-width: 12rem;
+}
+
+.actions__schedule-when {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--fg);
+}
+
+.actions__schedule-remain {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, #2d5be3);
+  font-weight: 700;
 }
 
 .actions button:disabled {
@@ -1426,6 +1456,10 @@ button {
   position: sticky;
   bottom: 0;
   z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
   margin-top: 28px;
   padding: 16px 0 6px;

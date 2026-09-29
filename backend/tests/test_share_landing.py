@@ -102,7 +102,25 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert ">0%<" not in teaser_block
     assert ">50%<" not in teaser_block
     assert "친구에게 보내기" in body
-    assert "앱으로 열기" in body
+    assert "한 표 했어. 너는 어떻게 생각해?" in body
+    assert "url: shareUrl" in body
+    assert '"\\n" + shareUrl' not in body
+    assert "앱에서 생각 남기기" in body
+    assert "앱으로 열기" not in body
+    assert "앱이 없다면 설치해 주세요" in body
+    assert "tryOpenApp" in body
+    assert "openApp" in body
+    assert "openingApp" in body
+    assert "showStore" in body
+    assert "showStore();" in body
+    assert "goStore" not in body
+    assert "cancelStoreFallback" not in body
+    assert "1200" not in body
+    assert "visibilitychange" not in body
+    assert "pagehide" not in body
+    assert 'addEventListener("blur"' not in body
+    assert "store_click" in body
+    assert 'id="store-panel"' in body
     assert "고르면 결과가 열려요" in body
     assert "이 이슈, 어떻게 생각해?" not in body
     assert "결과는 앱에서 확인할 수 있어요" not in body
@@ -116,6 +134,9 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "http-equiv=\"refresh\"" not in body.lower()
     assert "location.replace" not in body
     assert "play.google.com" in body
+    assert "apps.apple.com" in body
+    assert 'data-platform="android"' in body
+    assert 'data-platform="ios"' in body
     assert 'class="cover"' not in body
     assert "og-default.png" in body
     assert "나는 ‘더 간다’에 한 표" not in body

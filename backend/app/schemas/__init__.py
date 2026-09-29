@@ -284,6 +284,7 @@ class IssueOut(BaseModel):
     open_count: int = 0
     status: str = "published"
     published_at: Optional[datetime] = None
+    scheduled_publish_at: Optional[datetime] = None
     first_seen_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     content_updated_at: Optional[datetime] = None

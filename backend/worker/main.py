@@ -18,6 +18,7 @@ from app.core.usage import bind_usage_db, log_rollup, reset_usage_db
 from app.db.session import SessionLocal, init_db
 from worker.jobs.ingest import run_ingest
 from worker.jobs.process_signals import run_process_signals
+from worker.jobs.publish_scheduled import run_publish_scheduled
 from worker.jobs.send_push import run_pending_push
 from worker.scheduler import JobScheduler
 
@@ -151,6 +152,21 @@ def run_heavy_cycle_body(db) -> dict:
                 refreshed,
                 time.monotonic() - t,
             )
+
+    # Scheduled admin publishes before push so enqueue lands in this cycle.
+    t = time.monotonic()
+    sched_result, sched_err = run_isolated_stage(
+        "scheduled_publish", lambda: run_publish_scheduled(db)
+    )
+    if sched_err is not None:
+        stages["scheduled_publish"] = "error"
+    else:
+        stages["scheduled_publish"] = "ok"
+        logger.info(
+            "scheduled_publish summary result=%s elapsed_s=%.1f",
+            sched_result,
+            time.monotonic() - t,
+        )
 
     if not controls.push_enabled:
         stages["push"] = "disabled"

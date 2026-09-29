@@ -26,6 +26,7 @@ export type AdminIssue = {
   importance: number;
   first_seen_at: string | null;
   published_at: string | null;
+  scheduled_publish_at?: string | null;
   participation_suitable: boolean;
   participation_question: string | null;
   show_sources?: boolean;
@@ -209,11 +210,27 @@ export async function uploadColumnMedia(
   return (await response.json()) as { url: string };
 }
 
-export function publishIssue(key: string, id: string): Promise<AdminIssue> {
+export function publishIssue(
+  key: string,
+  id: string,
+  opts?: { scheduled_at?: string | null },
+): Promise<AdminIssue> {
+  const body: { scheduled_at?: string | null } = {};
+  if (opts && "scheduled_at" in opts) {
+    body.scheduled_at = opts.scheduled_at ?? null;
+  }
   return adminFetch(`/api/v1/admin/issues/${encodeURIComponent(id)}/publish`, key, {
     method: "POST",
-    body: "{}",
+    body: JSON.stringify(body),
   });
+}
+
+export function unscheduleIssue(key: string, id: string): Promise<AdminIssue> {
+  return adminFetch(
+    `/api/v1/admin/issues/${encodeURIComponent(id)}/unschedule`,
+    key,
+    { method: "POST", body: "{}" },
+  );
 }
 
 export function unpublishIssue(key: string, id: string): Promise<AdminIssue> {

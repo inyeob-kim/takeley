@@ -103,6 +103,9 @@ class Issue(Base):
     """User-facing Issue card store (physical table renamed from signals)."""
 
     __tablename__ = "issues"
+    __table_args__ = (
+        Index("idx_issues_status_scheduled_publish", "status", "scheduled_publish_at"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     event_id: Mapped[Optional[str]] = mapped_column(
@@ -171,6 +174,10 @@ class Issue(Base):
     first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     # Earliest source published_at (what the UI should show as "N시간 전").
     published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, index=True
+    )
+    # Admin scheduled publish (UTC). status stays draft until worker/publish fires.
+    scheduled_publish_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
