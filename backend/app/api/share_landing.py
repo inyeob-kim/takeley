@@ -996,6 +996,12 @@ def issue_share_landing(
       }}
       ensureUser().then(function (userId) {{
         if (!userId) return;
+        // Count landing visit as an issue open (session-deduped; avoids refresh spam).
+        var openKey = "landing_open:" + issueId;
+        if (!sessionStorage.getItem(openKey)) {{
+          sessionStorage.setItem(openKey, "1");
+          postEvent("open", "share");
+        }}
         if (teaser) {{
           var seenKey = "take_panel_seen:" + issueId;
           if (!sessionStorage.getItem(seenKey)) {{

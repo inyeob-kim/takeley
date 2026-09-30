@@ -89,6 +89,8 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert "선택한 뒤에 다른 사람 생각을 볼 수 있어요." in body
     assert "이걸로 남기고 결과 보기" in body
     assert "take_panel_seen" in body
+    assert 'postEvent("open"' in body or "postEvent(\"open\"" in body or 'landing_open:' in body
+    assert "landing_open:" in body
     assert "take_option_pending" in body
     assert "take_confirm_tapped" in body
     assert "column_open" in body
