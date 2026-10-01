@@ -115,6 +115,32 @@ def test_home_lists_issue_and_column():
         app.dependency_overrides.clear()
 
 
+def test_columns_exclude_news_body():
+    client, _issue_id = _client()
+    try:
+        session = next(app.dependency_overrides[get_db]())
+        session.add(
+            Signal(
+                title="속보성 뉴스 카드 제목입니다",
+                summary="뉴스 요약입니다.",
+                column_body="뉴스 본문이 길어도 칼럼 목록에는 나오면 안 됩니다. " * 5,
+                content_kind="NEWS",
+                status="published",
+                published_at=datetime.utcnow(),
+                category="스포츠",
+            )
+        )
+        session.commit()
+        columns = client.get("/columns")
+        assert columns.status_code == 200
+        assert "엔비디아 수요 이슈" in columns.text
+        assert "속보성 뉴스 카드 제목입니다" not in columns.text
+        home = client.get("/")
+        assert "속보성 뉴스 카드 제목입니다" not in home.text
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_issue_filter_and_take_page_keep_share_path():
     client, issue_id = _client()
     try:

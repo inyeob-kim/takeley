@@ -6,6 +6,6 @@ cd "$ROOT"
 flutter build ipa \
   --dart-define=API_BASE_URL=https://api.takeley.co \
   --dart-define=SHARE_ORIGIN=https://takeley.co \
-  --build-name=1.0.2 \
-  --build-number=2
+  --build-name=1.0.3 \
+  --build-number=3
 echo "IPA: $ROOT/build/ios/ipa/takeley.ipa"

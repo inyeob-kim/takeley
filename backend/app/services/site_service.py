@@ -77,10 +77,12 @@ class SiteService:
         return ordered + extra
 
     def columns(self, *, limit: int = 24) -> list[ColumnCard]:
+        # NEWS also stores body in column_body — keep it off the editorial 칼럼 list.
         rows = (
             self.db.query(Issue, Columnist)
             .outerjoin(Columnist, Columnist.id == Issue.columnist_id)
             .filter(Issue.status == "published")
+            .filter(Issue.content_kind == "ISSUE")
             .filter(func.length(func.trim(Issue.column_body)) > 80)
             .order_by(Issue.published_at.desc())
             .limit(max(1, min(limit, 40)))
