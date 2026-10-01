@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/device_session.dart';
 import '../api/issues_api.dart';
@@ -44,12 +45,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Issue> _issues = [];
   List<Issue> _news = [];
+  ClosureItem? _closure;
   bool _loading = true;
   bool _collecting = false;
   String? _error;
   String? _displayName;
   final ScrollController _scroll = ScrollController();
   ValueNotifier<int>? _homeRetap;
+  bool _recapChecked = false;
 
   @override
   void initState() {
@@ -150,6 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
         unawaited(widget.issuesApi
             .recordEvent(id: issue.id, event: 'impression', userId: userId));
       }
+      unawaited(_loadClosure(userId));
+      unawaited(_maybeShowRecap(userId));
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -157,6 +162,127 @@ class _HomeScreenState extends State<HomeScreen> {
         _error = 'TAKE를 불러오지 못했어요.\n잠시 후 다시 시도해 주세요.';
       });
     }
+  }
+
+  Future<void> _loadClosure(String? userId) async {
+    try {
+      final items = await widget.issuesApi.fetchClosures(userId: userId, limit: 1);
+      if (!mounted) return;
+      setState(() => _closure = items.isEmpty ? null : items.first);
+    } catch (_) {}
+  }
+
+  Future<void> _maybeShowRecap(String? userId) async {
+    if (_recapChecked) return;
+    _recapChecked = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today =
+          '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}';
+      final key = 'recap_shown_ymd';
+      if (prefs.getString(key) == today) return;
+      final recap = await widget.issuesApi.fetchRecapToday(userId: userId);
+      if (!mounted || recap.items.isEmpty) return;
+      await prefs.setString(key, today);
+      if (!mounted) return;
+
+      String streakLine(int days) {
+        if (days <= 1) return '';
+        if (days == 2) return '이틀째예요';
+        if (days == 3) return '사흘째예요';
+        return '$days일째예요';
+      }
+
+      final softStreak = streakLine(recap.streakDays);
+
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: TakeleyColors.canvas,
+        showDragHandle: true,
+        useSafeArea: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '오늘, 이렇게 봤어요',
+                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  softStreak.isEmpty
+                      ? '나중에 다시 볼 오늘의 판단이에요'
+                      : '나중에 다시 볼 오늘의 판단이에요. $softStreak',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: TakeleyColors.secondaryLabel,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                ...recap.items.take(5).map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              e.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                height: 1.35,
+                                fontWeight: FontWeight.w600,
+                                color: TakeleyColors.fg,
+                              ),
+                            ),
+                            if (e.optionLabel.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                e.optionLabel,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  height: 1.35,
+                                  color: TakeleyColors.muted,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      if (recap.items.isNotEmpty) {
+                        unawaited(widget.issuesApi.recordEvent(
+                          id: recap.items.first.issueId,
+                          event: 'recap_viewed',
+                          userId: userId,
+                        ));
+                      }
+                    },
+                    child: const Text('닫기'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (_) {}
   }
 
   String get _title {
@@ -237,6 +363,55 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else ...[
+            if (_closure != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: InkWell(
+                    onTap: () => widget.onIssueOpen(_closure!.issueId),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: TakeleyColors.soft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '정리된 이슈',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: TakeleyColors.accent,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _closure!.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (_closure!.optionLabel.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '내 입장 · ${_closure!.optionLabel}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: TakeleyColors.muted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ..._sectionSlivers(
               title: '오늘의 TAKE',
               moreLabel: 'TAKE 더보기 →',

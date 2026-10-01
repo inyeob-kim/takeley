@@ -246,44 +246,177 @@ Return ONLY valid JSON:
 """.strip()
 
 
-NEWS_CARD_PROMPT_VERSION = "news_card_v3"
+NEWS_CARD_PROMPT_VERSION = "news_card_v5"
 
 NEWS_CARD_PROMPT = """
-Rewrite ONE source into a TAKELEY NEWS briefing (NOT a wire rewrite, NOT an Issue debate).
+Rewrite ONE source into a TAKELEY NEWS briefing.
 
 Audience: Korean adults. Source may be English → friendly Korean (~해요 / ~이에요).
-Tagline spirit: Take a look. (Understand fast.) Leave Take a side to Issues — no vote CTA.
 
-Tone (match Issue column voice, minus controversy manufacturing):
-- Calm, conversational, intelligent — Finimize-like story briefing
-- curiosity > hype; tension > outrage; clarity > bulletin style
-- No emoji. No invented facts, quotes, numbers, or motives.
-- Do NOT start by repeating the title, or with “~가 발표했습니다 / ~할 예정입니다” stacks
-- Do NOT sound like a news-agency wire dump
+No emoji. No invented facts, quotes, numbers, or motives.
 
-Structure for body (adapt; do not force every beat):
-Hook (interesting tension / surprise from the facts)
-→ What happened (only needed context)
-→ Why it matters now (stakes, without fake sides)
-→ Numbers / concrete details worth remembering
-→ Optional: what to watch next (no unsupported prediction)
-Do NOT end with empty “앞으로 지켜봐야 합니다.”
+══════════════════════════════════════
+TAKELEY NEWS PHILOSOPHY (read first)
+══════════════════════════════════════
+NEWS는 독자가 사건과 정보를 빠르게 이해하도록 돕는 콘텐츠다.
 
-Formatting for body (markdown the app can render):
-- Use 1–3 short section headings as lines starting with "## " (Korean, ≤20 chars)
-- Bold the most important numbers, names, or stakes with **like this**
-- Separate paragraphs with a blank line
-- Do NOT use bullet lists inside body (put bullets only in key_points)
-- Do NOT paste English source text
+NEWS는 독자에게 의견을 요구하지 않는다.
+NEWS는 독자를 설득하지 않는다.
+NEWS는 AI가 결론을 대신 내리지 않는다.
 
-Return:
-- title: hooky but honest Korean headline (≤60 chars). Prefer tension/meaning over wire style.
-- summary: 1–3 short Korean sentences for the feed card (plain text, no markdown)
-- body: longer Korean briefing ~500–1400 chars with ## headings and **bold** as above
-- key_points: 2–3 short plain-text Korean bullets (no markdown)
-- category: exactly ONE of 정치|경제|금융|기술|AI|사회|국제|문화|스포츠|엔터 (or null)
+판단과 의견은 ISSUE에서,
+개인의 생각 기록은 TAKE에서 담당한다.
 
-Do NOT write: why_it_matters, participation, push copy, partisan takes, or fake controversy.
+Do NOT write takeley_line, opinion CTAs, vote prompts, or Issue-style questions.
+Do NOT turn this into a column that teaches a moral or closes with “what you should think.”
+
+══════════════════════════════════════
+ANGLE (internal only — do NOT put in JSON)
+══════════════════════════════════════
+Pick exactly ONE angle that best fits the source:
+
+- number_lead: one concrete number or measured change drives the piece
+- what_changed: what is different vs before / vs expectation
+- who_feels_it: who is affected and how — ONLY if the source states the affected party and basis
+- misconception: what a headline might make people misread — ONLY if that misread risk is real in the source
+
+Priority: accuracy > fit > diversity.
+- Never force an unsuitable angle for “variety.”
+- Do not rotate angles mechanically.
+- If several angles fit equally well, prefer one that differs from a same-structure habit — but never at the cost of accuracy.
+- Never stack multiple angles in one card.
+- Never use the fixed order “hook → what happened → why it matters → numbers → what to watch” on every card.
+
+══════════════════════════════════════
+TITLE
+══════════════════════════════════════
+Purpose: make the reader instantly understand what this news is about.
+- Keep the source’s core fact; tighten for clarity (≤60 Korean chars when possible).
+- Real tension or change that exists in the facts may appear naturally.
+Forbidden habits: exaggeration, fearmongering, emotional overkill, baseless outlook, clickbait, titles that hide the actual news to force a tap.
+
+══════════════════════════════════════
+SUMMARY (feed — most important)
+══════════════════════════════════════
+Purpose: why this is worth opening now — not a rewrite of the title.
+1–2 short Korean sentences. Plain text. No markdown.
+May use: new change, key number, difference vs before, unexpected result, who is affected (if sourced), essential context.
+Do NOT restate the title with different wording.
+Do NOT open with empty “~가 발표했습니다 / ~할 예정입니다” stacks that only echo the title.
+
+══════════════════════════════════════
+CURIOSITY ≠ CLICKBAIT
+══════════════════════════════════════
+Curiosity from the importance of the information is good.
+Hiding information to bait clicks is bad.
+Do not habitually use:
+충격, 결국, 진짜 이유, 알고 보니, 무슨 일이?, 대체 왜?, 역대급, 발칵, 초비상
+— unless the wording is truly required by the facts.
+Ban empty dramatic use, not the dictionary.
+
+══════════════════════════════════════
+FACT / INTERPRETATION / OUTLOOK
+══════════════════════════════════════
+- Fact: verifiable from the source.
+- Interpretation: expert / industry / market reading — name the subject when possible.
+- Outlook: possibility or expectation — never as a completed fact.
+Forbidden: outlook as fact; one expert as universal truth; market reaction as a settled outcome; possibility as something that already happened.
+Good: “일부 전문가들은 이를 ○○의 신호로 해석합니다.”
+Bad: “이는 ○○의 신호입니다.” when that is only an interpretation.
+
+══════════════════════════════════════
+who_feels_it — STRICT
+══════════════════════════════════════
+Use only when the source identifies who is affected and on what basis.
+Do NOT invent or inflate impact on:
+all consumers, whole industries, the whole economy, “the market,” stock prices, real estate, loans, or “future society”
+without source support.
+
+══════════════════════════════════════
+NEWS IS NOT A COLUMN
+══════════════════════════════════════
+Do not habitually use:
+결국 중요한 것은… / 이제 우리가 주목해야 할 것은… / 생각해볼 필요가 있습니다. /
+여러분의 생각은? / 당신이라면? / 찬성하시나요? / 반대하시나요?
+Do not end with a question to the reader.
+NEWS may simply deliver information and stop.
+No forced lesson or closing judgment.
+
+══════════════════════════════════════
+BODY FORMATTING
+══════════════════════════════════════
+- ~350–900 Korean characters
+- 2–4 short paragraphs
+- blank line between paragraphs
+- At most ONE "## " heading
+- Often zero is better
+- Bold sparingly: at most 1–2 phrases total
+- No bullet lists in body
+- No English paste
+- No empty closer “앞으로 지켜봐야 합니다.”
+
+══════════════════════════════════════
+KEY_POINTS
+══════════════════════════════════════
+2–3 short plain-text Korean bullets.
+Concrete facts, not abstract vibes.
+Prefer: “국채 10년물 금리가 4%를 넘어섰습니다.”
+over: “시장의 변화가 주목됩니다.”
+Do not merely rephrase the body paragraphs.
+
+══════════════════════════════════════
+CATEGORY
+══════════════════════════════════════
+Exactly ONE of:
+정치|경제|금융|기술|AI|사회|국제|문화|스포츠|엔터
+or null.
+Match the actual story; do not force a category.
+
+══════════════════════════════════════
+FEW-SHOT
+══════════════════════════════════════
+The following examples demonstrate structure and failure avoidance.
+Do NOT copy their facts into unrelated sources.
+
+GOOD 1 — number_lead
+title: “미국 10년물 국채 수익률, 24년 만에 5.3% 돌파”
+summary: “장기 금리 기준점으로 쓰이는 10년물 수익률이 이전 고점을 넘어섰습니다. 이번 움직임의 배경과 금리 수준의 변화가 핵심입니다.”
+body: Use the source-supported rate, timeframe and reason. Keep facts first. Attribute market interpretation. Do not invent spillover effects.
+key_points: Use concrete rate and timeframe facts.
+
+GOOD 2 — what_changed
+title: “A 제품 가격, 3개월 만에 이전 수준으로 회복”
+summary: “가격은 이전 수준을 회복했지만 판매량은 같은 속도로 돌아오지 않았습니다. 두 지표의 차이가 이번 변화의 핵심입니다.”
+body: Explain the source-supported contrast between the two measures. Do not invent reasons or broader consequences.
+key_points: Use concrete before/after facts.
+
+BAD 1 — title ≈ summary
+title: “삼성전자, AI칩 생산 확대”
+summary: “삼성전자가 AI칩 생산을 확대한다고 밝혔습니다.”
+This is a failure because the summary merely repeats the title.
+
+BAD 2 — clickbait + unsourced impact + opinion CTA
+title: “충격… 금리가 움직였다, 진짜 이유는?”
+summary: “결국 모든 소비자의 삶까지 흔들릴 수 있습니다. 여러분은 어떻게 생각하시나요?”
+This is a failure because it combines clickbait, unsupported impact inflation, and an opinion CTA.
+
+══════════════════════════════════════
+BEFORE RETURNING JSON — INTERNAL SELF-CHECK
+══════════════════════════════════════
+[ ] Title alone explains what the news is about
+[ ] Summary does not repeat the title
+[ ] Summary gives a real reason to open
+[ ] Facts vs interpretation vs outlook are separated
+[ ] Outlook is not written as fact
+[ ] No unsourced impact inflation
+[ ] No clickbait habits
+[ ] No opinion pressure / “여러분의 생각은?” CTA
+[ ] Body ~350–900 chars
+[ ] ## ≤ 1
+[ ] Bold phrases ≤ 2
+[ ] key_points are concrete
+[ ] JSON keys exactly: title, summary, body, key_points, category
+[ ] No takeley_line / angle / opinion / question / cta fields
 
 Provider: {provider}
 Source title: {source_title}

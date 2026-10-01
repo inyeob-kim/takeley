@@ -28,6 +28,7 @@ import '../widgets/data_state.dart';
 import '../widgets/deep_thought_card.dart';
 import '../widgets/share_choice_sheet.dart';
 import '../widgets/judgment_note_sheet.dart';
+import '../widgets/profile_chrome.dart';
 import '../widgets/takeley_buttons.dart';
 import '../widgets/ugc_actions.dart';
 import 'deep_thought_detail_screen.dart';
@@ -170,6 +171,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   bool _didOpenInitialFocus = false;
   bool _didRecordTakePanel = false;
   bool _didScrollToTake = false;
+  bool _didRecordDistribution = false;
   final _scroll = ScrollController();
   final _takePanelKey = GlobalKey();
   List<IssueTake> _publishedTakes = [];
@@ -472,6 +474,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       _scheduleTakePanelFocus();
       if (issue.myOptionId != null && issue.myOptionId!.isNotEmpty) {
         unawaited(_loadOtherTake());
+        _maybeRecordDistributionViewed();
       }
     } catch (_) {
       if (!mounted) return;
@@ -582,6 +585,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         );
       }
       unawaited(_loadOtherTake());
+      _maybeRecordDistributionViewed();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -590,6 +594,19 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     } finally {
       if (mounted) setState(() => _voting = false);
     }
+  }
+
+  void _maybeRecordDistributionViewed() {
+    final issue = _issue;
+    if (issue == null || _didRecordDistribution) return;
+    final hasTake = issue.myOptionId != null && issue.myOptionId!.isNotEmpty;
+    if (!hasTake || !issue.distributionVisible) return;
+    _didRecordDistribution = true;
+    unawaited(widget.issuesApi.recordEvent(
+      id: widget.issueId,
+      event: 'distribution_viewed',
+      userId: _userId,
+    ));
   }
 
   Future<void> _loadOtherTake() async {
@@ -673,6 +690,22 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       );
     } catch (_) {}
     if (mounted) setState(() => _otherTake = null);
+  }
+
+  Future<void> _openOtherTake() async {
+    final card = _otherTake;
+    if (card == null) return;
+    try {
+      await widget.issuesApi.openOtherTake(
+        id: widget.issueId,
+        userId: _userId,
+        exposureId: '${card['exposure_id'] ?? ''}',
+      );
+    } catch (_) {}
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('다른 사람의 한 줄을 확인했어요.')),
+    );
   }
 
   Future<void> _toggleFollow() async {
@@ -844,46 +877,40 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     required VoidCallback onBack,
     bool showActions = false,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
-      decoration: const BoxDecoration(
-        color: Color(0xF2FFFFFF),
-        border: Border(
-          bottom: BorderSide(color: TakeleyColors.border, width: 1),
-        ),
+    final issue = _issue;
+    final showIssueActions =
+        showActions && issue != null && issue.contentKind.toUpperCase() != 'NEWS';
+    return ScreenTopBar(
+      title: '',
+      leading: IconButton(
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+        tooltip: '뒤로',
       ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-            tooltip: '뒤로',
-          ),
-          const Spacer(),
-          if (showActions && _issue != null) ...[
-            if (_issue!.contentKind.toUpperCase() != 'NEWS')
-              IconButton(
-                onPressed: _toggleFollow,
-                icon: Icon(
-                  _issue!.isFollowing
-                      ? Icons.bookmark
-                      : Icons.bookmark_outline,
-                  size: 22,
-                  color: _issue!.isFollowing
-                      ? TakeleyColors.accent
-                      : TakeleyColors.fg,
+      trailing: showActions && issue != null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showIssueActions)
+                  IconButton(
+                    onPressed: _toggleFollow,
+                    icon: Icon(
+                      issue.isFollowing ? Icons.bookmark : Icons.bookmark_outline,
+                      size: 22,
+                      color: issue.isFollowing
+                          ? TakeleyColors.accent
+                          : TakeleyColors.fg,
+                    ),
+                    tooltip: issue.isFollowing ? '팔로우 해제' : '이슈 팔로우',
+                  ),
+                IconButton(
+                  onPressed: _shareBusy ? null : _share,
+                  icon: const Icon(Icons.ios_share_rounded, size: 22),
+                  tooltip: '공유',
                 ),
-                tooltip: _issue!.isFollowing ? '팔로우 해제' : '이슈 팔로우',
-              ),
-            IconButton(
-              onPressed: _shareBusy ? null : _share,
-              icon: const Icon(Icons.ios_share_rounded, size: 22),
-              tooltip: '공유',
-            ),
-          ],
-        ],
-      ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -1249,6 +1276,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           const SizedBox(height: 10),
           Row(
             children: [
+              TextButton(
+                onPressed: _openOtherTake,
+                child: const Text('열기'),
+              ),
               TextButton(
                 onPressed: _skipOtherTake,
                 child: const Text('넘어가기'),

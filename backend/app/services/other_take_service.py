@@ -153,6 +153,8 @@ def _score_note(
     same_side: bool,
     force_same_side: bool,
     now: datetime,
+    split: float = 0.0,
+    split_priority_at: float = 0.35,
 ) -> float:
     score = 0.0
     n = len(note)
@@ -171,6 +173,9 @@ def _score_note(
         score += 4.0 if same_side else -5.0
     elif not same_side:
         score += 1.0
+        # When debate is sharp, prefer opposite-side discovery slightly more.
+        if split >= float(split_priority_at):
+            score += 1.5
     return score
 
 
@@ -262,6 +267,8 @@ def pick_other_take(
             same_side=same_side,
             force_same_side=force_same_side,
             now=now,
+            split=split,
+            split_priority_at=float(settings.other_take_split_priority_at),
         )
         if force_same_side and not same_side:
             continue

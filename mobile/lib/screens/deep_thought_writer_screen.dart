@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../api/contributor_api.dart';
 import '../theme/takeley_colors.dart';
 import '../utils/contributor_ui.dart';
+import '../widgets/profile_chrome.dart';
 import '../widgets/takeley_buttons.dart';
 
 typedef DeepThoughtSaved = ({String title, String body, List<String> sourceUrls});
@@ -321,7 +322,15 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _WriterNav(onBack: _busy ? null : _handleBack),
+              ScreenTopBar(
+                title: '',
+                afterGap: 0,
+                leading: IconButton(
+                  onPressed: _busy ? null : _handleBack,
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                  tooltip: '이슈로 돌아가기',
+                ),
+              ),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
@@ -589,37 +598,6 @@ class _DeepThoughtWriterScreenState extends State<DeepThoughtWriterScreen> {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WriterNav extends StatelessWidget {
-  const _WriterNav({required this.onBack});
-
-  final VoidCallback? onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 4, 16, 8),
-      decoration: const BoxDecoration(
-        color: TakeleyColors.canvas,
-        border: Border(
-          bottom: BorderSide(color: TakeleyColors.border, width: 1),
-        ),
-      ),
-      child: SizedBox(
-        height: 44,
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-              tooltip: '이슈로 돌아가기',
-            ),
-          ],
         ),
       ),
     );

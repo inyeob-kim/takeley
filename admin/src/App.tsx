@@ -5,6 +5,7 @@ import {
   fetchColumnists,
   fetchIssue,
   fetchIssues,
+  fetchParticipationMetrics,
   publishIssue,
   rejectIssue,
   resolveMediaUrl,
@@ -18,6 +19,7 @@ import {
   type ContentKindFilter,
   type Counts,
   type IssueStatus,
+  type ParticipationMetrics,
 } from "./api";
 import { ConfirmModal } from "./ConfirmModal";
 import { ColumnEditor } from "./ColumnEditor";
@@ -180,6 +182,8 @@ export default function App() {
   const [contentKind, setContentKind] = useState<ContentKindFilter>("ISSUE");
   const [status, setStatus] = useState<IssueStatus>("draft");
   const [counts, setCounts] = useState<Counts | null>(null);
+  const [participationMetrics, setParticipationMetrics] =
+    useState<ParticipationMetrics | null>(null);
   const [items, setItems] = useState<AdminIssue[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminIssue | null>(null);
@@ -225,11 +229,15 @@ export default function App() {
     nextKind: ContentKindFilter = contentKind,
   ) {
     setError(null);
-    const [c, list] = await Promise.all([
+    const [c, list, metrics] = await Promise.all([
       fetchCounts(adminKey),
       fetchIssues(adminKey, nextStatus, nextKind),
+      nextKind === "ISSUE"
+        ? fetchParticipationMetrics(adminKey, 7).catch(() => null)
+        : Promise.resolve(null),
     ]);
     setCounts(c);
+    setParticipationMetrics(metrics);
     setItems(list.items);
     if (list.items.length === 0) {
       setSelectedId(null);
@@ -818,6 +826,24 @@ export default function App() {
 
       {section === "issues" ? (
         <>
+          {!isNews && participationMetrics ? (
+            <div className="panel" style={{ marginBottom: 12, padding: 12 }}>
+              <p className="meta" style={{ marginBottom: 8 }}>
+                참여 KPI · 최근 {participationMetrics.days}일
+              </p>
+              <p className="meta">
+                A/B{" "}
+                {participationMetrics.buckets.A ?? 0}/
+                {participationMetrics.buckets.B ?? 0}
+                {" · "}투표 {participationMetrics.participations_created}
+                {" · "}한 줄 {participationMetrics.notes_written}
+                {" · "}other-take {participationMetrics.other_take_exposures}
+                {" · "}분포열람{" "}
+                {participationMetrics.events.distribution_viewed ?? 0}
+                {" · "}리캡 {participationMetrics.events.recap_viewed ?? 0}
+              </p>
+            </div>
+          ) : null}
           <div className="tabs">
             {(
               [

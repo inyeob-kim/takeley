@@ -1,4 +1,4 @@
-"""Backfill NEWS column_body via news_card_v3 (+ optional OG image_url)."""
+"""Backfill NEWS column_body via news_card_v5 (+ optional OG image_url)."""
 
 from __future__ import annotations
 

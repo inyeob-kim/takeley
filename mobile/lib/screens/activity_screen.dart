@@ -60,6 +60,7 @@ class _ActivityScreenState extends State<ActivityScreen>
   List<IssueComment> _comments = [];
   ContributorStats? _contributorStats;
   List<MyDeepThought> _deepThoughts = [];
+  JudgmentLog? _judgments;
   bool _loading = true;
   String? _error;
 
@@ -128,6 +129,14 @@ class _ActivityScreenState extends State<ActivityScreen>
       final data = await widget.issuesApi.fetchMyActivity(
         userId: widget.session.userId,
       );
+      JudgmentLog? judgments;
+      try {
+        judgments = await widget.issuesApi.fetchJudgments(
+          userId: widget.session.userId,
+        );
+      } catch (_) {
+        judgments = null;
+      }
       if (!mounted) return;
       setState(() {
         _votes = data.participations;
@@ -135,6 +144,7 @@ class _ActivityScreenState extends State<ActivityScreen>
         _comments = data.comments;
         _contributorStats = data.contributorStats;
         _deepThoughts = data.myDeepThoughts;
+        _judgments = judgments;
         _loading = false;
         if (_contributorStats == null && _tab == ActivityTabs.writes) {
           _tab = ActivityTabs.votes;
@@ -269,18 +279,47 @@ class _ActivityScreenState extends State<ActivityScreen>
     if (_votes.isEmpty) {
       return const DataState(message: '아직 참여한 TAKE가 없어요.');
     }
+    final log = _judgments;
+    final byId = <String, JudgmentItem>{
+      for (final j in log?.items ?? const <JudgmentItem>[]) j.issueId: j,
+    };
+    final unlock = log?.unlockLevel ?? 'locked';
+    final basicAt = log?.unlockBasicAt ?? 5;
+    final fullAt = log?.unlockFullAt ?? 15;
+    final voteN = log?.voteCount ?? _votes.length;
+    String? banner;
+    if (unlock == 'locked') {
+      banner = '입장 ${voteN}회 · ${basicAt}번 남기면 한 줄 기록이 열려요';
+    } else if (unlock == 'basic') {
+      banner = '한 줄 기록이 열렸어요 · ${fullAt}번이면 입장 변경 이력도 보여요';
+    }
+
     return RefreshIndicator(
       color: TakeleyColors.accent,
       onRefresh: () => _load(silent: true),
       child: ListView.separated(
         padding: const EdgeInsets.only(bottom: 88),
-        itemCount: _votes.length,
+        itemCount: _votes.length + (banner != null ? 1 : 0),
         separatorBuilder: (_, __) => const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Divider(height: 1, thickness: 2),
         ),
         itemBuilder: (context, index) {
-          final issue = _votes[index];
+          if (banner != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+              child: Text(
+                banner,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: TakeleyColors.muted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }
+          final issue = _votes[index - (banner != null ? 1 : 0)];
           String? voteLabel;
           if (issue.myOptionId != null) {
             voteLabel = issue.options
@@ -288,13 +327,47 @@ class _ActivityScreenState extends State<ActivityScreen>
                 .map((o) => o.label)
                 .firstOrNull;
           }
-          return IssueCard(
-            issue: issue,
-            imageLayout: IssueCardImageLayout.trailing,
-            takeLabel: voteLabel,
-            showSummary: false,
-            ctaLabel: '다시 보기 →',
-            onOpen: (i) => widget.onIssueOpen(i.id),
+          final j = byId[issue.id];
+          final note = (j?.noteLocked ?? true) ? null : j?.note;
+          final changeHint = (!(j?.changesLocked ?? true) &&
+                  (j?.changeCount ?? 0) > 1)
+              ? '입장 변경 ${j!.changeCount}회'
+              : null;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              IssueCard(
+                issue: issue,
+                imageLayout: IssueCardImageLayout.trailing,
+                takeLabel: voteLabel,
+                showSummary: false,
+                ctaLabel: '다시 보기 →',
+                onOpen: (i) => widget.onIssueOpen(i.id),
+              ),
+              if (note != null && note.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Text(
+                    '“$note”',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: TakeleyColors.secondaryLabel,
+                    ),
+                  ),
+                ),
+              if (changeHint != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Text(
+                    changeHint,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: TakeleyColors.muted,
+                    ),
+                  ),
+                ),
+            ],
           );
         },
       ),

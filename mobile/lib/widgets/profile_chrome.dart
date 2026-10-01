@@ -133,6 +133,7 @@ class TakeleyHeaderStyle {
 /// Sticky top bar matching React `.profile-topbar` / `.settings-topbar`.
 ///
 /// React settings body starts with `0.85rem` (~14px) under the hairline.
+/// Row height is 44. IconButtons are shrink-wrapped to fit (Material default is 48).
 class ScreenTopBar extends StatelessWidget {
   const ScreenTopBar({
     super.key,
@@ -147,8 +148,16 @@ class ScreenTopBar extends StatelessWidget {
   final Widget? trailing;
   final double afterGap;
 
+  static final ButtonStyle iconStyle = IconButton.styleFrom(
+    minimumSize: const Size(44, 44),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    padding: EdgeInsets.zero,
+    visualDensity: VisualDensity.compact,
+  );
+
   @override
   Widget build(BuildContext context) {
+    final trailingChild = trailing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -162,24 +171,36 @@ class ScreenTopBar extends StatelessWidget {
           ),
           child: SizedBox(
             height: 44,
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 44,
-                  child: leading ?? const SizedBox.shrink(),
-                ),
-                Expanded(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TakeleyHeaderStyle.title,
+            child: IconButtonTheme(
+              data: IconButtonThemeData(style: iconStyle),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 44,
+                    child: leading ?? const SizedBox.shrink(),
                   ),
-                ),
-                SizedBox(
-                  width: 44,
-                  child: trailing ?? const SizedBox.shrink(),
-                ),
-              ],
+                  Expanded(
+                    child: title.isEmpty
+                        ? const SizedBox.shrink()
+                        : Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TakeleyHeaderStyle.title,
+                          ),
+                  ),
+                  // minWidth 44 keeps lone actions balanced with leading;
+                  // multi-action rows (bookmark + share) can grow.
+                  if (trailingChild == null)
+                    const SizedBox(width: 44)
+                  else
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 44),
+                      child: trailingChild,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

@@ -179,3 +179,29 @@ def build_news_new_copy(
     out_title = clip_push_text(title, PUSH_TITLE_MAX) or "TAKELEY 뉴스"
     out_body = _pick_variant(sid, _NEWS_BODY_VARIANTS)
     return PushCopy(title=out_title, body=out_body, kind=PUSH_KIND_NEWS)
+
+
+PUSH_KIND_JUDGMENT = "judgment"
+
+
+def build_judgment_recap_copy() -> PushCopy:
+    return PushCopy(
+        title=clip_push_text("오늘의 TAKE", PUSH_TITLE_MAX) or "오늘의 TAKE",
+        body=clip_push_text(
+            "오늘 남긴 TAKE를 다시 볼래요?", PUSH_BODY_MAX
+        )
+        or "오늘 남긴 TAKE를 다시 볼래요?",
+        kind=PUSH_KIND_JUDGMENT,
+    )
+
+
+def build_judgment_closure_copy(*, title: str | None = None) -> PushCopy:
+    headline = clip_push_text(title, PUSH_TITLE_MAX) or "정리된 이슈"
+    return PushCopy(
+        title=headline,
+        body=clip_push_text(
+            "예전에 찍은 이슈가 정리됐어요", PUSH_BODY_MAX
+        )
+        or "예전에 찍은 이슈가 정리됐어요",
+        kind=PUSH_KIND_JUDGMENT,
+    )

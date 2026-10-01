@@ -168,6 +168,25 @@ def run_heavy_cycle_body(db) -> dict:
             time.monotonic() - t,
         )
 
+    # Judgment recap / STALE closure enqueue before send_push.
+    t = time.monotonic()
+
+    def _judgment() -> dict:
+        from worker.jobs.judgment_pushes import run_judgment_pushes
+
+        return run_judgment_pushes(db)
+
+    judgment_result, judgment_err = run_isolated_stage("judgment_push", _judgment)
+    if judgment_err is not None:
+        stages["judgment_push"] = "error"
+    else:
+        stages["judgment_push"] = "ok"
+        logger.info(
+            "judgment_push summary result=%s elapsed_s=%.1f",
+            judgment_result,
+            time.monotonic() - t,
+        )
+
     if not controls.push_enabled:
         stages["push"] = "disabled"
         logger.info("push skipped reason=disabled")

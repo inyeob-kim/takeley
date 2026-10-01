@@ -214,4 +214,39 @@ class IssuesApi {
     );
     return MyActivity.fromJson(data);
   }
+
+  Future<JudgmentLog> fetchJudgments({String? userId, int limit = 40}) async {
+    final data = await _api.getJson(
+      '/api/v1/issues/judgments/me',
+      query: {
+        ..._userQuery(userId),
+        'limit': '$limit',
+      },
+    );
+    return JudgmentLog.fromJson(data);
+  }
+
+  Future<RecapToday> fetchRecapToday({String? userId}) async {
+    final data = await _api.getJson(
+      '/api/v1/issues/recap/today',
+      query: _userQuery(userId),
+    );
+    return RecapToday.fromJson(data);
+  }
+
+  Future<List<ClosureItem>> fetchClosures({String? userId, int limit = 5}) async {
+    final data = await _api.getJson(
+      '/api/v1/issues/closures/me',
+      query: {
+        ..._userQuery(userId),
+        'limit': '$limit',
+      },
+    );
+    final raw = data['items'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => ClosureItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
 }

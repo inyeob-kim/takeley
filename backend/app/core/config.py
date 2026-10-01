@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     distribution_min_responses: int = 30
     allow_position_change: bool = True
     judgment_note_max_chars: int = 120
+    # Judgment log unlock thresholds (distinct voted issues).
+    judgment_log_unlock_basic: int = 5
+    judgment_log_unlock_full: int = 15
+    # Judgment-linked push (separate from signal_new / news).
+    judgment_push_daily_cap: int = 1
+    judgment_push_enabled: bool = True
     other_take_min_responses: int = 30
     other_take_split_hide_below: float = 0.25
     other_take_split_priority_at: float = 0.35

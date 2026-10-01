@@ -8,8 +8,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.models import Base, Signal
-from app.pipeline.news_generate import NewsCard, generate_news_card
+from app.pipeline.news_generate import (
+    NewsCard,
+    apply_news_card_post_check,
+    count_markdown_headings,
+    generate_news_card,
+    llm_payload_has_forbidden_keys,
+    title_summary_token_coverage,
+)
 from app.pipeline.news_guardrails import news_passes_guardrails
+from app.pipeline.prompts import NEWS_CARD_PROMPT_VERSION
 from app.pipeline.understanding import (
     CONTENT_KIND_ISSUE,
     CONTENT_KIND_NEWS,
@@ -153,6 +161,103 @@ def test_heuristic_debate_is_issue():
     )
     assert u.content_kind == CONTENT_KIND_ISSUE
     assert u.is_issue_candidate is True
+
+
+def test_news_card_prompt_version_v5():
+    assert NEWS_CARD_PROMPT_VERSION == "news_card_v5"
+
+
+def test_title_summary_token_coverage_rejects_repeat():
+    title = "삼성전자, AI칩 생산 확대"
+    summary = "삼성전자가 AI칩 생산을 확대한다고 밝혔습니다."
+    assert title_summary_token_coverage(title, summary) >= 0.55
+
+
+def test_title_summary_token_coverage_allows_distinct():
+    title = "미국 10년물 국채 수익률, 24년 만에 5.3% 돌파"
+    summary = (
+        "장기 금리 기준점으로 쓰이는 지표가 이전 고점을 넘어섰습니다. "
+        "배경과 수준 변화가 핵심입니다."
+    )
+    assert title_summary_token_coverage(title, summary) < 0.55
+
+
+def test_post_check_rejects_title_summary_overlap():
+    body = "가" * 360
+    card = NewsCard(
+        title="삼성전자, AI칩 생산 확대",
+        summary="삼성전자가 AI칩 생산을 확대한다고 밝혔습니다.",
+        body=body,
+        key_points=["사실 하나"],
+        source="llm",
+        ok=True,
+    )
+    out = apply_news_card_post_check(card)
+    assert out.ok is False
+    assert out.reason == "title_summary_overlap"
+
+
+def test_post_check_rejects_too_many_headings():
+    body = "## 하나\n\n" + ("내용입니다. " * 40) + "\n\n## 둘\n\n" + ("더 있습니다. " * 20)
+    card = NewsCard(
+        title="충분히 긴 뉴스 제목입니다",
+        summary="제목과 다른 이유로 지금 열어볼 가치가 있습니다.",
+        body=body,
+        source="llm",
+        ok=True,
+    )
+    assert count_markdown_headings(body) >= 2
+    out = apply_news_card_post_check(card)
+    assert out.ok is False
+    assert out.reason == "too_many_headings"
+
+
+def test_post_check_rejects_issue_style_cta():
+    body = "가" * 360
+    card = NewsCard(
+        title="충분히 긴 뉴스 제목입니다",
+        summary="여러분은 어떻게 생각하시나요? 지금 확인해 보세요.",
+        body=body,
+        source="llm",
+        ok=True,
+    )
+    out = apply_news_card_post_check(card)
+    assert out.ok is False
+    assert out.reason == "issue_style_cta"
+
+
+def test_post_check_accepts_valid_llm_card():
+    body = (
+        "원문에서 확인된 수치가 핵심입니다. 이전 고점을 넘어선 변화가 "
+        "이번 브리핑의 중심이에요.\n\n"
+        "해석이 있다면 주체를 밝혀 적습니다. 전망은 사실처럼 단정하지 않습니다.\n\n"
+        "영향 범위는 출처에 나온 대상만 적습니다."
+    )
+    # pad to ≥350 without adding ##
+    while len(body) < 360:
+        body += " 구체 사실 문장을 이어 붙여 길이를 맞춥니다."
+    card = NewsCard(
+        title="미국 10년물 국채 수익률, 24년 만에 5.3% 돌파",
+        summary="장기 금리 기준점이 한 단계 높아진 숫자입니다. 수준이 얼마나 유지되는지가 핵심이에요.",
+        body=body,
+        key_points=["10년물 5.3% 돌파", "24년 만의 수준"],
+        category="금융",
+        source="llm",
+        ok=True,
+    )
+    out = apply_news_card_post_check(card)
+    assert out.ok is True
+    assert out.reason == ""
+
+
+def test_forbidden_extra_keys_detected():
+    assert llm_payload_has_forbidden_keys({"title": "a", "takeley_line": "x"}) == (
+        "takeley_line"
+    )
+    assert llm_payload_has_forbidden_keys({"title": "a", "angle": "number_lead"}) == (
+        "angle"
+    )
+    assert llm_payload_has_forbidden_keys({"title": "a", "summary": "b"}) is None
 
 
 def test_news_generate_heuristic_ok():

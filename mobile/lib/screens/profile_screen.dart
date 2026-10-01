@@ -43,6 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   int _voteCount = 0;
   int _followCount = 0;
   int _commentCount = 0;
+  int _streakDays = 0;
   int? _takesCount;
   bool _loading = true;
   final _nickTick = ValueNotifier<int>(0);
@@ -78,18 +79,28 @@ class _ProfileScreenState extends State<ProfileScreen>
       final settings =
           await widget.settingsApi.fetch(userId: widget.session.userId);
       MyActivity? activity;
+      JudgmentLog? judgments;
       try {
         activity = await widget.issuesApi
             .fetchMyActivity(userId: widget.session.userId);
       } catch (_) {
         activity = null;
       }
+      try {
+        judgments = await widget.issuesApi
+            .fetchJudgments(userId: widget.session.userId, limit: 3);
+      } catch (_) {
+        judgments = null;
+      }
       if (!mounted) return;
       setState(() {
         _displayName = settings.displayName;
-        _voteCount = activity?.participations.length ?? 0;
+        _voteCount = judgments?.voteCount ??
+            activity?.participations.length ??
+            0;
         _followCount = activity?.followed.length ?? 0;
         _commentCount = activity?.comments.length ?? 0;
+        _streakDays = judgments?.streakDays ?? 0;
         _takesCount = activity?.contributorStats?.takesCount;
         _loading = false;
       });
@@ -325,9 +336,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                       ),
                       const ProfileBlockLabel('내 활동'),
+                      if (_streakDays > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            '연속 $_streakDays일 판단 중',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: TakeleyColors.accent,
+                            ),
+                          ),
+                        ),
                       ProfilePillRow(
                         icon: Icons.chat_bubble_outline_rounded,
-                        label: '참여한 TAKE',
+                        label: '판단 기록',
                         count: _voteCount,
                         onTap: () => widget.onOpenActivity(ActivityTabs.votes),
                       ),

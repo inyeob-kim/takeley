@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 CATEGORY_SIGNAL_NEW = "signal_new"
 CATEGORY_NEWS_NEW = "news_new"
 CATEGORY_ISSUE_UPDATE = "issue_update"
+CATEGORY_JUDGMENT_RECAP = "judgment_recap"
+CATEGORY_JUDGMENT_CLOSURE = "judgment_closure"
 
 
 def _notifications_on(db: Session, user_id: str) -> bool:
@@ -445,4 +447,214 @@ def enqueue_issue_update(
         "skipped_token": skipped_token,
     }
     logger.info("issue_update_push_fanout %s", result)
+    return result
+
+
+def _judgment_push_count_today(db: Session, user_id: str, local_date) -> int:
+    """Count judgment_* rows already queued/sent for the user's local calendar day."""
+    start = datetime(local_date.year, local_date.month, local_date.day)
+    # Approximate UTC day window; PreferenceService.local_brief_date is already local.
+    end = datetime(local_date.year, local_date.month, local_date.day, 23, 59, 59)
+    return (
+        db.query(PushNotification)
+        .filter(
+            PushNotification.user_id == user_id,
+            PushNotification.category.in_(
+                (CATEGORY_JUDGMENT_RECAP, CATEGORY_JUDGMENT_CLOSURE)
+            ),
+            PushNotification.created_at >= start,
+            PushNotification.created_at <= end,
+        )
+        .count()
+    )
+
+
+def enqueue_judgment_recap(db: Session) -> dict:
+    """Daily recap nudge for users who voted today (KST). Cap 1 judgment push/day."""
+    from app.services.judgment_log_service import (
+        kst_day_start_utc_naive,
+        kst_today,
+    )
+    from app.services.push_copy import (
+        PUSH_BODY_MAX,
+        PUSH_TITLE_MAX,
+        build_judgment_recap_copy,
+    )
+
+    settings = get_settings()
+    if not bool(getattr(settings, "judgment_push_enabled", True)):
+        return {"enqueued": 0, "skipped": "disabled"}
+
+    from app.db.models import Participation
+
+    today = kst_today()
+    start = kst_day_start_utc_naive(today)
+    end = kst_day_start_utc_naive(
+        __import__("datetime").date.fromordinal(today.toordinal() + 1)
+    )
+    user_ids = {
+        uid
+        for (uid,) in db.query(Participation.user_id)
+        .filter(
+            Participation.updated_at >= start,
+            Participation.updated_at < end,
+        )
+        .distinct()
+        .all()
+        if uid
+    }
+    prefs = PreferenceService(db)
+    copy = build_judgment_recap_copy()
+    title_limit = int(getattr(settings, "push_title_max", PUSH_TITLE_MAX) or PUSH_TITLE_MAX)
+    body_limit = int(getattr(settings, "push_body_max", PUSH_BODY_MAX) or PUSH_BODY_MAX)
+    cap = max(1, int(settings.judgment_push_daily_cap))
+    enqueued = 0
+    skipped_cap = skipped_prefs = skipped_token = skipped_dedupe = 0
+
+    for user_id in sorted(user_ids):
+        if not _notifications_on(db, user_id):
+            skipped_prefs += 1
+            continue
+        if not _has_active_token(db, user_id):
+            skipped_token += 1
+            continue
+        local_date = prefs.local_brief_date(user_id)
+        if _judgment_push_count_today(db, user_id, local_date) >= cap:
+            skipped_cap += 1
+            continue
+        push_title_out, body = render_push_copy(
+            db,
+            CATEGORY_JUDGMENT_RECAP,
+            {
+                "title": copy.title,
+                "body": copy.body,
+                "summary": "",
+                "symbols": "",
+                "signal_id": "",
+                "brief_date": today.isoformat(),
+            },
+            title_limit=title_limit,
+            body_limit=body_limit,
+        )
+        dedupe_key = f"{user_id}:{CATEGORY_JUDGMENT_RECAP}:{today.isoformat()}"
+        row = _insert_pending(
+            db,
+            user_id=user_id,
+            category=CATEGORY_JUDGMENT_RECAP,
+            title=push_title_out or copy.title,
+            body=body or copy.body,
+            data={
+                "category": CATEGORY_JUDGMENT_RECAP,
+                "route": "/activity",
+                "user_id": user_id,
+            },
+            dedupe_key=dedupe_key,
+        )
+        if row:
+            enqueued += 1
+        else:
+            skipped_dedupe += 1
+
+    result = {
+        "category": CATEGORY_JUDGMENT_RECAP,
+        "candidates": len(user_ids),
+        "enqueued": enqueued,
+        "skipped_cap": skipped_cap,
+        "skipped_prefs": skipped_prefs,
+        "skipped_token": skipped_token,
+        "skipped_dedupe": skipped_dedupe,
+    }
+    logger.info("judgment_recap_push %s", result)
+    return result
+
+
+def enqueue_judgment_closure(
+    db: Session,
+    *,
+    signal_id: str,
+    title: str | None = None,
+) -> dict:
+    """Notify voters when an issue is marked STALE / soft-closed."""
+    from app.db.models import Participation
+    from app.services.push_copy import (
+        PUSH_BODY_MAX,
+        PUSH_TITLE_MAX,
+        build_judgment_closure_copy,
+    )
+
+    settings = get_settings()
+    if not bool(getattr(settings, "judgment_push_enabled", True)):
+        return {"enqueued": 0, "skipped": "disabled"}
+
+    voter_ids = {
+        uid
+        for (uid,) in db.query(Participation.user_id)
+        .filter(Participation.signal_id == signal_id)
+        .all()
+        if uid
+    }
+    copy = build_judgment_closure_copy(title=title)
+    prefs = PreferenceService(db)
+    title_limit = int(getattr(settings, "push_title_max", PUSH_TITLE_MAX) or PUSH_TITLE_MAX)
+    body_limit = int(getattr(settings, "push_body_max", PUSH_BODY_MAX) or PUSH_BODY_MAX)
+    cap = max(1, int(settings.judgment_push_daily_cap))
+    enqueued = skipped_cap = skipped_prefs = skipped_token = skipped_dedupe = 0
+
+    for user_id in sorted(voter_ids):
+        if not _notifications_on(db, user_id):
+            skipped_prefs += 1
+            continue
+        if not _has_active_token(db, user_id):
+            skipped_token += 1
+            continue
+        local_date = prefs.local_brief_date(user_id)
+        if _judgment_push_count_today(db, user_id, local_date) >= cap:
+            skipped_cap += 1
+            continue
+        push_title_out, body = render_push_copy(
+            db,
+            CATEGORY_JUDGMENT_CLOSURE,
+            {
+                "title": copy.title,
+                "body": copy.body,
+                "summary": "",
+                "symbols": "",
+                "signal_id": signal_id,
+                "brief_date": "",
+            },
+            title_limit=title_limit,
+            body_limit=body_limit,
+        )
+        dedupe_key = f"{user_id}:{CATEGORY_JUDGMENT_CLOSURE}:{signal_id}"
+        row = _insert_pending(
+            db,
+            user_id=user_id,
+            category=CATEGORY_JUDGMENT_CLOSURE,
+            title=push_title_out or copy.title,
+            body=body or copy.body,
+            data={
+                "category": CATEGORY_JUDGMENT_CLOSURE,
+                "signal_id": signal_id,
+                "issue_id": signal_id,
+                "route": f"/issues/{signal_id}",
+                "user_id": user_id,
+            },
+            dedupe_key=dedupe_key,
+        )
+        if row:
+            enqueued += 1
+        else:
+            skipped_dedupe += 1
+
+    result = {
+        "category": CATEGORY_JUDGMENT_CLOSURE,
+        "signal_id": signal_id,
+        "targets": len(voter_ids),
+        "enqueued": enqueued,
+        "skipped_cap": skipped_cap,
+        "skipped_prefs": skipped_prefs,
+        "skipped_token": skipped_token,
+        "skipped_dedupe": skipped_dedupe,
+    }
+    logger.info("judgment_closure_push %s", result)
     return result

@@ -539,3 +539,197 @@ class ColumnistProfile {
     );
   }
 }
+
+class JudgmentChange {
+  JudgmentChange({
+    this.fromOptionId,
+    this.fromLabel,
+    required this.toOptionId,
+    this.toLabel = '',
+    this.changedAt,
+  });
+
+  final String? fromOptionId;
+  final String? fromLabel;
+  final String toOptionId;
+  final String toLabel;
+  final String? changedAt;
+
+  factory JudgmentChange.fromJson(Map<String, dynamic> json) {
+    return JudgmentChange(
+      fromOptionId: json['from_option_id'] as String?,
+      fromLabel: json['from_label'] as String?,
+      toOptionId: '${json['to_option_id'] ?? ''}',
+      toLabel: '${json['to_label'] ?? ''}',
+      changedAt: json['changed_at']?.toString(),
+    );
+  }
+}
+
+class JudgmentItem {
+  JudgmentItem({
+    required this.issueId,
+    required this.title,
+    required this.optionId,
+    this.optionLabel = '',
+    this.note,
+    this.noteLocked = false,
+    this.updatedAt,
+    this.changeCount,
+    this.changes,
+    this.changesLocked = true,
+  });
+
+  final String issueId;
+  final String title;
+  final String optionId;
+  final String optionLabel;
+  final String? note;
+  final bool noteLocked;
+  final String? updatedAt;
+  final int? changeCount;
+  final List<JudgmentChange>? changes;
+  final bool changesLocked;
+
+  factory JudgmentItem.fromJson(Map<String, dynamic> json) {
+    final rawChanges = json['changes'];
+    return JudgmentItem(
+      issueId: '${json['issue_id'] ?? ''}',
+      title: '${json['title'] ?? ''}',
+      optionId: '${json['option_id'] ?? ''}',
+      optionLabel: '${json['option_label'] ?? ''}',
+      note: json['note'] as String?,
+      noteLocked: json['note_locked'] == true,
+      updatedAt: json['updated_at']?.toString(),
+      changeCount: (json['change_count'] as num?)?.toInt(),
+      changes: rawChanges is List
+          ? rawChanges
+              .whereType<Map>()
+              .map(
+                (e) => JudgmentChange.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList()
+          : null,
+      changesLocked: json['changes_locked'] != false,
+    );
+  }
+}
+
+class JudgmentLog {
+  JudgmentLog({
+    required this.unlockLevel,
+    this.voteCount = 0,
+    this.streakDays = 0,
+    this.unlockBasicAt = 5,
+    this.unlockFullAt = 15,
+    this.items = const [],
+  });
+
+  final String unlockLevel;
+  final int voteCount;
+  final int streakDays;
+  final int unlockBasicAt;
+  final int unlockFullAt;
+  final List<JudgmentItem> items;
+
+  factory JudgmentLog.fromJson(Map<String, dynamic> json) {
+    final raw = json['items'];
+    return JudgmentLog(
+      unlockLevel: '${json['unlock_level'] ?? 'locked'}',
+      voteCount: (json['vote_count'] as num?)?.toInt() ?? 0,
+      streakDays: (json['streak_days'] as num?)?.toInt() ?? 0,
+      unlockBasicAt: (json['unlock_basic_at'] as num?)?.toInt() ?? 5,
+      unlockFullAt: (json['unlock_full_at'] as num?)?.toInt() ?? 15,
+      items: raw is List
+          ? raw
+              .whereType<Map>()
+              .map((e) => JudgmentItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+          : const [],
+    );
+  }
+}
+
+class RecapItem {
+  RecapItem({
+    required this.issueId,
+    required this.title,
+    this.optionLabel = '',
+    this.note,
+    this.updatedAt,
+  });
+
+  final String issueId;
+  final String title;
+  final String optionLabel;
+  final String? note;
+  final String? updatedAt;
+
+  factory RecapItem.fromJson(Map<String, dynamic> json) {
+    return RecapItem(
+      issueId: '${json['issue_id'] ?? ''}',
+      title: '${json['title'] ?? ''}',
+      optionLabel: '${json['option_label'] ?? ''}',
+      note: json['note'] as String?,
+      updatedAt: json['updated_at']?.toString(),
+    );
+  }
+}
+
+class RecapToday {
+  RecapToday({
+    required this.date,
+    this.streakDays = 0,
+    this.voteCountToday = 0,
+    this.items = const [],
+  });
+
+  final String date;
+  final int streakDays;
+  final int voteCountToday;
+  final List<RecapItem> items;
+
+  factory RecapToday.fromJson(Map<String, dynamic> json) {
+    final raw = json['items'];
+    return RecapToday(
+      date: '${json['date'] ?? ''}',
+      streakDays: (json['streak_days'] as num?)?.toInt() ?? 0,
+      voteCountToday: (json['vote_count_today'] as num?)?.toInt() ?? 0,
+      items: raw is List
+          ? raw
+              .whereType<Map>()
+              .map((e) => RecapItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+          : const [],
+    );
+  }
+}
+
+class ClosureItem {
+  ClosureItem({
+    required this.issueId,
+    required this.title,
+    this.optionLabel = '',
+    this.note,
+    this.lifecycle = 'STALE',
+    this.updatedAt,
+  });
+
+  final String issueId;
+  final String title;
+  final String optionLabel;
+  final String? note;
+  final String lifecycle;
+  final String? updatedAt;
+
+  factory ClosureItem.fromJson(Map<String, dynamic> json) {
+    return ClosureItem(
+      issueId: '${json['issue_id'] ?? ''}',
+      title: '${json['title'] ?? ''}',
+      optionLabel: '${json['option_label'] ?? ''}',
+      note: json['note'] as String?,
+      lifecycle: '${json['lifecycle'] ?? 'STALE'}',
+      updatedAt: json['updated_at']?.toString(),
+    );
+  }
+}

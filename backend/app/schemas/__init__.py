@@ -473,6 +473,64 @@ class MyActivityOut(BaseModel):
     my_deep_thoughts: list[MyDeepThoughtOut] = Field(default_factory=list)
 
 
+class JudgmentChangeOut(BaseModel):
+    from_option_id: Optional[str] = None
+    from_label: Optional[str] = None
+    to_option_id: str
+    to_label: str = ""
+    changed_at: datetime
+
+
+class JudgmentItemOut(BaseModel):
+    issue_id: str
+    title: str
+    option_id: str
+    option_label: str = ""
+    note: Optional[str] = None
+    note_locked: bool = False
+    updated_at: Optional[datetime] = None
+    change_count: Optional[int] = None
+    changes: Optional[list[JudgmentChangeOut]] = None
+    changes_locked: bool = True
+
+
+class JudgmentLogOut(BaseModel):
+    unlock_level: str  # locked | basic | full
+    vote_count: int = 0
+    streak_days: int = 0
+    unlock_basic_at: int = 5
+    unlock_full_at: int = 15
+    items: list[JudgmentItemOut] = Field(default_factory=list)
+
+
+class RecapItemOut(BaseModel):
+    issue_id: str
+    title: str
+    option_label: str = ""
+    note: Optional[str] = None
+    updated_at: Optional[datetime] = None
+
+
+class RecapTodayOut(BaseModel):
+    date: str
+    streak_days: int = 0
+    vote_count_today: int = 0
+    items: list[RecapItemOut] = Field(default_factory=list)
+
+
+class ClosureItemOut(BaseModel):
+    issue_id: str
+    title: str
+    option_label: str = ""
+    note: Optional[str] = None
+    lifecycle: str = "STALE"
+    updated_at: Optional[datetime] = None
+
+
+class ClosuresOut(BaseModel):
+    items: list[ClosureItemOut] = Field(default_factory=list)
+
+
 class ContributorApplicationIn(BaseModel):
     motivation: str = Field(..., min_length=1, max_length=500)
     interests: str = Field(..., min_length=1, max_length=200)

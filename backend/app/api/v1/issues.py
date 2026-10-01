@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.schemas import (
+    ClosuresOut,
     IssueCommentIn,
     IssueCommentListOut,
     IssueCommentOut,
@@ -13,12 +14,15 @@ from app.schemas import (
     IssueOut,
     IssueParticipateIn,
     IssueParticipateOut,
+    JudgmentLogOut,
     MyActivityOut,
     OtherTakeActionIn,
     OtherTakeMaybeOut,
     OtherTakeOut,
+    RecapTodayOut,
 )
 from app.services.issue_service import IssueService
+from app.services.judgment_log_service import JudgmentLogService
 from app.services.other_take_service import mark_other_take, pick_other_take
 
 router = APIRouter(prefix="/issues", tags=["issues"])
@@ -66,6 +70,35 @@ def my_activity(
     db: Session = Depends(get_db),
 ) -> MyActivityOut:
     return IssueService(db).my_activity(_uid(user_id), limit=limit)
+
+
+@router.get("/judgments/me", response_model=JudgmentLogOut)
+def my_judgments(
+    user_id: str | None = Query(None),
+    limit: int = Query(40, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> JudgmentLogOut:
+    raw = JudgmentLogService(db).list_judgments(_uid(user_id), limit=limit)
+    return JudgmentLogOut.model_validate(raw)
+
+
+@router.get("/recap/today", response_model=RecapTodayOut)
+def recap_today(
+    user_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> RecapTodayOut:
+    raw = JudgmentLogService(db).recap_today(_uid(user_id))
+    return RecapTodayOut.model_validate(raw)
+
+
+@router.get("/closures/me", response_model=ClosuresOut)
+def my_closures(
+    user_id: str | None = Query(None),
+    limit: int = Query(5, ge=1, le=10),
+    db: Session = Depends(get_db),
+) -> ClosuresOut:
+    raw = JudgmentLogService(db).closures_me(_uid(user_id), limit=limit)
+    return ClosuresOut.model_validate(raw)
 
 
 @router.get("/{issue_id}", response_model=IssueOut)

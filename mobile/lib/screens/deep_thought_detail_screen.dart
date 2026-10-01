@@ -6,6 +6,7 @@ import '../theme/takeley_colors.dart';
 import '../widgets/ugc_actions.dart';
 import '../utils/contributor_ui.dart';
 import '../widgets/data_state.dart';
+import '../widgets/profile_chrome.dart';
 import '../widgets/takeley_buttons.dart';
 
 String? _errorMessage(Object e) {
@@ -139,24 +140,15 @@ class _DeepThoughtDetailScreenState extends State<DeepThoughtDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.fromLTRB(12, 4, 20, 4),
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: TakeleyColors.border, width: 1),
-                ),
+            ScreenTopBar(
+              title: '',
+              leading: IconButton(
+                onPressed: widget.onBack,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                tooltip: '이슈로 돌아가기',
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: widget.onBack,
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                    tooltip: '이슈로 돌아가기',
-                  ),
-                  const Spacer(),
-                  if (take != null && take.authorId != widget.userId)
-                    IconButton(
+              trailing: take != null && take.authorId != widget.userId
+                  ? IconButton(
                       icon: const Icon(Icons.more_horiz, size: 20),
                       tooltip: '더보기',
                       onPressed: () => showUgcActions(
@@ -169,9 +161,8 @@ class _DeepThoughtDetailScreenState extends State<DeepThoughtDetailScreen> {
                         isMine: false,
                         onRemovedFromFeed: widget.onBack,
                       ),
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
             Expanded(
               child: _loading

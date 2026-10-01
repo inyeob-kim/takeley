@@ -79,6 +79,16 @@ export type Counts = {
   news_today?: number;
 };
 
+export type ParticipationMetrics = {
+  days: number;
+  since: string;
+  buckets: Record<string, number>;
+  events: Record<string, number>;
+  participations_created: number;
+  notes_written: number;
+  other_take_exposures: number;
+};
+
 export function resolveMediaUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const text = url.trim();
@@ -116,6 +126,16 @@ async function adminFetch<T>(
 
 export function fetchCounts(key: string): Promise<Counts> {
   return adminFetch<Counts>("/api/v1/admin/issues/counts", key);
+}
+
+export function fetchParticipationMetrics(
+  key: string,
+  days = 7,
+): Promise<ParticipationMetrics> {
+  return adminFetch<ParticipationMetrics>(
+    `/api/v1/admin/issues/participation-metrics?days=${days}`,
+    key,
+  );
 }
 
 export function fetchIssues(

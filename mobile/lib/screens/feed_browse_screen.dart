@@ -121,100 +121,108 @@ class _FeedBrowseScreenState extends State<FeedBrowseScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
-    // Shell already applies top SafeArea; stay opaque to the bottom nav edge.
+    // Full-screen route (outside shell) — pad top for status bar / notch.
     return ColoredBox(
       color: TakeleyColors.canvas,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ScreenTopBar(
-            title: widget.title,
-            afterGap: widget.showCategoryChips ? 8 : 14,
-            leading: widget.onBack == null
-                ? null
-                : IconButton(
-                    tooltip: '뒤로',
-                    onPressed: widget.onBack,
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 18,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ScreenTopBar(
+              title: widget.title,
+              afterGap: widget.showCategoryChips ? 8 : 14,
+              leading: widget.onBack == null
+                  ? null
+                  : IconButton(
+                      tooltip: '뒤로',
+                      onPressed: widget.onBack,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                      ),
                     ),
-                  ),
-          ),
-          if (widget.showCategoryChips)
-            FeedChips(
-              tabs: _newsFeedTabs,
-              selectedId: _tab,
-              onSelect: (id) {
-                setState(() => _tab = id);
-                _load();
-              },
             ),
-          Expanded(
-            child: RefreshIndicator(
-              color: TakeleyColors.accent,
-              onRefresh: _load,
-              child: _loading
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(
-                          child: CircularProgressIndicator(
-                            color: TakeleyColors.accent,
+            if (widget.showCategoryChips)
+              FeedChips(
+                tabs: _newsFeedTabs,
+                selectedId: _tab,
+                onSelect: (id) {
+                  setState(() => _tab = id);
+                  _load();
+                },
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                color: TakeleyColors.accent,
+                onRefresh: _load,
+                child: _loading
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 120),
+                          Center(
+                            child: CircularProgressIndicator(
+                              color: TakeleyColors.accent,
+                            ),
                           ),
-                        ),
-                      ],
-                    )
-                  : _error != null
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: MediaQuery.sizeOf(context).height * 0.45,
-                              child: DataState(
-                                message: _error!,
-                                actionLabel: '다시 시도',
-                                onAction: _load,
-                              ),
-                            ),
-                          ],
-                        )
-                      : _items.isEmpty
-                          ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              children: [
-                                SizedBox(
-                                  height:
-                                      MediaQuery.sizeOf(context).height * 0.45,
-                                  child: DataState(
-                                    message: widget.contentKind == 'NEWS'
-                                        ? '아직 뉴스가 없어요.'
-                                        : '아직 TAKE가 없어요.',
-                                  ),
+                        ],
+                      )
+                    : _error != null
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.sizeOf(context).height * 0.45,
+                                child: DataState(
+                                  message: _error!,
+                                  actionLabel: '다시 시도',
+                                  onAction: _load,
                                 ),
-                              ],
-                            )
-                          : ListView.separated(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: EdgeInsets.only(bottom: 24 + bottomPad),
-                              itemCount: _items.length,
-                              separatorBuilder: (_, __) => const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Divider(height: 1, thickness: 2),
                               ),
-                              itemBuilder: (context, index) {
-                                final issue = _items[index];
-                                return IssueCard(
-                                  issue: issue,
-                                  onOpen: _openCard,
-                                  onCta: _ctaCard,
-                                );
-                              },
-                            ),
+                            ],
+                          )
+                        : _items.isEmpty
+                            ? ListView(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.sizeOf(context).height *
+                                        0.45,
+                                    child: DataState(
+                                      message: widget.contentKind == 'NEWS'
+                                          ? '아직 뉴스가 없어요.'
+                                          : '아직 TAKE가 없어요.',
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    EdgeInsets.only(bottom: 24 + bottomPad),
+                                itemCount: _items.length,
+                                separatorBuilder: (_, __) => const Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 20),
+                                  child: Divider(height: 1, thickness: 2),
+                                ),
+                                itemBuilder: (context, index) {
+                                  final issue = _items[index];
+                                  return IssueCard(
+                                    issue: issue,
+                                    onOpen: _openCard,
+                                    onCta: _ctaCard,
+                                  );
+                                },
+                              ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -79,6 +79,26 @@ def admin_issue_counts(db: Session = Depends(get_db)) -> AdminCountsOut:
     return AdminCountsOut(**AdminIssueService(db).counts())
 
 
+class AdminParticipationMetricsOut(BaseModel):
+    days: int
+    since: str
+    buckets: dict[str, int]
+    events: dict[str, int]
+    participations_created: int = 0
+    notes_written: int = 0
+    other_take_exposures: int = 0
+
+
+@router.get("/participation-metrics", response_model=AdminParticipationMetricsOut)
+def admin_participation_metrics(
+    days: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db),
+) -> AdminParticipationMetricsOut:
+    from app.services.participation_metrics_service import participation_metrics
+
+    return AdminParticipationMetricsOut(**participation_metrics(db, days=days))
+
+
 @router.post("", response_model=IssueOut)
 def admin_create_issue(
     body: AdminIssueCreateIn | None = None,
