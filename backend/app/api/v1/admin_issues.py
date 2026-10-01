@@ -56,6 +56,10 @@ class AdminCountsOut(BaseModel):
     draft: int
     published: int
     rejected: int
+    news_draft: int = 0
+    news_published: int = 0
+    news_rejected: int = 0
+    news_today: int = 0
 
 
 class AdminPublishIn(BaseModel):
@@ -94,10 +98,17 @@ def admin_create_issue(
 @router.get("", response_model=IssueListOut)
 def admin_list_issues(
     status: str = Query("draft", pattern="^(draft|published|rejected)$"),
+    content_kind: str = Query(
+        "ISSUE",
+        pattern="^(ISSUE|NEWS|ALL)$",
+        description="Filter by content_kind; default ISSUE",
+    ),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> IssueListOut:
-    return AdminIssueService(db).list_by_status(status=status, limit=limit)
+    return AdminIssueService(db).list_by_status(
+        status=status, limit=limit, content_kind=content_kind
+    )
 
 
 @router.get("/{issue_id}", response_model=IssueOut)

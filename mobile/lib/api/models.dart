@@ -70,6 +70,7 @@ class Issue {
     this.importance = 0,
     this.confidence = 0,
     this.contentType = '',
+    this.contentKind = 'ISSUE',
     this.evidenceLevel = '',
     this.relatedSymbols = const [],
     this.participationSuitable = false,
@@ -78,6 +79,8 @@ class Issue {
     this.options = const [],
     this.participationCount = 0,
     this.myOptionId,
+    this.myNote,
+    this.distributionVisible = false,
     this.sourceCount = 0,
     this.sources = const [],
     this.showSources = false,
@@ -112,6 +115,7 @@ class Issue {
   final double importance;
   final double confidence;
   final String contentType;
+  final String contentKind;
   final String evidenceLevel;
   final List<String> relatedSymbols;
   final bool participationSuitable;
@@ -120,6 +124,8 @@ class Issue {
   final List<IssueOption> options;
   final int participationCount;
   final String? myOptionId;
+  final String? myNote;
+  final bool distributionVisible;
   final int sourceCount;
   final List<IssueSource> sources;
   final bool showSources;
@@ -165,6 +171,7 @@ class Issue {
       importance: (json['importance'] as num?)?.toDouble() ?? 0,
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
       contentType: '${json['content_type'] ?? ''}',
+      contentKind: '${json['content_kind'] ?? 'ISSUE'}'.toUpperCase(),
       evidenceLevel: '${json['evidence_level'] ?? ''}',
       relatedSymbols: symbolsRaw is List
           ? symbolsRaw.map((e) => '$e').toList()
@@ -180,6 +187,8 @@ class Issue {
           : const [],
       participationCount: (json['participation_count'] as num?)?.toInt() ?? 0,
       myOptionId: json['my_option_id'] as String?,
+      myNote: (json['my_note'] as String?)?.trim(),
+      distributionVisible: json['distribution_visible'] == true,
       sourceCount: (json['source_count'] as num?)?.toInt() ?? 0,
       sources: sourcesRaw is List
           ? sourcesRaw
@@ -204,6 +213,8 @@ class Issue {
 
   Issue copyWith({
     String? myOptionId,
+    String? myNote,
+    bool? distributionVisible,
     int? participationCount,
     List<IssueOption>? options,
     bool? isFollowing,
@@ -228,6 +239,7 @@ class Issue {
       importance: importance,
       confidence: confidence,
       contentType: contentType,
+      contentKind: contentKind,
       evidenceLevel: evidenceLevel,
       relatedSymbols: relatedSymbols,
       participationSuitable: participationSuitable,
@@ -236,6 +248,8 @@ class Issue {
       options: options ?? this.options,
       participationCount: participationCount ?? this.participationCount,
       myOptionId: myOptionId ?? this.myOptionId,
+      myNote: myNote ?? this.myNote,
+      distributionVisible: distributionVisible ?? this.distributionVisible,
       sourceCount: sourceCount,
       sources: sources,
       showSources: showSources,
@@ -407,6 +421,7 @@ class UserSettings {
   UserSettings({
     required this.userId,
     required this.notificationsEnabled,
+    this.newsNotificationsEnabled = false,
     this.displayName,
     this.briefAlarmTime,
     this.timezone,
@@ -415,6 +430,7 @@ class UserSettings {
 
   final String userId;
   final bool notificationsEnabled;
+  final bool newsNotificationsEnabled;
   final String? displayName;
   final String? briefAlarmTime;
   final String? timezone;
@@ -425,6 +441,7 @@ class UserSettings {
     return UserSettings(
       userId: '${json['user_id'] ?? ''}',
       notificationsEnabled: json['notifications_enabled'] != false,
+      newsNotificationsEnabled: json['news_notifications_enabled'] == true,
       displayName: (name != null && name.isNotEmpty) ? name : null,
       briefAlarmTime: json['brief_alarm_time'] as String?,
       timezone: json['timezone'] as String?,

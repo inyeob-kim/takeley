@@ -54,5 +54,5 @@ String formatNewsTime(String? raw, {DateTime? now}) {
     return '$hours시간 전';
   }
   if (dayDiff == 1) return '어제';
-  return '${then.month}.${then.day}';
+  return '${then.month}월 ${then.day}일';
 }

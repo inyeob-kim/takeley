@@ -15,6 +15,7 @@ import {
   type AdminColumnist,
   type AdminIssue,
   type AdminIssueUpdate,
+  type ContentKindFilter,
   type Counts,
   type IssueStatus,
 } from "./api";
@@ -176,6 +177,7 @@ export default function App() {
   const [draftKey, setDraftKey] = useState(key);
   const [authed, setAuthed] = useState(Boolean(key));
   const [section, setSection] = useState<AdminSection>("issues");
+  const [contentKind, setContentKind] = useState<ContentKindFilter>("ISSUE");
   const [status, setStatus] = useState<IssueStatus>("draft");
   const [counts, setCounts] = useState<Counts | null>(null);
   const [items, setItems] = useState<AdminIssue[]>([]);
@@ -220,11 +222,12 @@ export default function App() {
     nextStatus: IssueStatus = status,
     adminKey = key,
     selectId?: string | null,
+    nextKind: ContentKindFilter = contentKind,
   ) {
     setError(null);
     const [c, list] = await Promise.all([
       fetchCounts(adminKey),
-      fetchIssues(adminKey, nextStatus),
+      fetchIssues(adminKey, nextStatus, nextKind),
     ]);
     setCounts(c);
     setItems(list.items);
@@ -247,7 +250,7 @@ export default function App() {
       setAuthed(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, key, status, section]);
+  }, [authed, key, status, section, contentKind]);
 
   useEffect(() => {
     if (!authed || !key) return;
@@ -300,14 +303,16 @@ export default function App() {
       const row = await createIssue(key, {
         columnist_id: columnistId || null,
       });
-      const needSwitch = section !== "issues" || status !== "draft";
+      const needSwitch =
+        section !== "issues" || status !== "draft" || contentKind !== "ISSUE";
       setSelectedId(row.id);
       applyDetail(row);
+      setContentKind("ISSUE");
       setSection("issues");
       setStatus("draft");
       setNotice("칼럼 초안을 만들었습니다. 제목과 본문을 적어 주세요.");
       if (!needSwitch) {
-        await refresh("draft", key, row.id);
+        await refresh("draft", key, row.id, "ISSUE");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "초안 만들기 실패");
@@ -325,6 +330,23 @@ export default function App() {
     setError(null);
     setNotice(null);
     setSection(next);
+  }
+
+  function openContentSection(next: ContentKindFilter) {
+    if (section === "issues" && contentKind === next) return;
+    if (section === "issues" && dirty) {
+      setError(
+        "저장하지 않은 변경이 있습니다. 저장하거나 버린 뒤 이슈/뉴스를 바꾸세요.",
+      );
+      return;
+    }
+    setError(null);
+    setNotice(null);
+    setSelectedId(null);
+    applyDetail(null);
+    setStatus("draft");
+    setContentKind(next);
+    setSection("issues");
   }
 
   async function loadIssue(id: string) {
@@ -352,6 +374,8 @@ export default function App() {
       setModal({ kind: "discard-tab", nextStatus: next });
       return;
     }
+    setSelectedId(null);
+    applyDetail(null);
     setStatus(next);
   }
 
@@ -511,7 +535,11 @@ export default function App() {
     try {
       await publishIssue(key, publishedId);
       setModal(null);
-      setNotice("배포했습니다. 앱 홈에 노출됩니다.");
+      setNotice(
+        contentKind === "NEWS"
+          ? "배포했습니다. 뉴스 피드에 노출됩니다. (뉴스 알림 켠 사용자에게만 푸시)"
+          : "배포했습니다. 앱 홈에 노출됩니다.",
+      );
       setSelectedId(publishedId);
       setStatus("published");
       await refresh("published");
@@ -536,7 +564,9 @@ export default function App() {
       await publishIssue(key, publishedId, { scheduled_at: scheduledAt });
       setModal(null);
       setNotice(
-        `예약했습니다. ${formatWhen(scheduledAt)}에 앱에 공개되고 푸시가 발송됩니다.`,
+        contentKind === "NEWS"
+          ? `예약했습니다. ${formatWhen(scheduledAt)}에 뉴스 피드에 공개됩니다. (뉴스 알림 켠 사용자에게만 푸시)`
+          : `예약했습니다. ${formatWhen(scheduledAt)}에 앱에 공개되고 푸시가 발송됩니다.`,
       );
       setSelectedId(publishedId);
       setStatus("draft");
@@ -634,7 +664,22 @@ export default function App() {
   }
 
   const canEdit = detail?.status === "draft" || detail?.status === "published";
-  const issueTitle = detail?.title?.trim() || "이 이슈";
+  const isNews = contentKind === "NEWS";
+  const unitLabel = isNews ? "뉴스" : "이슈";
+  const issueTitle = detail?.title?.trim() || (isNews ? "이 뉴스" : "이 이슈");
+  const statusCounts = counts
+    ? isNews
+      ? {
+          draft: counts.news_draft ?? 0,
+          published: counts.news_published ?? 0,
+          rejected: counts.news_rejected ?? 0,
+        }
+      : {
+          draft: counts.draft,
+          published: counts.published,
+          rejected: counts.rejected,
+        }
+    : null;
 
   if (!authed) {
     return (
@@ -686,10 +731,17 @@ export default function App() {
       <nav className="section-nav" aria-label="Admin sections">
         <button
           type="button"
-          className={section === "issues" ? "is-active" : ""}
-          onClick={() => requestSection("issues")}
+          className={section === "issues" && contentKind === "ISSUE" ? "is-active" : ""}
+          onClick={() => openContentSection("ISSUE")}
         >
           Issues
+        </button>
+        <button
+          type="button"
+          className={section === "issues" && contentKind === "NEWS" ? "is-active" : ""}
+          onClick={() => openContentSection("NEWS")}
+        >
+          News
         </button>
         <button
           type="button"
@@ -781,17 +833,24 @@ export default function App() {
                 onClick={() => requestTab(s)}
               >
                 {label}
-                {counts ? ` · ${counts[s]}` : ""}
+                {statusCounts ? ` · ${statusCounts[s]}` : ""}
               </button>
             ))}
-            <button
-              type="button"
-              className="tabs__ghost"
-              disabled={busy}
-              onClick={() => void onCreateColumnDraft()}
-            >
-              칼럼 초안
-            </button>
+            {!isNews ? (
+              <button
+                type="button"
+                className="tabs__ghost"
+                disabled={busy}
+                onClick={() => void onCreateColumnDraft()}
+              >
+                칼럼 초안
+              </button>
+            ) : null}
+            {isNews && counts && (counts.news_today ?? 0) > 0 ? (
+              <span className="tabs__meta" title="오늘 생성된 NEWS (자동 파이프라인)">
+                오늘 · {counts.news_today}
+              </span>
+            ) : null}
           </div>
 
           <div className="layout">
@@ -804,7 +863,7 @@ export default function App() {
                       className={selectedId === item.id ? "is-selected" : ""}
                       onClick={() => requestSelect(item.id)}
                     >
-                      <span className="cat">{item.category || "ISSUE"}</span>
+                      <span className="cat">{item.category || unitLabel}</span>
                       <p className="title">{item.title}</p>
                       <p className="meta">
                         {formatWhen(item.first_seen_at)} · 출처{" "}
@@ -816,7 +875,7 @@ export default function App() {
                 {items.length === 0 ? (
                   <li>
                     <button type="button" disabled>
-                      <p className="title">항목이 없어요</p>
+                      <p className="title">{unitLabel} 항목이 없어요</p>
                     </button>
                   </li>
                 ) : null}
@@ -825,11 +884,12 @@ export default function App() {
 
             <section className="panel detail">
               {!detail || !form ? (
-                <div className="empty">왼쪽에서 이슈를 선택하세요.</div>
+                <div className="empty">왼쪽에서 {unitLabel}를 선택하세요.</div>
               ) : (
             <>
               <p className="meta">
-                status {detail.status} · {formatWhen(detail.first_seen_at)}
+                {isNews ? "NEWS" : "ISSUE"} · status {detail.status} ·{" "}
+                {formatWhen(detail.first_seen_at)}
                 {dirty ? " · 수정됨" : ""}
               </p>
 
@@ -840,7 +900,7 @@ export default function App() {
                 </p>
               ) : null}
               {!canEdit ? (
-                <p className="meta">폐기된 이슈는 편집할 수 없습니다.</p>
+                <p className="meta">폐기된 {unitLabel}는 편집할 수 없습니다.</p>
               ) : null}
 
               <div className={`editor${canEdit ? "" : " editor--readonly"}`}>
@@ -1048,11 +1108,17 @@ export default function App() {
                 </div>
 
                 <div className="editor-section">
-                  <p className="editor-section__title">참여 · 알림</p>
+                  <p className="editor-section__title">
+                    {isNews ? "알림" : "참여 · 알림"}
+                  </p>
                   <p className="editor-section__dek">
-                    투표와 푸시 문구 (비우면 자동)
+                    {isNews
+                      ? "뉴스 알림을 켠 사용자에게 가는 푸시 (비우면 자동)"
+                      : "투표와 푸시 문구 (비우면 자동)"}
                   </p>
 
+                {!isNews ? (
+                  <>
                 <label className="check">
                   <input
                     type="checkbox"
@@ -1100,6 +1166,8 @@ export default function App() {
                     </label>
                   </>
                 ) : null}
+                  </>
+                ) : null}
 
                 <label>
                   알림 제목 (선택 · 비우면 자동)
@@ -1108,7 +1176,11 @@ export default function App() {
                     maxLength={80}
                     value={form.push_title}
                     disabled={!canEdit}
-                    placeholder="비우면 이슈 제목 기반 자동 문구"
+                    placeholder={
+                      isNews
+                        ? "비우면 뉴스 제목"
+                        : "비우면 TAKE 제목 기반 자동 문구"
+                    }
                     onChange={(e) => patchForm({ push_title: e.target.value })}
                   />
                 </label>
@@ -1119,10 +1191,34 @@ export default function App() {
                     maxLength={160}
                     value={form.push_body}
                     disabled={!canEdit}
-                    placeholder="비우면 참여 질문 또는 확인 CTA 자동"
+                    placeholder={
+                      isNews
+                        ? "비우면 «지금 보면 좋아요» 등 자동 초대 문구"
+                        : "비우면 참여 질문 또는 확인 CTA 자동"
+                    }
                     onChange={(e) => patchForm({ push_body: e.target.value })}
                   />
                 </label>
+                {isNews && (detail.push_preview_title || detail.push_preview_body) ? (
+                  <div className="push-preview" aria-label="뉴스 알림 미리보기">
+                    <p className="push-preview__label">
+                      알림 미리보기
+                      <span className="push-preview__kind">
+                        {detail.push_title || detail.push_body
+                          ? " · 직접 입력"
+                          : " · 자동"}
+                      </span>
+                    </p>
+                    <div className="push-preview__card">
+                      <p className="push-preview__title">
+                        {detail.push_preview_title || detail.title}
+                      </p>
+                      <p className="push-preview__body">
+                        {detail.push_preview_body || "지금 보면 좋아요"}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
                 </div>
 
                 <div className="editor-section">
@@ -1269,9 +1365,13 @@ export default function App() {
         open={modal?.kind === "publish"}
         title="정말 배포할까요?"
         body={
-          detail?.scheduled_publish_at
-            ? `「${issueTitle}」에 예약이 걸려 있습니다. 지금 즉시 배포하면 예약을 취소하고 앱 홈에 바로 공개되며, 알림을 켠 사용자에게 푸시가 발송됩니다.`
-            : `「${issueTitle}」를 지금 배포하면 앱 홈에 공개되고, 알림을 켠 사용자에게 아래 푸시가 발송됩니다. 내용을 한 번 더 확인해 주세요.`
+          contentKind === "NEWS"
+            ? detail?.scheduled_publish_at
+              ? `「${issueTitle}」에 예약이 걸려 있습니다. 지금 즉시 배포하면 예약을 취소하고 뉴스 피드에 바로 공개됩니다. 뉴스 알림을 켠 사용자에게만 푸시가 갑니다.`
+              : `「${issueTitle}」를 지금 배포하면 뉴스 피드에 공개됩니다. 뉴스 알림을 켠 사용자에게만 푸시가 갑니다.`
+            : detail?.scheduled_publish_at
+              ? `「${issueTitle}」에 예약이 걸려 있습니다. 지금 즉시 배포하면 예약을 취소하고 앱 홈에 바로 공개되며, 알림을 켠 사용자에게 푸시가 발송됩니다.`
+              : `「${issueTitle}」를 지금 배포하면 앱 홈에 공개되고, 알림을 켠 사용자에게 아래 푸시가 발송됩니다. 내용을 한 번 더 확인해 주세요.`
         }
         confirmLabel="즉시 배포"
         tone="danger"
@@ -1288,7 +1388,9 @@ export default function App() {
                   ? "참여"
                   : detail.push_kind === "trend"
                     ? "급상승/트렌딩"
-                    : "일반"}
+                    : detail.push_kind === "news"
+                      ? "뉴스"
+                      : "일반"}
                 {detail.push_title || detail.push_body ? " · 직접 입력" : " · 자동"}
               </span>
             ) : null}
@@ -1298,7 +1400,10 @@ export default function App() {
               {detail?.push_preview_title || issueTitle}
             </p>
             <p className="push-preview__body">
-              {detail?.push_preview_body || "새롭게 나온 내용을 확인해보세요."}
+              {detail?.push_preview_body ||
+                (contentKind === "NEWS"
+                  ? "지금 보면 좋아요"
+                  : "새롭게 나온 내용을 확인해보세요.")}
             </p>
           </div>
         </div>
@@ -1307,7 +1412,11 @@ export default function App() {
       <ConfirmModal
         open={modal?.kind === "schedule"}
         title="예약 배포할까요?"
-        body={`「${issueTitle}」를 예약한 시각에 앱 홈에 공개하고, 그때 알림을 켠 사용자에게 푸시가 발송됩니다.`}
+        body={
+          contentKind === "NEWS"
+            ? `「${issueTitle}」를 예약한 시각에 뉴스 피드에 공개합니다. 뉴스 알림을 켠 사용자에게만 푸시가 갑니다.`
+            : `「${issueTitle}」를 예약한 시각에 앱 홈에 공개하고, 그때 알림을 켠 사용자에게 푸시가 발송됩니다.`
+        }
         confirmLabel="예약하기"
         tone="danger"
         busy={busy}
@@ -1325,6 +1434,7 @@ export default function App() {
             style={{ display: "block", marginTop: "0.25rem", width: "100%" }}
           />
         </label>
+        {contentKind === "NEWS" ? null : (
         <div className="push-preview" aria-label="발송될 알림 미리보기">
           <p className="push-preview__label">
             알림 미리보기
@@ -1348,6 +1458,26 @@ export default function App() {
             </p>
           </div>
         </div>
+        )}
+        {contentKind === "NEWS" ? (
+        <div className="push-preview" aria-label="발송될 알림 미리보기">
+          <p className="push-preview__label">
+            알림 미리보기
+            <span className="push-preview__kind">
+              뉴스
+              {detail?.push_title || detail?.push_body ? " · 직접 입력" : " · 자동"}
+            </span>
+          </p>
+          <div className="push-preview__card">
+            <p className="push-preview__title">
+              {detail?.push_preview_title || issueTitle}
+            </p>
+            <p className="push-preview__body">
+              {detail?.push_preview_body || "지금 보면 좋아요"}
+            </p>
+          </div>
+        </div>
+        ) : null}
       </ConfirmModal>
 
       <ConfirmModal

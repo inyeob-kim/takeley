@@ -25,7 +25,7 @@ class HomeRetapScope extends InheritedWidget {
       notifier != oldWidget.notifier;
 }
 
-/// Mirrors `frontend/src/App.tsx` tab chrome (홈 / 내 이슈 / 프로필).
+/// Mirrors `frontend/src/App.tsx` tab chrome (홈 / 내 TAKE / 프로필).
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key, required this.navigationShell});
 
@@ -82,7 +82,7 @@ class _ShellScreenState extends State<ShellScreen> {
                       onTap: _tapHome,
                     ),
                     _TabItem(
-                      label: '내 이슈',
+                      label: '내 TAKE',
                       active: index == 1,
                       icon: Icons.pie_chart_rounded,
                       onTap: () => widget.navigationShell.goBranch(1),

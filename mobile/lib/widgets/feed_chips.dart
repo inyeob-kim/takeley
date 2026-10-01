@@ -18,10 +18,10 @@ class FeedChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
         itemCount: tabs.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {

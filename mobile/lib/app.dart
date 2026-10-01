@@ -16,6 +16,7 @@ import 'config.dart';
 import 'navigation/deep_link.dart';
 import 'navigation/page_transitions.dart';
 import 'screens/activity_screen.dart';
+import 'screens/feed_browse_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/issue_detail_screen.dart';
 import 'screens/profile_screen.dart';
@@ -177,6 +178,74 @@ class _TakeleyAppState extends State<TakeleyApp> {
                       source: 'home_cta',
                     ),
                   ),
+                  routes: [
+                    GoRoute(
+                      path: 'issues',
+                      pageBuilder: (context, state) {
+                        return takeleySlidePage(
+                          key: state.pageKey,
+                          child: FeedBrowseScreen(
+                            issuesApi: _issuesApi,
+                            session: widget.session,
+                            contentKind: 'ISSUE',
+                            title: 'TAKE',
+                            sort: 'trending',
+                            showCategoryChips: true,
+                            onIssueOpen: (id, {scrollToTake = false}) =>
+                                _openIssue(
+                              context,
+                              id,
+                              source: 'issues_browse',
+                              scrollToTake: scrollToTake,
+                            ),
+                            onIssueTake: (id) => _openIssue(
+                              context,
+                              id,
+                              scrollToTake: true,
+                              source: 'issues_browse_cta',
+                            ),
+                            onBack: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/home');
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    GoRoute(
+                      path: 'news',
+                      pageBuilder: (context, state) {
+                        return takeleySlidePage(
+                          key: state.pageKey,
+                          child: FeedBrowseScreen(
+                            issuesApi: _issuesApi,
+                            session: widget.session,
+                            contentKind: 'NEWS',
+                            title: '뉴스',
+                            sort: 'new',
+                            showCategoryChips: true,
+                            onIssueOpen: (id, {scrollToTake = false}) =>
+                                _openIssue(
+                              context,
+                              id,
+                              source: 'news_browse',
+                              scrollToTake: scrollToTake,
+                            ),
+                            onBack: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/home');
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

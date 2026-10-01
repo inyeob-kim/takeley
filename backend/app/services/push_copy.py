@@ -26,6 +26,15 @@ _GENERAL_VARIANTS = (
     "이번 변화가 무엇인지 확인해보세요.",
 )
 
+# NEWS: Take a look — never vote / opinion CTAs, never dump summary.
+PUSH_KIND_NEWS = "news"
+_NEWS_BODY_VARIANTS = (
+    "지금 보면 좋아요",
+    "핵심만 짧게 정리해 뒀어요",
+    "Take a look — 1분이면 충분해요",
+    "오늘 흐름, 이것만 보면 돼요",
+)
+
 _BREAK_CHARS = set(" \t\n\r,./;:!?…·—–-，。、！？")
 
 
@@ -142,3 +151,31 @@ def build_signal_new_copy(source: PushCopySource) -> PushCopy:
     if not body:
         body = _pick_variant(signal_id, _GENERAL_VARIANTS)
     return PushCopy(title=title, body=body, kind=kind)
+
+
+def build_news_new_copy(
+    *,
+    signal_id: str,
+    title: str | None,
+    push_title: str | None = None,
+    push_body: str | None = None,
+) -> PushCopy:
+    """NEWS push: headline + look invitation. Admin override when non-empty."""
+    sid = signal_id or ""
+    override_title = " ".join((push_title or "").split()).strip()
+    override_body = " ".join((push_body or "").split()).strip()
+
+    if override_title or override_body:
+        out_title = (
+            clip_push_text(override_title or (title or ""), PUSH_TITLE_MAX)
+            or "TAKELEY 뉴스"
+        )
+        out_body = clip_push_text(
+            override_body or _pick_variant(sid, _NEWS_BODY_VARIANTS),
+            PUSH_BODY_MAX,
+        ) or _pick_variant(sid, _NEWS_BODY_VARIANTS)
+        return PushCopy(title=out_title, body=out_body, kind=PUSH_KIND_NEWS)
+
+    out_title = clip_push_text(title, PUSH_TITLE_MAX) or "TAKELEY 뉴스"
+    out_body = _pick_variant(sid, _NEWS_BODY_VARIANTS)
+    return PushCopy(title=out_title, body=out_body, kind=PUSH_KIND_NEWS)

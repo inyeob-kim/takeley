@@ -14,8 +14,12 @@ from app.schemas import (
     IssueParticipateIn,
     IssueParticipateOut,
     MyActivityOut,
+    OtherTakeActionIn,
+    OtherTakeMaybeOut,
+    OtherTakeOut,
 )
 from app.services.issue_service import IssueService
+from app.services.other_take_service import mark_other_take, pick_other_take
 
 router = APIRouter(prefix="/issues", tags=["issues"])
 
@@ -32,6 +36,11 @@ def list_issues(
         None,
         description="Industry filter: 정치|경제|금융|기술|AI|사회|국제|문화|스포츠|엔터",
     ),
+    content_kind: str = Query(
+        "ISSUE",
+        pattern="^(ISSUE|NEWS|ALL)$",
+        description="ISSUE (default home) | NEWS | ALL",
+    ),
     q: str | None = Query(
         None,
         max_length=40,
@@ -44,6 +53,7 @@ def list_issues(
         limit=limit,
         sort=sort,
         category=category,
+        content_kind=content_kind,
         q=q,
         user_id=_uid(user_id),
     )
@@ -116,13 +126,70 @@ def participate(
     uid = _uid(body.user_id or user_id)
     try:
         result = IssueService(db).participate(
-            issue_id, user_id=uid, option_id=body.option_id
+            issue_id,
+            user_id=uid,
+            option_id=body.option_id,
+            note=body.note,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not result:
         raise HTTPException(status_code=404, detail="Issue not found or not votable")
     return IssueParticipateOut(**result)
+
+
+@router.get("/{issue_id}/other-take", response_model=OtherTakeMaybeOut)
+def get_other_take(
+    issue_id: str,
+    user_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> OtherTakeMaybeOut:
+    card = pick_other_take(db, issue_id=issue_id, user_id=_uid(user_id))
+    if not card:
+        return OtherTakeMaybeOut(item=None)
+    return OtherTakeMaybeOut(item=OtherTakeOut(**card))
+
+
+@router.post("/{issue_id}/other-take/skip")
+def skip_other_take(
+    issue_id: str,
+    body: OtherTakeActionIn | None = None,
+    user_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    body = body or OtherTakeActionIn()
+    uid = _uid(body.user_id or user_id)
+    ok = mark_other_take(
+        db,
+        issue_id=issue_id,
+        user_id=uid,
+        action="skip",
+        exposure_id=body.exposure_id,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="exposure_not_found")
+    return {"ok": True}
+
+
+@router.post("/{issue_id}/other-take/open")
+def open_other_take(
+    issue_id: str,
+    body: OtherTakeActionIn | None = None,
+    user_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    body = body or OtherTakeActionIn()
+    uid = _uid(body.user_id or user_id)
+    ok = mark_other_take(
+        db,
+        issue_id=issue_id,
+        user_id=uid,
+        action="open",
+        exposure_id=body.exposure_id,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="exposure_not_found")
+    return {"ok": True}
 
 
 @router.get("/{issue_id}/comments", response_model=IssueCommentListOut)

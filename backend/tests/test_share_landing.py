@@ -141,6 +141,7 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert 'data-platform="ios"' in body
     assert 'class="cover"' not in body
     assert "og-default.png" in body
+    assert "splash1" in body
     assert "나는 ‘더 간다’에 한 표" not in body
 
     voted = client.get(f"/i/{signal.id}?take=%EB%8D%94+%EA%B0%84%EB%8B%A4")
@@ -270,5 +271,56 @@ def test_web_participate_does_not_use_demo_user():
     assert len(rows) == 1
     assert rows[0].user_id == user_id
     assert rows[0].option_id == opt.id
+
+    app.dependency_overrides.clear()
+
+
+def test_share_landing_news_copy_differs_from_issue(monkeypatch):
+    db = _session()
+    long_body = (
+        "## 무슨 일이에요\n\n"
+        + ("뉴스 본문입니다. " * 40)
+        + "\n\n## 왜 중요해요\n\n"
+        + ("추가 맥락입니다. " * 20)
+    )
+    signal = Signal(
+        title="그렉스 감원 뉴스",
+        summary="영국 베이커리 체인이 감원을 발표했습니다.",
+        column_body=long_body,
+        status="published",
+        published_at=datetime.utcnow(),
+        category="경제",
+        content_kind="NEWS",
+        participation_suitable=False,
+        open_count=3,
+    )
+    db.add(signal)
+    db.commit()
+    db.refresh(signal)
+
+    def _override():
+        try:
+            yield db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override
+    from app.core import config as cfg
+
+    cfg.get_settings.cache_clear()
+    monkeypatch.setenv("PUBLIC_SHARE_ORIGIN", "http://testserver")
+    cfg.get_settings.cache_clear()
+
+    client = TestClient(app)
+    res = client.get(f"/i/{signal.id}")
+    assert res.status_code == 200
+    body = res.text
+    assert "전체 기사 읽기" in body
+    assert "전체 칼럼 읽기" not in body
+    assert "앱에서 전체 보기" in body
+    assert "뉴스 브리핑 · 앱에서 더 보기" in body
+    assert "생각 남기기 · 댓글은 앱에서" not in body
+    assert "앱에서 생각 남기기" not in body
+    assert "다른 사람 생각" not in body
 
     app.dependency_overrides.clear()

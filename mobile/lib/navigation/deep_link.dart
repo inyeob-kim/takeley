@@ -130,7 +130,12 @@ DeepLinkTarget? parseDeepLink(Object? input) {
   final lower = route.toLowerCase();
   if (lower.contains('settings')) return const SettingsLink();
   if (lower.contains('brief')) return const BriefLink();
-  if (lower.contains('home') || route == '/' || route.isEmpty) {
+  // Exact home only — do not treat /home/news or /home/issues as HomeLink.
+  final homePath = lower.split('?').first.replaceAll(RegExp(r'/+$'), '');
+  if (homePath == '/home' ||
+      homePath == 'home' ||
+      route == '/' ||
+      route.isEmpty) {
     return const HomeLink();
   }
   return null;
@@ -194,6 +199,8 @@ String issueRoutePath(SignalLink link) {
 String? routerLocationForUri(Uri uri) {
   final path = uri.path;
   if (path == '/home' ||
+      path == '/home/news' ||
+      path == '/home/issues' ||
       path == '/activity' ||
       path == '/profile' ||
       path == '/settings' ||

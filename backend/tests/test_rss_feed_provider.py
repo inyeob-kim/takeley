@@ -40,6 +40,28 @@ def test_canonical_url_strips_utm_keeps_other():
     assert canonical_url("https://ex.com/p?utm_source=tw&id=9") == "https://ex.com/p?id=9"
 
 
+def test_parse_rss_uses_source_or_host_as_author():
+    from app.providers.rss_feed_provider import publisher_label_from_url
+
+    assert publisher_label_from_url("https://www.bbc.co.uk/news/x") == "BBC"
+    xml = """<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title>Story</title>
+      <link>https://news.google.com/rss/articles/abc</link>
+      <guid>g-1</guid>
+      <description>Body</description>
+      <source url="https://www.bbc.co.uk">BBC News</source>
+    </item>
+  </channel>
+</rss>
+"""
+    items = parse_rss_xml(xml, feed_id="demo")
+    assert len(items) == 1
+    assert items[0].author == "BBC News"
+
+
 def test_parse_valid_xml_and_external_id():
     items = parse_rss_xml(SAMPLE, feed_id="feed-a")
     assert len(items) == 1

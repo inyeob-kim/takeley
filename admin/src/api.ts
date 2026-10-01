@@ -21,6 +21,7 @@ export type AdminIssue = {
   image_url?: string | null;
   key_points: string[];
   category: string | null;
+  content_kind?: string;
   status: string;
   source_count: number;
   importance: number;
@@ -66,10 +67,16 @@ export type AdminIssueUpdate = {
   push_body: string | null;
 };
 
+export type ContentKindFilter = "ISSUE" | "NEWS";
+
 export type Counts = {
   draft: number;
   published: number;
   rejected: number;
+  news_draft?: number;
+  news_published?: number;
+  news_rejected?: number;
+  news_today?: number;
 };
 
 export function resolveMediaUrl(url: string | null | undefined): string | null {
@@ -114,8 +121,12 @@ export function fetchCounts(key: string): Promise<Counts> {
 export function fetchIssues(
   key: string,
   status: IssueStatus,
+  contentKind: ContentKindFilter = "ISSUE",
 ): Promise<{ items: AdminIssue[]; count: number }> {
-  return adminFetch(`/api/v1/admin/issues?status=${status}&limit=50`, key);
+  return adminFetch(
+    `/api/v1/admin/issues?status=${status}&content_kind=${contentKind}&limit=50`,
+    key,
+  );
 }
 
 export function fetchIssue(key: string, id: string): Promise<AdminIssue> {

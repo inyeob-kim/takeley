@@ -15,8 +15,12 @@ DEFAULT_TEMPLATES: dict[str, tuple[str, str]] = {
         "{title}",
         "{body}",
     ),
+    "news_new": (
+        "{title}",
+        "{body}",
+    ),
     "issue_update": (
-        "내가 팔로우한 이슈에 새로운 소식이 추가됐어요.",
+        "내가 팔로우한 TAKE에 새로운 소식이 추가됐어요.",
         "{title}",
     ),
 }

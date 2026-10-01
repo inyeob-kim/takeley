@@ -230,6 +230,17 @@ def _teaser_html(
     the landing — uniform deco only — so winners do not leak before the app.
     """
     esc = html.escape
+    kind = (getattr(row, "content_kind", None) or "ISSUE").strip().upper()
+    if kind == "NEWS":
+        teaser = """
+<section class="teaser teaser--soft" aria-label="앱에서 이어보기">
+  <p class="teaser-kicker">TAKELEY</p>
+  <p class="teaser-q">뉴스 브리핑 · 앱에서 더 보기</p>
+  <p class="teaser-lock">앱에서 전체 기사와 다른 이슈도 이어서 보세요</p>
+</section>
+"""
+        return teaser, "앱에서 전체 보기"
+
     suitable = bool(getattr(row, "participation_suitable", False))
     options = sorted(
         row.participation_options or [],
@@ -352,7 +363,7 @@ def issue_share_landing(
         canonical = f"{canonical}?{urlencode(q)}"
 
     issue_image = _abs_url(share_origin, getattr(row, "image_url", None))
-    image = issue_image or f"{share_origin}/static/og-default.png?v=td"
+    image = issue_image or f"{share_origin}/static/og-default.png?v=splash1"
 
     app_url = _app_scheme_url(issue_id, sid=sid, ref=ref)
     column_raw = _column_source(row)
@@ -371,12 +382,18 @@ def issue_share_landing(
         else ""
     )
     author = (getattr(row, "column_author_name", None) or "").strip()
+    kind = (getattr(row, "content_kind", None) or "ISSUE").strip().upper()
+    is_news = kind == "NEWS"
+    # NEWS has no columnist byline on the share page.
     author_html = (
-        f'<p class="column-author">{esc(author)}</p>' if author and column_html else ""
+        f'<p class="column-author">{esc(author)}</p>'
+        if author and column_html and not is_news
+        else ""
     )
     collapsed = " is-collapsed" if column_html and len(column_raw) > 280 else ""
+    more_label = "전체 기사 읽기" if is_news else "전체 칼럼 읽기"
     more_html = (
-        '<button type="button" class="column-more" id="column-more">전체 칼럼 읽기</button>'
+        f'<button type="button" class="column-more" id="column-more">{esc(more_label)}</button>'
         if collapsed
         else ""
     )

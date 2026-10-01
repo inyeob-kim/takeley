@@ -300,13 +300,14 @@ class SignalRepository:
         )
 
     def count_issue_cards_today(self) -> int:
-        """Draft + published created today — used for daily soft/hard create caps."""
+        """Draft + published ISSUE cards today — soft/hard create caps (excludes NEWS)."""
         start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         return (
             self.db.query(Signal)
             .filter(
                 Signal.status.in_(("draft", "published")),
                 Signal.first_seen_at >= start,
+                Signal.content_kind == "ISSUE",
             )
             .count()
         )

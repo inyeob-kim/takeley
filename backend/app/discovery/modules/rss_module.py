@@ -1,4 +1,4 @@
-"""RSS discovery module — admin feeds, XML only, per-feed isolation."""
+"""RSS discovery module — admin feeds, XML + publisher body enrich."""
 
 from __future__ import annotations
 

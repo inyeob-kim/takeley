@@ -105,6 +105,7 @@ class UserSettingsOut(BaseModel):
     brief_alarm_time: str
     timezone: str
     notifications_enabled: bool = True
+    news_notifications_enabled: bool = False
     tts_voice_gender: str = "female"
     display_name: Optional[str] = None
 
@@ -113,6 +114,7 @@ class UserSettingsUpdateIn(BaseModel):
     brief_alarm_time: Optional[str] = None
     timezone: Optional[str] = None
     notifications_enabled: Optional[bool] = None
+    news_notifications_enabled: Optional[bool] = None
     tts_voice_gender: Optional[str] = None
     display_name: Optional[str] = None
 
@@ -261,6 +263,7 @@ class IssueOut(BaseModel):
     importance: float = 0.5
     confidence: float = 0.5
     content_type: str = "REPORT"
+    content_kind: str = "ISSUE"
     evidence_level: str = "UNVERIFIED"
     related_symbols: list[str] = Field(default_factory=list)
     participation_suitable: bool = False
@@ -277,6 +280,9 @@ class IssueOut(BaseModel):
     options: list[ParticipationOptionOut] = Field(default_factory=list)
     participation_count: int = 0
     my_option_id: Optional[str] = None
+    my_note: Optional[str] = None
+    # False until user voted AND n >= distribution_min_responses.
+    distribution_visible: bool = False
     source_count: int = 0
     sources: list[IssueSourceOut] = Field(default_factory=list)
     comment_count: int = 0
@@ -301,14 +307,39 @@ class IssueListOut(BaseModel):
 class IssueParticipateIn(BaseModel):
     option_id: str = Field(..., min_length=1)
     user_id: Optional[str] = None
+    # Optional one-line judgment note (participations.note).
+    note: Optional[str] = Field(default=None, max_length=120)
 
 
 class IssueParticipateOut(BaseModel):
     issue_id: str
     my_option_id: str
+    my_note: Optional[str] = None
     participation_count: int
     options: list[ParticipationOptionOut]
+    distribution_visible: bool = False
     is_following: bool = False
+    position_changed: bool = False
+
+
+class OtherTakeOut(BaseModel):
+    exposure_id: str
+    issue_id: str
+    target_type: str = "participation"
+    target_id: str
+    author_id: str
+    option_label: Optional[str] = None
+    note: str
+    same_side: bool = False
+
+
+class OtherTakeMaybeOut(BaseModel):
+    item: Optional[OtherTakeOut] = None
+
+
+class OtherTakeActionIn(BaseModel):
+    user_id: Optional[str] = None
+    exposure_id: Optional[str] = None
 
 
 class IssueCommentIn(BaseModel):

@@ -18,11 +18,16 @@ from app.services.push_template_service import render_push_copy
 logger = logging.getLogger(__name__)
 
 CATEGORY_SIGNAL_NEW = "signal_new"
+CATEGORY_NEWS_NEW = "news_new"
 CATEGORY_ISSUE_UPDATE = "issue_update"
 
 
 def _notifications_on(db: Session, user_id: str) -> bool:
     return PreferenceService(db).get(user_id).notifications_enabled
+
+
+def _news_notifications_on(db: Session, user_id: str) -> bool:
+    return PreferenceService(db).get(user_id).news_notifications_enabled
 
 
 def _has_active_token(db: Session, user_id: str) -> bool:
@@ -241,6 +246,128 @@ def enqueue_signal_new(
     }
     logger.info("signal_push_fanout %s", result)
     return result
+
+
+def enqueue_news_new(
+    db: Session,
+    *,
+    signal_id: str,
+    title: str | None = None,
+    summary: str | None = None,
+) -> dict:
+    """Fan out NEWS pushes to users with news_notifications_enabled."""
+    from app.db.models import Signal
+    from app.services.push_copy import (
+        PUSH_BODY_MAX,
+        PUSH_TITLE_MAX,
+        build_news_new_copy,
+    )
+
+    settings = get_settings()
+    if not bool(getattr(settings, "news_push_enabled", False)):
+        logger.info("push skip reason=news_push_disabled signal=%s", signal_id)
+        return {"enqueued": 0, "skipped": "news_push_disabled"}
+
+    row = db.query(Signal).filter(Signal.id == signal_id).first()
+    raw_title = (getattr(row, "title", None) if row else title) or title or ""
+    # summary kept for call-site compat — never dumped into push body.
+    _ = summary
+    copy = build_news_new_copy(
+        signal_id=signal_id,
+        title=raw_title,
+        push_title=getattr(row, "push_title", None) if row else None,
+        push_body=getattr(row, "push_body", None) if row else None,
+    )
+
+    title_limit = int(getattr(settings, "push_title_max", PUSH_TITLE_MAX) or PUSH_TITLE_MAX)
+    body_limit = int(getattr(settings, "push_body_max", PUSH_BODY_MAX) or PUSH_BODY_MAX)
+    push_title_out, body = render_push_copy(
+        db,
+        CATEGORY_NEWS_NEW,
+        {
+            "title": copy.title,
+            "body": copy.body,
+            "summary": "",
+            "symbols": "",
+            "signal_id": signal_id,
+            "brief_date": "",
+        },
+        title_limit=title_limit,
+        body_limit=body_limit,
+    )
+
+    user_ids = users_for_issue_broadcast(db)
+    prefs = PreferenceService(db)
+    enqueued = skipped_prefs = skipped_token = skipped_cap = skipped_dedupe = 0
+
+    for user_id in sorted(user_ids):
+        if not _news_notifications_on(db, user_id):
+            skipped_prefs += 1
+            continue
+        if not _has_active_token(db, user_id):
+            skipped_token += 1
+            continue
+        local_date = prefs.local_brief_date(user_id)
+        if _news_push_count_today(db, user_id, local_date) >= settings.signal_push_daily_cap:
+            skipped_cap += 1
+            continue
+        dedupe_key = f"{user_id}:{CATEGORY_NEWS_NEW}:{signal_id}"
+        row_n = _insert_pending(
+            db,
+            user_id=user_id,
+            category=CATEGORY_NEWS_NEW,
+            title=push_title_out,
+            body=body,
+            data={
+                "category": CATEGORY_NEWS_NEW,
+                "signal_id": signal_id,
+                "issue_id": signal_id,
+                "push_kind": copy.kind,
+                "content_kind": "NEWS",
+                "route": f"/issues/{signal_id}",
+                "user_id": user_id,
+                "local_date": local_date,
+            },
+            dedupe_key=dedupe_key,
+        )
+        if row_n:
+            enqueued += 1
+        else:
+            skipped_dedupe += 1
+
+    result = {
+        "signal_id": signal_id,
+        "targets": len(user_ids),
+        "enqueued": enqueued,
+        "skipped_cap": skipped_cap,
+        "skipped_prefs": skipped_prefs,
+        "skipped_token": skipped_token,
+        "skipped_dedupe": skipped_dedupe,
+        "push_kind": copy.kind,
+    }
+    logger.info("news_push_fanout %s", result)
+    return result
+
+
+def _news_push_count_today(db: Session, user_id: str, local_date: str) -> int:
+    rows = (
+        db.query(PushNotification)
+        .filter(
+            PushNotification.user_id == user_id,
+            PushNotification.category == CATEGORY_NEWS_NEW,
+            PushNotification.status.in_(("pending", "sent")),
+        )
+        .all()
+    )
+    count = 0
+    for row in rows:
+        data = row.data or {}
+        if data.get("local_date") == local_date:
+            count += 1
+            continue
+        if row.created_at and row.created_at.strftime("%Y-%m-%d") == local_date:
+            count += 1
+    return count
 
 
 def enqueue_issue_update(

@@ -120,3 +120,36 @@ def test_title_truncated_to_limit():
     assert len(copy.title) <= PUSH_TITLE_MAX
     assert copy.title.endswith("…")
     assert len(copy.body) <= PUSH_BODY_MAX
+
+
+def test_news_push_copy_is_look_invitation_not_summary():
+    from app.services.push_copy import PUSH_KIND_NEWS, build_news_new_copy
+
+    copy = build_news_new_copy(
+        signal_id="news-abc",
+        title="그렉스, 740명 감원 및 4개 공장 폐쇄 계획",
+    )
+    assert copy.kind == PUSH_KIND_NEWS
+    assert "그렉스" in copy.title
+    assert copy.body in {
+        "지금 보면 좋아요",
+        "핵심만 짧게 정리해 뒀어요",
+        "Take a look — 1분이면 충분해요",
+        "오늘 흐름, 이것만 보면 돼요",
+    }
+    assert "어떻게 생각" not in copy.body
+    assert len(copy.body) <= PUSH_BODY_MAX
+
+
+def test_news_push_copy_admin_override():
+    from app.services.push_copy import PUSH_KIND_NEWS, build_news_new_copy
+
+    copy = build_news_new_copy(
+        signal_id="news-xyz",
+        title="원본 제목",
+        push_title="직접 쓴 뉴스 제목",
+        push_body="직접 쓴 뉴스 본문",
+    )
+    assert copy.kind == PUSH_KIND_NEWS
+    assert copy.title == "직접 쓴 뉴스 제목"
+    assert copy.body == "직접 쓴 뉴스 본문"

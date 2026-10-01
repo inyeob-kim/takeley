@@ -15,10 +15,17 @@ from app.core.config import get_settings
 from app.core.usage import (
     CANDIDATE_ACCEPTED,
     CANDIDATE_REJECTED,
+    CONTENT_KIND_ISSUE,
+    CONTENT_KIND_NEWS,
+    CONTENT_KIND_REJECT,
     DUPLICATE_ISSUE_PREVENTED,
     ISSUE_CREATED,
     ISSUE_REJECTED,
     ISSUE_UPDATED,
+    NEWS_DEDUPLICATED,
+    NEWS_FAILED,
+    NEWS_GENERATED,
+    NEWS_REJECTED,
     UNDERSTANDING_REJECTED,
     record_usage,
 )
@@ -35,15 +42,21 @@ from app.pipeline.evidence import trust_tier_for_provider
 from app.pipeline.issue_heat import max_reply_count_from_payloads
 from app.pipeline.issue_quality import passes_issue_quality_gate
 from app.pipeline.matching import (
-    DECISION_NEW,
     DECISION_REJECT,
     DECISION_UPDATE,
     ExistingIssueBrief,
     match_to_existing,
 )
+from app.pipeline.news_generate import generate_news_card
+from app.pipeline.news_guardrails import count_news_cards_today, news_passes_guardrails
 from app.pipeline.normalize import content_fingerprint, normalize_text
 from app.pipeline.quality_judge import judge_issue_card
-from app.pipeline.understanding import understand_candidate
+from app.pipeline.understanding import (
+    CONTENT_KIND_ISSUE as KIND_ISSUE,
+    CONTENT_KIND_NEWS as KIND_NEWS,
+    CONTENT_KIND_REJECT as KIND_REJECT,
+    understand_candidate,
+)
 from app.pipeline.velocity import compute_velocity, record_metric_snapshot
 from app.services.issue_service import (
     apply_issue_fields,
@@ -188,6 +201,126 @@ def _lane_keys(payloads: list) -> set[str]:
     return keys
 
 
+def _next_news_publish_at(db: Session, settings) -> datetime:
+    """Next drip slot: max(now, last NEWS schedule/publish + interval)."""
+    now = datetime.utcnow()
+    interval = max(1, int(settings.news_publish_interval_seconds))
+    last_scheduled = (
+        db.query(Signal.scheduled_publish_at)
+        .filter(
+            Signal.content_kind == KIND_NEWS,
+            Signal.status == SignalStatus.DRAFT.value,
+            Signal.scheduled_publish_at.isnot(None),
+        )
+        .order_by(Signal.scheduled_publish_at.desc())
+        .limit(1)
+        .scalar()
+    )
+    last_published = (
+        db.query(Signal.published_at)
+        .filter(
+            Signal.content_kind == KIND_NEWS,
+            Signal.status == SignalStatus.PUBLISHED.value,
+            Signal.published_at.isnot(None),
+        )
+        .order_by(Signal.published_at.desc())
+        .limit(1)
+        .scalar()
+    )
+    anchors = [t for t in (last_scheduled, last_published) if t is not None]
+    if not anchors:
+        return now
+    candidate = max(anchors) + timedelta(seconds=interval)
+    return candidate if candidate > now else now
+
+
+def _persist_news_card(
+    db: Session,
+    *,
+    pregroup: Cluster,
+    rep: ScoredCandidate,
+    card,
+    settings,
+) -> str:
+    """Create NEWS Signal. Returns 'draft' | 'skipped' (publish is drip-only)."""
+    event_repo = EventRepository(db)
+    signal_repo = SignalRepository(db)
+    event = event_repo.upsert_from_cluster(
+        cluster_key=pregroup.key,
+        title=card.title,
+        related_symbols=[],
+        related_sectors=[],
+        providers=pregroup.unique_providers,
+        raw_ids=pregroup.raw_ids,
+    )
+    existing_same_event = (
+        db.query(Signal)
+        .filter(
+            Signal.event_id == event.id,
+            Signal.status.in_(("draft", "published")),
+        )
+        .order_by(Signal.updated_at.desc())
+        .first()
+    )
+    if existing_same_event:
+        record_usage(NEWS_DEDUPLICATED, 1, db=db, tags={"reason": "same_event"})
+        return "skipped"
+
+    now = datetime.utcnow()
+    auto = bool(settings.news_auto_publish)
+    # Always draft; auto_publish only assigns a drip slot (push on publish_due).
+    scheduled_at = _next_news_publish_at(db, settings) if auto else None
+    origin = rep.payload if isinstance(rep.payload, dict) else {}
+    cover = (origin.get("image_url") or "").strip() or None
+    if cover and len(cover) > 1024:
+        cover = cover[:1024]
+    signal = Signal(
+        event_id=event.id,
+        title=card.title,
+        summary=card.summary,
+        why_it_matters="",
+        column_body=(card.body or "").strip(),
+        confirmed_facts=[],
+        key_points=list(card.key_points or []),
+        emphasis={},
+        market_reaction=None,
+        evidence_mix=[],
+        content_type="REPORT",
+        content_kind=KIND_NEWS,
+        evidence_level="UNVERIFIED",
+        importance=0.45,
+        confidence=0.5,
+        related_symbols=[],
+        related_sectors=[],
+        cluster_key=pregroup.key,
+        status=SignalStatus.DRAFT.value,
+        category=card.category,
+        topic=(rep.title or card.title or "")[:120] or None,
+        image_url=cover,
+        first_seen_at=now,
+        published_at=None,
+        scheduled_publish_at=scheduled_at,
+        updated_at=now,
+        content_updated_at=now,
+        lifecycle="CANDIDATE",
+        trend_status="NORMAL",
+        participation_suitable=False,
+        participation_type=None,
+        participation_question=None,
+        show_sources=True,
+    )
+    _attach_sources_v2(signal, pregroup, None)
+    signal_repo.save(signal)
+    record_usage(NEWS_GENERATED, 1, db=db, tags={"provider": rep.provider})
+    if auto and scheduled_at is not None:
+        logger.info(
+            "news drip queued id=%s scheduled_publish_at=%s",
+            signal.id,
+            scheduled_at.isoformat(),
+        )
+    return "draft"
+
+
 def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
     settings = get_settings()
     raw_repo = RawItemRepository(db)
@@ -242,6 +375,7 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
                 payload=payload if isinstance(payload, dict) else {},
                 priority_score=decision.priority_score,
                 reasons=list(decision.reasons),
+                title=row.title,
             )
         )
 
@@ -256,12 +390,18 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         reserve = bool(x_config.industry_slot_reserve)
     except Exception:
         logger.exception("x ingest config unavailable; using env understand budget")
-    if reserve:
+    news_budget = (
+        int(settings.news_llm_budget_per_cycle)
+        if settings.news_pipeline_enabled
+        else 0
+    )
+    total_budget = budget + news_budget
+    if reserve and news_budget == 0:
         from app.pipeline.candidate import rank_for_pool_reserved
 
         pool = rank_for_pool_reserved(scored, budget=budget)
     else:
-        pool = rank_for_pool(scored, budget=budget)
+        pool = rank_for_pool(scored, budget=total_budget)
     pool_ids = {c.raw_id for c in pool}
     # Candidates not in Top-N stay unprocessed for a later cycle (cost control).
     for c in scored:
@@ -287,6 +427,8 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
     created = 0
     updated = 0
     rejected = 0
+    news_created = 0
+    news_published = 0
     _meaningful: set[str] = set()
     remembered_topics: list[str] = []
     armed_topics: list[tuple[str, str, str]] = []
@@ -308,10 +450,89 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         if understanding.topic:
             remembered_topics.append(understanding.topic)
 
-        if not understanding.is_issue_candidate:
-            rejected += 1
-            record_usage(UNDERSTANDING_REJECTED, 1, db=db)
-            continue
+        kind = understanding.content_kind or KIND_REJECT
+        news_enabled = bool(settings.news_pipeline_enabled)
+
+        # Legacy path when NEWS pipeline OFF: no NEWS persist; NEWS/ISSUE → Issue path.
+        if not news_enabled:
+            if kind == KIND_REJECT:
+                rejected += 1
+                record_usage(UNDERSTANDING_REJECTED, 1, db=db)
+                record_usage(
+                    CONTENT_KIND_REJECT, 1, db=db, tags={"reason": "pipeline_off"}
+                )
+                continue
+            kind = KIND_ISSUE
+            # Match still gates on is_issue_candidate (NEWS heuristic sets False).
+            understanding.is_issue_candidate = True
+        else:
+            if kind == KIND_REJECT:
+                rejected += 1
+                record_usage(UNDERSTANDING_REJECTED, 1, db=db)
+                record_usage(
+                    CONTENT_KIND_REJECT,
+                    1,
+                    db=db,
+                    tags={
+                        "novelty": understanding.novelty,
+                        "reason": understanding.reject_reason
+                        or understanding.novelty
+                        or "reject",
+                        "hook": round(understanding.hook, 2),
+                        "useful": round(understanding.useful, 2),
+                        "takeley_fit": round(understanding.takeley_fit, 2),
+                    },
+                )
+                continue
+            if kind == KIND_NEWS:
+                record_usage(CONTENT_KIND_NEWS, 1, db=db)
+                if count_news_cards_today(db) >= settings.daily_news_cap:
+                    rejected += 1
+                    record_usage(
+                        NEWS_REJECTED, 1, db=db, tags={"reason": "daily_cap"}
+                    )
+                    continue
+                card = generate_news_card(
+                    text=rep.text,
+                    provider=rep.provider,
+                    source_title=rep.title,
+                    source_url=rep.url,
+                )
+                guard = news_passes_guardrails(
+                    db,
+                    card=card,
+                    source_url=rep.url,
+                    provider=rep.provider,
+                    published_at=rep.published_at,
+                    cluster_text=rep.text,
+                )
+                if not guard.accepted:
+                    rejected += 1
+                    metric = (
+                        NEWS_DEDUPLICATED
+                        if guard.reason.startswith("duplicate")
+                        else NEWS_FAILED
+                    )
+                    record_usage(
+                        metric, 1, db=db, tags={"reason": guard.reason}
+                    )
+                    continue
+                outcome = _persist_news_card(
+                    db,
+                    pregroup=pregroup,
+                    rep=rep,
+                    card=card,
+                    settings=settings,
+                )
+                if outcome == "skipped":
+                    rejected += 1
+                    continue
+                news_created += 1
+                if outcome == "published":
+                    news_published += 1
+                continue
+            # ISSUE
+            record_usage(CONTENT_KIND_ISSUE, 1, db=db)
 
         if understanding.topic:
             origin = payload_by_id.get(rep.raw_id) or {}
@@ -481,7 +702,7 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
             continue
 
         evidence = domain.evidence_mix[0].value if domain.evidence_mix else None
-        # Admin review gate: never auto-publish to the home feed.
+        # Admin review gate: never auto-publish ISSUE to the home feed.
         signal = Signal(
             event_id=event.id,
             title=domain.title,
@@ -494,6 +715,7 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
             market_reaction=domain.market_reaction,
             evidence_mix=[e.value for e in domain.evidence_mix],
             content_type=domain.content_type,
+            content_kind=KIND_ISSUE,
             evidence_level=domain.evidence_level,
             importance=domain.importance,
             confidence=domain.confidence,
@@ -510,6 +732,7 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         )
         apply_issue_fields(signal, domain, db=db)
         signal.status = SignalStatus.DRAFT.value
+        signal.content_kind = KIND_ISSUE
         _attach_sources_v2(signal, pregroup, evidence)
         signal_repo.save(signal)
         if domain.participation_suitable and domain.participation_options:
@@ -547,6 +770,9 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
         "signals_created": created,
         "signals_updated": updated,
         "signals_rejected": rejected,
+        "news_created": news_created,
+        "news_published": news_published,
+        "news_pipeline_enabled": bool(settings.news_pipeline_enabled),
         "meaningful_lanes": sorted(_meaningful),
         "cheap_filter_dropped": cheap_dropped,
         "published_today": cards_today,

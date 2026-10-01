@@ -135,6 +135,11 @@ class Issue(Base):
     market_reaction: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     evidence_mix: Mapped[list] = mapped_column(JSONType, default=list)
     content_type: Mapped[str] = mapped_column(String(32), default="REPORT", index=True)
+    # Pipeline branch: NEWS (light auto card) | ISSUE (full template + admin).
+    # Orthogonal to content_type (FACT/REPORT/…). REJECT never persists a row.
+    content_kind: Mapped[str] = mapped_column(
+        String(32), default="ISSUE", index=True
+    )
     evidence_level: Mapped[str] = mapped_column(
         String(32), default="UNVERIFIED", index=True
     )
@@ -319,6 +324,8 @@ class Participation(Base):
     option_id: Mapped[str] = mapped_column(
         ForeignKey("participation_options.id"), index=True
     )
+    # Optional one-line judgment note (LEVEL 3 TAKE) — not a comment thread.
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -326,6 +333,45 @@ class Participation(Base):
 
     signal: Mapped["Issue"] = relationship(back_populates="participations")
     option: Mapped["ParticipationOption"] = relationship(back_populates="participations")
+
+
+class ParticipationChangeLog(Base):
+    """Append-only stance history for judgment log / closure / recap."""
+
+    __tablename__ = "participation_change_logs"
+    __table_args__ = (
+        Index("idx_pcl_user_changed", "user_id", "changed_at"),
+        Index("idx_pcl_signal_changed", "signal_id", "changed_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    signal_id: Mapped[str] = mapped_column(ForeignKey("issues.id"), index=True)
+    from_option_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    to_option_id: Mapped[str] = mapped_column(String(36))
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class OtherTakeExposure(Base):
+    """Per-user exposure of another person's judgment note (other-take card)."""
+
+    __tablename__ = "other_take_exposures"
+    __table_args__ = (
+        Index("idx_ote_user_exposed", "user_id", "exposed_at"),
+        Index("idx_ote_user_signal", "user_id", "signal_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    signal_id: Mapped[str] = mapped_column(ForeignKey("issues.id"), index=True)
+    # participation | comment — MVP uses participation (note).
+    target_type: Mapped[str] = mapped_column(String(16), default="participation")
+    target_id: Mapped[str] = mapped_column(String(36))
+    author_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_key: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    exposed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    skipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    opened_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
 class IssueComment(Base):
@@ -723,6 +769,12 @@ class UserPreference(Base):
     brief_alarm_time: Mapped[str] = mapped_column(String(5), default="07:00")
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Seoul")
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Opt-in NEWS push (separate from TAKE / signal_new).
+    news_notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    # A/B sticky: A=distribution only, B=distribution+other-take. Null until assigned.
+    participation_experiment_bucket: Mapped[Optional[str]] = mapped_column(
+        String(8), nullable=True
+    )
     # OpenAI TTS gender preference: female | male (mapped to nova / onyx).
     tts_voice_gender: Mapped[str] = mapped_column(String(16), default="female")
     updated_at: Mapped[datetime] = mapped_column(

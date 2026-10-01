@@ -104,6 +104,20 @@ def _ensure_columnist_schema() -> None:
             conn.execute(
                 text("ALTER TABLE issues ADD COLUMN scheduled_publish_at TIMESTAMP")
             )
+        if "issues" in tables and "content_kind" not in issue_cols:
+            conn.execute(
+                text(
+                    "ALTER TABLE issues ADD COLUMN content_kind VARCHAR(32) "
+                    "NOT NULL DEFAULT 'ISSUE'"
+                )
+            )
+            try:
+                conn.execute(
+                    text("CREATE INDEX IF NOT EXISTS ix_issues_content_kind "
+                         "ON issues (content_kind)")
+                )
+            except Exception:
+                pass
         if "columnists" in tables:
             col_names = {c["name"] for c in inspector.get_columns("columnists")}
             if "specialties" not in col_names:
@@ -366,6 +380,11 @@ def _ensure_sqlite_schema_patches() -> None:
                 "scheduled_publish_at",
                 "ALTER TABLE issues ADD COLUMN scheduled_publish_at DATETIME",
             ),
+            (
+                "content_kind",
+                "ALTER TABLE issues ADD COLUMN content_kind VARCHAR(32) "
+                "NOT NULL DEFAULT 'ISSUE'",
+            ),
         ):
             if issue_cols and col not in issue_cols:
                 conn.exec_driver_sql(ddl)
@@ -554,6 +573,56 @@ def _ensure_sqlite_schema_patches() -> None:
                 "ALTER TABLE user_preferences "
                 "ADD COLUMN tts_voice_gender VARCHAR(16) DEFAULT 'female'"
             )
+        if pref_cols and "news_notifications_enabled" not in pref_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user_preferences "
+                "ADD COLUMN news_notifications_enabled BOOLEAN DEFAULT 0"
+            )
+        if pref_cols and "participation_experiment_bucket" not in pref_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user_preferences "
+                "ADD COLUMN participation_experiment_bucket VARCHAR(8)"
+            )
+
+        part_info = conn.exec_driver_sql(
+            "PRAGMA table_info(participations)"
+        ).fetchall()
+        part_cols = {r[1] for r in part_info}
+        if part_cols and "note" not in part_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE participations ADD COLUMN note TEXT"
+            )
+
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS participation_change_logs (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(64) NOT NULL,
+                signal_id VARCHAR(36) NOT NULL,
+                from_option_id VARCHAR(36),
+                to_option_id VARCHAR(36) NOT NULL,
+                changed_at DATETIME NOT NULL,
+                FOREIGN KEY(signal_id) REFERENCES issues (id)
+            )
+            """
+        )
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS other_take_exposures (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(64) NOT NULL,
+                signal_id VARCHAR(36) NOT NULL,
+                target_type VARCHAR(16) NOT NULL,
+                target_id VARCHAR(36) NOT NULL,
+                author_id VARCHAR(64) NOT NULL,
+                session_key VARCHAR(64),
+                exposed_at DATETIME NOT NULL,
+                skipped_at DATETIME,
+                opened_at DATETIME,
+                FOREIGN KEY(signal_id) REFERENCES issues (id)
+            )
+            """
+        )
 
         assets = conn.exec_driver_sql("PRAGMA table_info(assets)").fetchall()
         asset_cols = {r[1] for r in assets}

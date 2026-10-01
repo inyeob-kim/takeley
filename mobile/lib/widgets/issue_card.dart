@@ -61,20 +61,27 @@ class _IssueCardState extends State<IssueCard> {
   @override
   Widget build(BuildContext context) {
     final issue = widget.issue;
+    final isNews = issue.contentKind.toUpperCase() == 'NEWS';
     final when = formatNewsTime(
       issuePublishedTimestamp(
         publishedAt: issue.publishedAt,
         firstSeenAt: issue.firstSeenAt,
       ),
     );
-    final canVote = issue.participationSuitable &&
+    final canVote = !isNews &&
+        issue.participationSuitable &&
         (issue.participationQuestion?.isNotEmpty ?? false);
     final cat = categoryLabel(issue.category);
     final imageUrl = resolveImageUrl(issue.imageUrl);
     final trend = issue.trendStatus.toUpperCase();
-    final meta = _footerMeta(issue, when);
+    final meta = _footerMeta(issue, when, isNews: isNews);
     final thumbUrl =
         widget.imageLayout == IssueCardImageLayout.trailing ? imageUrl : null;
+    final trailingMeta = _trailingMetaLabel(
+      context,
+      trend: trend,
+      isNews: isNews,
+    );
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -93,22 +100,7 @@ class _IssueCardState extends State<IssueCard> {
                 children: [
                   Text(cat, style: Theme.of(context).textTheme.labelLarge),
                   const Spacer(),
-                  if (trend == 'TRENDING')
-                    Text(
-                      '🔥 지금 뜨는',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: TakeleyColors.rising,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    )
-                  else if (trend == 'RISING')
-                    Text(
-                      '급상승',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: TakeleyColors.rising,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
+                  if (trailingMeta != null) trailingMeta,
                 ],
               ),
               const SizedBox(height: 10),
@@ -145,29 +137,33 @@ class _IssueCardState extends State<IssueCard> {
                   Expanded(
                     child: Text(
                       widget.footerOverride ??
-                          (meta.isEmpty ? '이슈' : meta),
+                          (meta.isEmpty
+                              ? (isNews ? '뉴스' : 'TAKE')
+                              : meta),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      final cta = widget.onCta;
-                      if (cta != null) {
-                        cta(issue);
-                      } else {
-                        widget.onOpen(issue);
-                      }
-                    },
-                    child: Text(
-                      widget.ctaLabel ??
-                          (canVote ? '생각 남기기 →' : '자세히 보기 →'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: TakeleyColors.accent,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  // NEWS is read-only — card tap opens; no column / take CTA.
+                  if (!isNews)
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        final cta = widget.onCta;
+                        if (cta != null) {
+                          cta(issue);
+                        } else {
+                          widget.onOpen(issue);
+                        }
+                      },
+                      child: Text(
+                        widget.ctaLabel ??
+                            (canVote ? '생각 남기기 →' : '자세히 보기 →'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: TakeleyColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -175,6 +171,39 @@ class _IssueCardState extends State<IssueCard> {
         ),
       ),
     );
+  }
+
+  /// Right-side meta: existing trend wins; else NEWS label (same ALL-CAPS label tone).
+  Widget? _trailingMetaLabel(
+    BuildContext context, {
+    required String trend,
+    required bool isNews,
+  }) {
+    if (trend == 'TRENDING') {
+      return Text(
+        '🔥 지금 뜨는',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: TakeleyColors.rising,
+              fontWeight: FontWeight.w700,
+            ),
+      );
+    }
+    if (trend == 'RISING') {
+      return Text(
+        '급상승',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: TakeleyColors.rising,
+              fontWeight: FontWeight.w600,
+            ),
+      );
+    }
+    if (isNews) {
+      return Text(
+        'NEWS',
+        style: Theme.of(context).textTheme.labelLarge,
+      );
+    }
+    return null;
   }
 
   Widget _titleBlock(BuildContext context, Issue issue) {
@@ -218,12 +247,12 @@ class _IssueCardState extends State<IssueCard> {
     );
   }
 
-  String _footerMeta(Issue issue, String when) {
+  String _footerMeta(Issue issue, String when, {required bool isNews}) {
     final parts = <String>[];
     if (when.isNotEmpty) parts.add(when);
     final fmt = NumberFormat.decimalPattern('ko_KR');
     if (issue.openCount > 0) parts.add('조회 ${fmt.format(issue.openCount)}');
-    if (issue.participationCount > 0) {
+    if (!isNews && issue.participationCount > 0) {
       parts.add('생각 ${fmt.format(issue.participationCount)}');
     }
     return parts.join(' · ');

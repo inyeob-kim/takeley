@@ -176,23 +176,50 @@ If the Issue is not genuinely hot, is_trending MUST be false.
 """.strip()
 
 
-ISSUE_UNDERSTANDING_PROMPT_VERSION = "issue_understanding_v1"
+ISSUE_UNDERSTANDING_PROMPT_VERSION = "issue_understanding_v3"
 
 ISSUE_UNDERSTANDING_PROMPT = """
-You understand ONE source post for Issue discovery (not yet an Issue card).
-Audience: Korean product; source may be English. Analyze meaning carefully.
+You understand ONE source post for TAKELEY content discovery (not yet a published card).
+Audience: Korean curious adults. Source may be English. Analyze meaning carefully.
 
-Decide:
-- is_issue_candidate: true if this is a real event/claim people may care about
-  (news, announcement, consequential development). false for empty spam, tipster BUY,
-  pure personal taste with no event ("I think X is cool forever").
-- topic: short English topic label
-- event: what happened (English, one line)
-- claim: main claim if any
-- entities: people/orgs/products involved
-- novelty: new_development | commentary | duplicate_suspected | opinion_only
-- relevance: 0..1 how worth surfacing
-- participation_suitable_hint: whether a vote question could fit later
+TAKELEY is NOT a news dump. Prefer stories people want to open, remember, or take a side on.
+
+Decide content_kind — exactly ONE of NEWS | ISSUE | REJECT:
+
+ISSUE — people may disagree / trade off / judge:
+  - Policy, economy, society, tech stakes with genuine debate
+  - “너라면?” / vote options feel natural
+  - Opinion value > pure fact dump
+
+NEWS — fact worth a short TAKELEY briefing:
+  - New event / announcement / change with stakes or curiosity
+  - Short title+summary is enough; forced participation not needed
+  - Must pass surface scores below (not every wire fact)
+
+REJECT — do NOT surface:
+  - Duplicate / tipster BUY / promo / ads / PR award fluff
+  - Routine weather/seasonal advisories (temperature drop, wind, heat/cold alerts)
+  - Trivial app/store updates (invite app, minor version bumps) with no product stakes
+  - Corporate CSAT / “N년 연속 1위” vanity rankings without controversy
+  - Too little info, too old, unclear source context
+  - Pure personal taste with no event ("I think X is cool forever")
+  - Low-quality SNS noise / irrelevant to TAKELEY
+
+Compatibility:
+- is_issue_candidate MUST be true ONLY when content_kind=ISSUE
+- is_issue_candidate MUST be false for NEWS and REJECT
+- NEVER map every non-ISSUE to NEWS — use REJECT when junk or dull
+
+Also return surface scores 0..1 (be strict; mid = mediocre wire filler):
+- hook: would a curious adult feel curiosity / tension from a one-line card?
+- useful: does knowing this help judgment, conversation, or a real decision?
+- takeley_fit: fits TAKELEY (brief + optional take), not a bulletin board
+- relevance: overall worth surfacing (may mirror the three scores)
+- topic, event, claim, entities, novelty, participation_suitable_hint, sensitive_review
+  (sensitive_review true → prefer ISSUE draft, never auto NEWS)
+
+If min(hook, useful, takeley_fit) would be below ~0.55, prefer content_kind=REJECT
+even if the text is a factual “event”.
 
 Provider: {provider}
 Text:
@@ -202,14 +229,77 @@ Text:
 
 Return ONLY valid JSON:
 {{
-  "is_issue_candidate": true,
+  "content_kind": "NEWS",
+  "is_issue_candidate": false,
+  "hook": 0.0,
+  "useful": 0.0,
+  "takeley_fit": 0.0,
   "relevance": 0.0,
   "topic": "",
   "event": "",
   "claim": "",
   "entities": [],
   "novelty": "new_development",
-  "participation_suitable_hint": false
+  "participation_suitable_hint": false,
+  "sensitive_review": false
+}}
+""".strip()
+
+
+NEWS_CARD_PROMPT_VERSION = "news_card_v3"
+
+NEWS_CARD_PROMPT = """
+Rewrite ONE source into a TAKELEY NEWS briefing (NOT a wire rewrite, NOT an Issue debate).
+
+Audience: Korean adults. Source may be English → friendly Korean (~해요 / ~이에요).
+Tagline spirit: Take a look. (Understand fast.) Leave Take a side to Issues — no vote CTA.
+
+Tone (match Issue column voice, minus controversy manufacturing):
+- Calm, conversational, intelligent — Finimize-like story briefing
+- curiosity > hype; tension > outrage; clarity > bulletin style
+- No emoji. No invented facts, quotes, numbers, or motives.
+- Do NOT start by repeating the title, or with “~가 발표했습니다 / ~할 예정입니다” stacks
+- Do NOT sound like a news-agency wire dump
+
+Structure for body (adapt; do not force every beat):
+Hook (interesting tension / surprise from the facts)
+→ What happened (only needed context)
+→ Why it matters now (stakes, without fake sides)
+→ Numbers / concrete details worth remembering
+→ Optional: what to watch next (no unsupported prediction)
+Do NOT end with empty “앞으로 지켜봐야 합니다.”
+
+Formatting for body (markdown the app can render):
+- Use 1–3 short section headings as lines starting with "## " (Korean, ≤20 chars)
+- Bold the most important numbers, names, or stakes with **like this**
+- Separate paragraphs with a blank line
+- Do NOT use bullet lists inside body (put bullets only in key_points)
+- Do NOT paste English source text
+
+Return:
+- title: hooky but honest Korean headline (≤60 chars). Prefer tension/meaning over wire style.
+- summary: 1–3 short Korean sentences for the feed card (plain text, no markdown)
+- body: longer Korean briefing ~500–1400 chars with ## headings and **bold** as above
+- key_points: 2–3 short plain-text Korean bullets (no markdown)
+- category: exactly ONE of 정치|경제|금융|기술|AI|사회|국제|문화|스포츠|엔터 (or null)
+
+Do NOT write: why_it_matters, participation, push copy, partisan takes, or fake controversy.
+
+Provider: {provider}
+Source title: {source_title}
+Source URL: {source_url}
+Text:
+\"\"\"
+{text}
+\"\"\"
+
+Return ONLY valid JSON:
+{{
+  "title": "",
+  "summary": "",
+  "body": "",
+  "key_points": [],
+  "category": null
 }}
 """.strip()
 

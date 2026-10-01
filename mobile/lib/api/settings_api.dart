@@ -19,6 +19,7 @@ class SettingsApi {
   Future<UserSettings> update({
     required String? userId,
     bool? notificationsEnabled,
+    bool? newsNotificationsEnabled,
     String? displayName,
     String? briefAlarmTime,
     String? timezone,
@@ -27,6 +28,8 @@ class SettingsApi {
     final body = <String, dynamic>{
       if (notificationsEnabled != null)
         'notifications_enabled': notificationsEnabled,
+      if (newsNotificationsEnabled != null)
+        'news_notifications_enabled': newsNotificationsEnabled,
       if (displayName != null) 'display_name': displayName,
       if (briefAlarmTime != null) 'brief_alarm_time': briefAlarmTime,
       if (timezone != null) 'timezone': timezone,

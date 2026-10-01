@@ -33,6 +33,39 @@ class Settings(BaseSettings):
     issue_ingest_focus: bool = True
     # Max LLM Understanding calls per process cycle (cost cap).
     issue_llm_understand_budget_per_cycle: int = 12
+    # NEWS|ISSUE|REJECT branch (OFF → legacy ISSUE-only reject path).
+    news_pipeline_enabled: bool = True
+    # When true, NEWS cards are draft-queued with staggered scheduled_publish_at.
+    # Actual publish (+ push) happens via publish_due drip, not instantly.
+    news_auto_publish: bool = True
+    # Spacing between auto-queued NEWS publish slots (seconds). Default 15 min.
+    news_publish_interval_seconds: int = 900
+    # Max NEWS drafts publish_due may promote per heavy cycle.
+    news_max_publish_per_cycle: int = 1
+    # Extra Understanding slots for NEWS-eligible candidates (lightweight path).
+    news_llm_budget_per_cycle: int = 20
+    # Soft daily create cap for content_kind=NEWS (draft+published).
+    daily_news_cap: int = 30
+    # Reject NEWS whose source published_at is older than this.
+    news_max_age_hours: int = 72
+    # Understanding surface gate: min(hook, useful, takeley_fit) must clear this.
+    # Applies to NEWS and ISSUE after LLM/heuristic classification.
+    surface_gate_enabled: bool = True
+    surface_min_score: float = 0.55
+    # Participation strategy: distribution / other-take gates (config, not magic).
+
+    distribution_min_responses: int = 30
+    allow_position_change: bool = True
+    judgment_note_max_chars: int = 120
+    other_take_min_responses: int = 30
+    other_take_split_hide_below: float = 0.25
+    other_take_split_priority_at: float = 0.35
+    other_take_session_idle_minutes: int = 15
+    other_take_daily_cap: int = 2
+    other_take_same_side_every_n: int = 5
+    other_take_skip_rate_block: float = 0.80
+    # When false, enqueue_news_new is a no-op (judgment-linked pushes only).
+    news_push_enabled: bool = False
     # Max recent Issues shown to Match LLM as shortlist.
     issue_llm_match_shortlist: int = 8
     # Public columnist profile: first page + load-more page size.
@@ -264,6 +297,7 @@ class Settings(BaseSettings):
         self.rss_interval_seconds = fast
         self.kr_news_interval_seconds = fast
         self.dart_interval_seconds = fast
+        self.news_publish_interval_seconds = fast
         return self
 
 

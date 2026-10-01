@@ -47,6 +47,17 @@ void main() {
       expect(parseDeepLink('/home'), isA<HomeLink>());
     });
 
+    test('does not treat /home/news or /home/issues as HomeLink', () {
+      expect(parseDeepLink('/home/news'), isNull);
+      expect(parseDeepLink('/home/issues'), isNull);
+    });
+
+    test('leaves browse routes alone in redirect', () {
+      expect(routerLocationForUri(Uri.parse('/home/news')), isNull);
+      expect(routerLocationForUri(Uri.parse('/home/issues')), isNull);
+      expect(routerLocationForUri(Uri.parse('/home')), isNull);
+    });
+
     test('maps takeley:// share button onto /issues/:id', () {
       final loc = routerLocationForUri(
         Uri.parse(

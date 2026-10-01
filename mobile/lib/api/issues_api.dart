@@ -15,11 +15,13 @@ class IssuesApi {
     int limit = 30,
     String sort = 'trending',
     String? category,
+    String contentKind = 'ISSUE',
     String? userId,
   }) async {
     final query = <String, String>{
       'limit': '$limit',
       'sort': sort,
+      'content_kind': contentKind,
       if (category != null && category.isNotEmpty) 'category': category,
       ..._userQuery(userId),
     };
@@ -47,12 +49,14 @@ class IssuesApi {
     required String id,
     required String optionId,
     String? userId,
+    String? note,
   }) async {
     final data = await _api.postJson(
       '/api/v1/issues/${Uri.encodeComponent(id)}/participate',
       {
         'option_id': optionId,
         if (userId != null) 'user_id': userId,
+        if (note != null) 'note': note,
       },
       query: _userQuery(userId),
     );
@@ -69,12 +73,59 @@ class IssuesApi {
     required String id,
     required String optionId,
     String? userId,
+    String? note,
   }) {
     return _api.postJson(
       '/api/v1/issues/${Uri.encodeComponent(id)}/participate',
       {
         'option_id': optionId,
         if (userId != null) 'user_id': userId,
+        if (note != null) 'note': note,
+      },
+      query: _userQuery(userId),
+    );
+  }
+
+  Future<Map<String, dynamic>?> fetchOtherTake({
+    required String id,
+    String? userId,
+  }) async {
+    final data = await _api.getJson(
+      '/api/v1/issues/${Uri.encodeComponent(id)}/other-take',
+      query: _userQuery(userId),
+    );
+    final item = data['item'];
+    if (item is Map) {
+      return Map<String, dynamic>.from(item);
+    }
+    return null;
+  }
+
+  Future<void> skipOtherTake({
+    required String id,
+    String? userId,
+    String? exposureId,
+  }) {
+    return _api.postJson(
+      '/api/v1/issues/${Uri.encodeComponent(id)}/other-take/skip',
+      {
+        if (userId != null) 'user_id': userId,
+        if (exposureId != null) 'exposure_id': exposureId,
+      },
+      query: _userQuery(userId),
+    );
+  }
+
+  Future<void> openOtherTake({
+    required String id,
+    String? userId,
+    String? exposureId,
+  }) {
+    return _api.postJson(
+      '/api/v1/issues/${Uri.encodeComponent(id)}/other-take/open',
+      {
+        if (userId != null) 'user_id': userId,
+        if (exposureId != null) 'exposure_id': exposureId,
       },
       query: _userQuery(userId),
     );

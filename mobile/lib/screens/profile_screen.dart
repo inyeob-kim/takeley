@@ -327,13 +327,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                       const ProfileBlockLabel('내 활동'),
                       ProfilePillRow(
                         icon: Icons.chat_bubble_outline_rounded,
-                        label: '참여한 이슈',
+                        label: '참여한 TAKE',
                         count: _voteCount,
                         onTap: () => widget.onOpenActivity(ActivityTabs.votes),
                       ),
                       ProfilePillRow(
                         icon: Icons.bookmark_border_rounded,
-                        label: '팔로우한 이슈',
+                        label: '팔로우한 TAKE',
                         count: _followCount,
                         onTap: () =>
                             widget.onOpenActivity(ActivityTabs.followed),

@@ -27,6 +27,7 @@ import '../widgets/columnist_avatar.dart';
 import '../widgets/data_state.dart';
 import '../widgets/deep_thought_card.dart';
 import '../widgets/share_choice_sheet.dart';
+import '../widgets/judgment_note_sheet.dart';
 import '../widgets/takeley_buttons.dart';
 import '../widgets/ugc_actions.dart';
 import 'deep_thought_detail_screen.dart';
@@ -51,15 +52,73 @@ int _estimateReadMinutes(Issue issue) {
 }
 
 String _sourceLabel(IssueSource s) {
+  final provider = (s.provider ?? '').trim().toLowerCase();
   final author = (s.author ?? '').trim();
-  if (author.isNotEmpty && !RegExp(r'^\d+$').hasMatch(author)) {
+  final isSocial =
+      provider == 'x' || provider == 'twitter' || provider == 'reddit';
+
+  // X/Reddit: keep @handle style.
+  if (isSocial &&
+      author.isNotEmpty &&
+      !RegExp(r'^\d+$').hasMatch(author)) {
     return '@${author.replaceFirst(RegExp(r'^@'), '')}';
   }
-  final provider = (s.provider ?? '').trim().toLowerCase();
+
+  final junk = {'rss', 'news', 'news-demo', 'rss_feed'};
+  if (author.isNotEmpty &&
+      !junk.contains(author.toLowerCase()) &&
+      !RegExp(r'^\d+$').hasMatch(author)) {
+    return author;
+  }
+
+  final host = _publisherFromUrl(s.url);
+  if (host != null) return host;
+
   if (provider == 'x' || provider == 'twitter') return 'X';
   if (provider == 'news') return 'News';
   if (provider.isNotEmpty) return provider.toUpperCase();
   return '원문';
+}
+
+String? _publisherFromUrl(String? raw) {
+  final t = (raw ?? '').trim();
+  if (t.isEmpty) return null;
+  final u = Uri.tryParse(t);
+  if (u == null || u.host.isEmpty) return null;
+  var host = u.host.toLowerCase();
+  if (host.startsWith('www.')) host = host.substring(4);
+  if (host.contains('news.google.')) return null;
+  const known = <String, String>{
+    'bbc.co.uk': 'BBC',
+    'bbc.com': 'BBC',
+    'reuters.com': 'Reuters',
+    'bloomberg.com': 'Bloomberg',
+    'wsj.com': 'WSJ',
+    'ft.com': 'FT',
+    'cnbc.com': 'CNBC',
+    'nytimes.com': 'NYT',
+    'theguardian.com': 'Guardian',
+    'apnews.com': 'AP',
+    'finance.yahoo.com': 'Yahoo Finance',
+    'yahoo.com': 'Yahoo',
+    'techcrunch.com': 'TechCrunch',
+    'theverge.com': 'The Verge',
+    'cnn.com': 'CNN',
+  };
+  for (final e in known.entries) {
+    if (host == e.key || host.endsWith('.${e.key}')) return e.value;
+  }
+  final parts = host.split('.').where((p) => p.isNotEmpty).toList();
+  if (parts.length >= 3 && parts[parts.length - 2] == 'co') {
+    return _titleCase(parts[parts.length - 3]);
+  }
+  if (parts.length >= 2) return _titleCase(parts[parts.length - 2]);
+  return host;
+}
+
+String _titleCase(String s) {
+  if (s.isEmpty) return s;
+  return s[0].toUpperCase() + s.substring(1);
 }
 
 class IssueDetailScreen extends StatefulWidget {
@@ -106,6 +165,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   bool _voting = false;
   String? _pendingOptionId;
   bool _shareBusy = false;
+  bool _savingNote = false;
+  Map<String, dynamic>? _otherTake;
   bool _didOpenInitialFocus = false;
   bool _didRecordTakePanel = false;
   bool _didScrollToTake = false;
@@ -409,6 +470,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       await _reloadDeepThoughts();
       _maybeOpenInitialDeepFocus();
       _scheduleTakePanelFocus();
+      if (issue.myOptionId != null && issue.myOptionId!.isNotEmpty) {
+        unawaited(_loadOtherTake());
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -462,7 +526,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   }
 
   void _pickOption(String optionId) {
-    if (_voting || _issue == null || (_issue!.myOptionId?.isNotEmpty ?? false)) {
+    if (_voting || _issue == null) return;
+    final current = _issue!.myOptionId;
+    if (current != null && current.isNotEmpty && current == optionId) {
       return;
     }
     setState(() => _pendingOptionId = optionId);
@@ -471,11 +537,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
   Future<void> _confirmVote() async {
     final optionId = _pendingOptionId;
-    if (_voting ||
-        _issue == null ||
-        optionId == null ||
-        optionId.isEmpty ||
-        (_issue!.myOptionId?.isNotEmpty ?? false)) {
+    if (_voting || _issue == null || optionId == null || optionId.isEmpty) {
       return;
     }
     setState(() => _voting = true);
@@ -499,6 +561,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         _pendingOptionId = null;
         _issue = _issue!.copyWith(
           myOptionId: '${data['my_option_id'] ?? optionId}',
+          myNote: data['my_note'] as String? ?? _issue!.myNote,
+          distributionVisible: data['distribution_visible'] == true,
           participationCount:
               (data['participation_count'] as num?)?.toInt() ??
                   _issue!.participationCount,
@@ -507,11 +571,17 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         );
       });
       final picked = _votedLabel(_issue!);
+      final changed = data['position_changed'] == true;
       if (mounted && picked != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('‘$picked’를 선택했어요. 선택은 바꿀 수 없어요.')),
+          SnackBar(
+            content: Text(
+              changed ? '‘$picked’(으)로 입장을 바꿨어요.' : '‘$picked’를 선택했어요.',
+            ),
+          ),
         );
       }
+      unawaited(_loadOtherTake());
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -520,6 +590,89 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     } finally {
       if (mounted) setState(() => _voting = false);
     }
+  }
+
+  Future<void> _loadOtherTake() async {
+    try {
+      final card = await widget.issuesApi.fetchOtherTake(
+        id: widget.issueId,
+        userId: _userId,
+      );
+      if (!mounted) return;
+      setState(() => _otherTake = card);
+    } catch (_) {
+      // Optional enrichment — ignore failures.
+    }
+  }
+
+  Future<void> _openJudgmentNoteSheet() async {
+    final issue = _issue;
+    if (issue == null || _savingNote) return;
+    _recordFunnel('take_started');
+    final text = await showJudgmentNoteSheet(
+      context,
+      initialNote: issue.myNote,
+    );
+    if (!mounted || text == null || text.trim().isEmpty) return;
+    await _saveNote(text.trim());
+  }
+
+  Future<void> _saveNote(String note) async {
+    final issue = _issue;
+    final optionId = issue?.myOptionId;
+    if (issue == null || optionId == null || optionId.isEmpty || _savingNote) {
+      return;
+    }
+    setState(() => _savingNote = true);
+    try {
+      final data = await widget.issuesApi.participateRaw(
+        id: widget.issueId,
+        optionId: optionId,
+        userId: _userId,
+        note: note,
+      );
+      if (!mounted) return;
+      setState(() {
+        _issue = issue.copyWith(
+          myNote: data['my_note'] as String? ?? note,
+          distributionVisible: data['distribution_visible'] == true,
+          options: data['options'] is List
+              ? (data['options'] as List)
+                  .whereType<Map>()
+                  .map(
+                    (e) => IssueOption.fromJson(Map<String, dynamic>.from(e)),
+                  )
+                  .toList()
+              : issue.options,
+          participationCount:
+              (data['participation_count'] as num?)?.toInt() ??
+                  issue.participationCount,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('남겼어요. 나중에 내 판단으로 남아 있어요.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('남기지 못했어요. 잠시 후 다시 해 주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingNote = false);
+    }
+  }
+
+  Future<void> _skipOtherTake() async {
+    final card = _otherTake;
+    if (card == null) return;
+    try {
+      await widget.issuesApi.skipOtherTake(
+        id: widget.issueId,
+        userId: _userId,
+        exposureId: '${card['exposure_id'] ?? ''}',
+      );
+    } catch (_) {}
+    if (mounted) setState(() => _otherTake = null);
   }
 
   Future<void> _toggleFollow() async {
@@ -709,19 +862,20 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           ),
           const Spacer(),
           if (showActions && _issue != null) ...[
-            IconButton(
-              onPressed: _toggleFollow,
-              icon: Icon(
-                _issue!.isFollowing
-                    ? Icons.bookmark
-                    : Icons.bookmark_outline,
-                size: 22,
-                color: _issue!.isFollowing
-                    ? TakeleyColors.accent
-                    : TakeleyColors.fg,
+            if (_issue!.contentKind.toUpperCase() != 'NEWS')
+              IconButton(
+                onPressed: _toggleFollow,
+                icon: Icon(
+                  _issue!.isFollowing
+                      ? Icons.bookmark
+                      : Icons.bookmark_outline,
+                  size: 22,
+                  color: _issue!.isFollowing
+                      ? TakeleyColors.accent
+                      : TakeleyColors.fg,
+                ),
+                tooltip: _issue!.isFollowing ? '팔로우 해제' : '이슈 팔로우',
               ),
-              tooltip: _issue!.isFollowing ? '팔로우 해제' : '이슈 팔로우',
-            ),
             IconButton(
               onPressed: _shareBusy ? null : _share,
               icon: const Icon(Icons.ios_share_rounded, size: 22),
@@ -905,7 +1059,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     if (!canVote) return const SizedBox.shrink();
     final hasTake = issue.myOptionId != null && issue.myOptionId!.isNotEmpty;
     final totalVotes = issue.participationCount;
+    final showDist = hasTake && issue.distributionVisible && totalVotes > 0;
     final fmt = NumberFormat.decimalPattern('ko_KR');
+    final changing = hasTake &&
+        _pendingOptionId != null &&
+        _pendingOptionId != issue.myOptionId;
     return KeyedSubtree(
       key: _takePanelKey,
       child: Container(
@@ -939,15 +1097,15 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ),
             const SizedBox(height: 12),
             ...issue.options.map((opt) {
-              final selected = hasTake
-                  ? issue.myOptionId == opt.id
-                  : _pendingOptionId == opt.id;
+              final selected = changing
+                  ? _pendingOptionId == opt.id
+                  : hasTake
+                      ? issue.myOptionId == opt.id
+                      : _pendingOptionId == opt.id;
               final pct = totalVotes > 0
                   ? ((opt.count / totalVotes) * 100).round()
                   : 0;
-              final meta = hasTake && totalVotes > 0
-                  ? '$pct% · ${fmt.format(opt.count)}'
-                  : '';
+              final meta = showDist ? '$pct% · ${fmt.format(opt.count)}' : '';
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TakeleyVoteOptionButton(
@@ -955,38 +1113,40 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   meta: meta,
                   selected: selected,
                   enabled: !_voting,
-                  onPressed: hasTake ? null : () => _pickOption(opt.id),
+                  onPressed: () => _pickOption(opt.id),
                 ),
               );
             }),
-            if (!hasTake && _pendingOptionId != null) ...[
+            if ((!hasTake && _pendingOptionId != null) || changing) ...[
               const SizedBox(height: 4),
               TakeleyOffsetPillButton(
-                label: _voting ? '결과 여는 중…' : '이걸로 남기고 결과 보기',
+                label: _voting
+                    ? '결과 여는 중…'
+                    : changing
+                        ? '입장 바꾸기'
+                        : '이걸로 남기고 결과 보기',
                 enabled: !_voting,
                 onPressed: _confirmVote,
               ),
               const SizedBox(height: 10),
             ],
-            if (!hasTake && issue.participationCount > 0) ...[
-              Text(
-                '${fmt.format(issue.participationCount)}명 생각 남김',
-                style: const TextStyle(
-                  color: TakeleyColors.muted,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
             Text(
               hasTake
-                  ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                  ? (showDist
+                      ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                      : '아직 충분한 응답이 모이지 않았어요.')
                   : _pendingOptionId == null
                       ? '선택한 뒤에 다른 사람 생각을 볼 수 있어요.'
                       : '다른 선택지를 누르면 바꿀 수 있어요.',
               style: const TextStyle(color: TakeleyColors.muted, fontSize: 13),
             ),
             if (hasTake) ...[
+              const SizedBox(height: 14),
+              _judgmentNoteSection(issue),
+              if (_otherTake != null) ...[
+                const SizedBox(height: 16),
+                _otherTakeCard(_otherTake!),
+              ],
               const SizedBox(height: 12),
               TakeleySecondaryPillButton(
                 label: '친구에게 묻기',
@@ -996,6 +1156,106 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _judgmentNoteSection(Issue issue) {
+    final existing = (issue.myNote ?? '').trim();
+    final hasNote = existing.isNotEmpty;
+
+    if (hasNote) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '내가 남긴 한 줄',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              color: TakeleyColors.accent,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            existing,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _savingNote ? null : _openJudgmentNoteSheet,
+            style: TextButton.styleFrom(
+              foregroundColor: TakeleyColors.muted,
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('고치기', style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      );
+    }
+
+    return TakeleySecondaryPillButton(
+      label: '왜 그렇게 봤는지, 한 줄만 남겨둘래요',
+      enabled: !_savingNote,
+      onPressed: _openJudgmentNoteSheet,
+    );
+  }
+
+  Widget _otherTakeCard(Map<String, dynamic> card) {
+    final note = '${card['note'] ?? ''}';
+    final label = '${card['option_label'] ?? ''}';
+    final sameSide = card['same_side'] == true;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: TakeleyColors.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sameSide ? '같은 입장의 다른 이유' : '다른 관점',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: TakeleyColors.accent,
+            ),
+          ),
+          if (label.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: TakeleyColors.muted,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            note,
+            style: const TextStyle(fontSize: 15, height: 1.4),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              TextButton(
+                onPressed: _skipOtherTake,
+                child: const Text('넘어가기'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1095,13 +1355,16 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     }
 
     final issue = _issue!;
+    final isNews = issue.contentKind.toUpperCase() == 'NEWS';
     final imageUrl = resolveImageUrl(issue.imageUrl);
     final metaParts = <String>[];
     if (issue.sourceCount > 0) metaParts.add('출처 ${issue.sourceCount}');
     final sources = issue.sources.take(8).toList();
-    final canWriteDeep = showDeepThoughtWriterCta(_contributorStatus);
-    final hasColumn = issue.columnBody.trim().isNotEmpty;
-    final canVote = _canVote(issue);
+    final canWriteDeep =
+        !isNews && showDeepThoughtWriterCta(_contributorStatus);
+    // NEWS has no columnist essay — never show column CTA / byline.
+    final hasColumn = !isNews && issue.columnBody.trim().isNotEmpty;
+    final canVote = !isNews && _canVote(issue);
 
     return ListView(
       controller: _scroll,
@@ -1126,7 +1389,24 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 ),
           ),
         ],
-        if ((issue.columnAuthorName ?? '').trim().isNotEmpty)
+        // NEWS: hero image then markdown briefing (## / **).
+        if (isNews && imageUrl != null) ...[
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+        ],
+        if (isNews && issue.columnBody.trim().isNotEmpty) ...[
+          const SizedBox(height: 28),
+          ColumnMarkdownView(source: issue.columnBody.trim()),
+        ],
+        if (!isNews && (issue.columnAuthorName ?? '').trim().isNotEmpty)
           _columnByline(
             name: issue.columnAuthorName!.trim(),
             imageUrl: resolveImageUrl(issue.columnAuthorImageUrl),
@@ -1140,7 +1420,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             readMinutes: _estimateReadMinutes(issue),
             columnistId: issue.columnistId,
           ),
-        if (imageUrl != null) ...[
+        if (!isNews && imageUrl != null) ...[
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),

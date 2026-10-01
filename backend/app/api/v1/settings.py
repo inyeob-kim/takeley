@@ -17,6 +17,7 @@ def _to_out(view, *, display_name: str | None = None) -> UserSettingsOut:
         brief_alarm_time=view.brief_alarm_time,
         timezone=view.timezone,
         notifications_enabled=view.notifications_enabled,
+        news_notifications_enabled=view.news_notifications_enabled,
         tts_voice_gender=view.tts_voice_gender,
         display_name=display_name,
     )
@@ -54,6 +55,7 @@ def patch_settings_api(
             brief_alarm_time=body.brief_alarm_time,
             timezone=body.timezone,
             notifications_enabled=body.notifications_enabled,
+            news_notifications_enabled=body.news_notifications_enabled,
             tts_voice_gender=body.tts_voice_gender,
         )
         if "display_name" in body.model_fields_set:

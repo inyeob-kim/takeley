@@ -16,8 +16,9 @@ import httpx
 from app.core.config import get_settings
 from app.domain.models import RawItem, SourceType
 from app.pipeline.normalize import is_relevant_to_symbol
-from app.providers.article_fetch import fetch_article_body
+from app.providers.article_fetch import enrich_raw_item_with_body
 from app.providers.base import SourceProvider
+from app.providers.rss_feed_provider import rss_item_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -142,39 +143,12 @@ class NewsProvider(SourceProvider):
 
     def _enrich_with_body(self, item: RawItem) -> RawItem | None:
         """Return item with article body, or None if body cannot be extracted (do not store)."""
-        rss_text = (item.text or "").strip()
-        title = (item.title or "").strip()
-        article = fetch_article_body(
-            item.url or "",
+        return enrich_raw_item_with_body(
+            item,
             timeout=self.body_timeout,
             max_chars=self.body_max_chars,
             min_chars=self.body_min_chars,
-        )
-        if not article.ok:
-            logger.warning(
-                "news drop reason=no_body title=%s reason=%s url=%s",
-                (title or "")[:80],
-                article.reason,
-                (item.url or "")[:160],
-            )
-            return None
-
-        payload = dict(item.raw_payload or {})
-        payload["rss_text"] = rss_text
-        payload["body_ok"] = True
-        payload["body_reason"] = article.reason
-        if article.canonical_url:
-            payload["canonical_url"] = article.canonical_url
-
-        body = article.text.strip()
-        # Keep headline for clustering context, then full body for analyze.
-        combined = f"{title}\n\n{body}" if title and title not in body[:120] else body
-        return item.model_copy(
-            update={
-                "text": combined,
-                "url": article.canonical_url or item.url,
-                "raw_payload": payload,
-            }
+            log_prefix="news",
         )
 
     def _parse_rss(self, xml_text: str, limit: int = 40) -> list[RawItem]:
@@ -209,18 +183,23 @@ class NewsProvider(SourceProvider):
             text = f"{title}. {description}".strip()
             if not text:
                 continue
+            publisher = rss_item_publisher(node, url=link or None)
             results.append(
                 RawItem(
                     provider=SourceType.NEWS,
                     external_id=external_id,
                     url=link or None,
-                    author="news",
+                    author=publisher,
                     title=title or None,
                     text=text,
                     language="en",
                     published_at=published_at,
                     fetched_at=datetime.utcnow(),
-                    raw_payload={"guid": guid, "source": "rss"},
+                    raw_payload={
+                        "guid": guid,
+                        "source": "rss",
+                        "publisher": publisher,
+                    },
                 )
             )
         return results

@@ -68,6 +68,7 @@ class PreferenceView:
     brief_alarm_time: str
     timezone: str
     notifications_enabled: bool
+    news_notifications_enabled: bool = False
     tts_voice_gender: str = "female"
 
 
@@ -88,6 +89,7 @@ class PreferenceService:
                 brief_alarm_time=self.settings.default_brief_alarm_time,
                 timezone=self.settings.default_timezone,
                 notifications_enabled=True,
+                news_notifications_enabled=False,
                 tts_voice_gender=self.settings.default_tts_voice_gender,
             )
         gender = getattr(row, "tts_voice_gender", None) or self.settings.default_tts_voice_gender
@@ -101,6 +103,9 @@ class PreferenceService:
             or self.settings.default_brief_alarm_time,
             timezone=row.timezone or self.settings.default_timezone,
             notifications_enabled=bool(row.notifications_enabled),
+            news_notifications_enabled=bool(
+                getattr(row, "news_notifications_enabled", False)
+            ),
             tts_voice_gender=gender,
         )
 
@@ -111,6 +116,7 @@ class PreferenceService:
         brief_alarm_time: str | None = None,
         timezone: str | None = None,
         notifications_enabled: bool | None = None,
+        news_notifications_enabled: bool | None = None,
         tts_voice_gender: str | None = None,
     ) -> PreferenceView:
         current = self.get(user_id)
@@ -127,6 +133,11 @@ class PreferenceService:
             if notifications_enabled is None
             else bool(notifications_enabled)
         )
+        news_notif = (
+            current.news_notifications_enabled
+            if news_notifications_enabled is None
+            else bool(news_notifications_enabled)
+        )
         gender = (
             normalize_tts_voice_gender(tts_voice_gender)
             if tts_voice_gender is not None
@@ -142,6 +153,7 @@ class PreferenceService:
             row.brief_alarm_time = alarm
             row.timezone = tz
             row.notifications_enabled = notif
+            row.news_notifications_enabled = news_notif
             row.tts_voice_gender = gender
             row.updated_at = datetime.utcnow()
         else:
@@ -150,6 +162,7 @@ class PreferenceService:
                 brief_alarm_time=alarm,
                 timezone=tz,
                 notifications_enabled=notif,
+                news_notifications_enabled=news_notif,
                 tts_voice_gender=gender,
             )
             self.db.add(row)

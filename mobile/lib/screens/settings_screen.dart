@@ -39,6 +39,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
+  bool _newsNotifications = false;
   bool _loading = true;
   String? _error;
   ContributorMe? _contributor;
@@ -89,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() {
         _notifications = s.notificationsEnabled;
+        _newsNotifications = s.newsNotificationsEnabled;
         _contributor = me;
         _loading = false;
       });
@@ -114,6 +116,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _notifications = !value);
+    }
+  }
+
+  Future<void> _setNewsNotifications(bool value) async {
+    setState(() => _newsNotifications = value);
+    try {
+      await widget.settingsApi.update(
+        userId: widget.session.userId,
+        newsNotificationsEnabled: value,
+      );
+      if (value && !kIsWeb) {
+        await widget.fcm.requestAndRegister();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _newsNotifications = !value);
     }
   }
 
@@ -204,12 +222,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const ProfileBlockLabel('알림'),
                             ProfilePillRow(
                               icon: Icons.notifications_outlined,
-                              label: '새 이슈 알림',
+                              label: '새 TAKE 알림',
                               trailing: Switch.adaptive(
                                 value: _notifications,
                                 activeTrackColor: TakeleyColors.switchOn,
                                 activeThumbColor: Colors.white,
                                 onChanged: _setNotifications,
+                              ),
+                            ),
+                            ProfilePillRow(
+                              icon: Icons.newspaper_outlined,
+                              label: '새 뉴스 알림',
+                              trailing: Switch.adaptive(
+                                value: _newsNotifications,
+                                activeTrackColor: TakeleyColors.switchOn,
+                                activeThumbColor: Colors.white,
+                                onChanged: _setNewsNotifications,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -412,7 +440,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    '이슈를 깊이 있게 바라본 당신의 생각을 나눠주세요.\n'
+                    'TAKE를 깊이 있게 바라본 당신의 생각을 나눠주세요.\n'
                     '누군가에게는 새로운 관점이 될 수 있어요.\n'
                     '관심 있는 분야와 함께하고 싶은 이유를 알려주세요.',
                     style: TextStyle(
@@ -427,7 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (status == 'APPROVED')
                     _statusCard(
                       '함께하는 중',
-                      '이슈 상세에서 깊이 있는 생각을 남길 수 있어요.',
+                      'TAKE 상세에서 깊이 있는 생각을 남길 수 있어요.',
                       ok: true,
                     ),
                   if (status == 'SUSPENDED')
@@ -439,7 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   if (canApply) ...[
                     const SizedBox(height: 8),
-                    _field('함께하고 싶은 이유', _motivation, '어떤 이슈에 대해 깊이 있는 생각을 나누고 싶나요?', 6),
+                    _field('함께하고 싶은 이유', _motivation, '어떤 TAKE에 대해 깊이 있는 생각을 나누고 싶나요?', 6),
                     _interestChips(),
                     if (_applyError != null)
                       Text(

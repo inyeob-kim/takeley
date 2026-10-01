@@ -14,7 +14,7 @@ import '../widgets/data_state.dart';
 import '../widgets/issue_card.dart';
 import '../widgets/profile_chrome.dart';
 
-/// 내 이슈 탭 id — 프로필 바로가기와 화면이 같은 값을 쓴다.
+/// 내 TAKE 탭 id — 프로필 바로가기와 화면이 같은 값을 쓴다.
 class ActivityTabs {
   ActivityTabs._();
 
@@ -144,7 +144,7 @@ class _ActivityScreenState extends State<ActivityScreen>
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = '내 이슈를 불러오지 못했어요.';
+        _error = '내 TAKE를 불러오지 못했어요.';
       });
     }
   }
@@ -186,7 +186,7 @@ class _ActivityScreenState extends State<ActivityScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const ScreenTopBar(
-          title: '내 이슈',
+          title: '내 TAKE',
         ),
         if (_loading)
           const Expanded(
@@ -205,7 +205,7 @@ class _ActivityScreenState extends State<ActivityScreen>
         else if (emptyAll)
           const Expanded(
             child: DataState(
-              message: '아직 관심 이슈가 없어요.\n홈에서 이슈를 읽고 생각을 남기거나 팔로우해 보세요.',
+              message: '아직 관심 TAKE가 없어요.\n홈에서 TAKE를 읽고 생각을 남기거나 팔로우해 보세요.',
             ),
           )
         else ...[
@@ -267,7 +267,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   Widget _votesCardList() {
     if (_votes.isEmpty) {
-      return const DataState(message: '아직 참여한 이슈가 없어요.');
+      return const DataState(message: '아직 참여한 TAKE가 없어요.');
     }
     return RefreshIndicator(
       color: TakeleyColors.accent,
@@ -303,7 +303,7 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   Widget _followCardList() {
     if (_followed.isEmpty) {
-      return const DataState(message: '팔로우한 이슈가 없어요.');
+      return const DataState(message: '팔로우한 TAKE가 없어요.');
     }
     return RefreshIndicator(
       color: TakeleyColors.accent,
@@ -344,7 +344,7 @@ class _ActivityScreenState extends State<ActivityScreen>
         itemBuilder: (context, index) {
           final c = _comments[index];
           final issueLabel =
-              c.issueTitle.trim().isEmpty ? '이슈' : c.issueTitle.trim();
+              c.issueTitle.trim().isEmpty ? 'TAKE' : c.issueTitle.trim();
           final when = formatNewsTime(c.createdAt);
           return _ActivityTapRow(
             onTap: () => widget.onIssueOpen(c.issueId),
@@ -388,7 +388,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                       ),
                     ),
                     const Text(
-                      '이슈 보기 →',
+                      'TAKE 보기 →',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -423,7 +423,7 @@ class _ActivityScreenState extends State<ActivityScreen>
         itemBuilder: (context, index) {
           final t = _deepThoughts[index];
           final issueLabel =
-              t.issueTitle.trim().isEmpty ? '이슈' : t.issueTitle.trim();
+              t.issueTitle.trim().isEmpty ? 'TAKE' : t.issueTitle.trim();
           return _ActivityTapRow(
             onTap: () => _openDeepThought(t),
             child: Column(

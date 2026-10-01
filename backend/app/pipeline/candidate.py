@@ -27,6 +27,7 @@ class ScoredCandidate:
     payload: dict
     priority_score: float
     reasons: list[str] = field(default_factory=list)
+    title: str | None = None
 
 
 def _provider_prior(provider: str) -> float:

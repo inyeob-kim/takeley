@@ -38,24 +38,31 @@ class AdminIssueService:
         self.db = db
 
     def list_by_status(
-        self, *, status: str = "draft", limit: int = 50
+        self,
+        *,
+        status: str = "draft",
+        limit: int = 50,
+        content_kind: str | None = "ISSUE",
     ) -> IssueListOut:
         limit = max(1, min(limit, 100))
         status = (status or "draft").strip().lower()
         allowed = {"draft", "published", "rejected"}
         if status not in allowed:
             status = "draft"
-        rows = (
+        q = (
             self.db.query(Signal)
             .options(
                 joinedload(Signal.participation_options),
                 joinedload(Signal.sources),
             )
             .filter(Signal.status == status)
-            .order_by(Signal.first_seen_at.desc())
-            .limit(limit)
-            .all()
         )
+        kind = (content_kind or "ISSUE").strip().upper()
+        if kind in {"NEWS", "ISSUE"}:
+            q = q.filter(Signal.content_kind == kind)
+        elif kind != "ALL":
+            q = q.filter(Signal.content_kind == "ISSUE")
+        rows = q.order_by(Signal.first_seen_at.desc()).limit(limit).all()
         items = [
             _admin_issue_out(
                 self.db, s, include_sources=False, expose_sources=True
@@ -87,6 +94,7 @@ class AdminIssueService:
             status=SignalStatus.DRAFT.value,
             lifecycle="CANDIDATE",
             trend_status="NORMAL",
+            content_kind="ISSUE",
             participation_suitable=False,
             show_sources=False,
             topic="column",
@@ -326,15 +334,27 @@ class AdminIssueService:
         self.db.refresh(row)
 
         record_usage(ISSUE_PUBLISHED, 1, db=self.db)
-        enqueue_signal_new(
-            self.db,
-            signal_id=row.id,
-            title=row.title or "",
-            related_symbols=row.related_symbols or [],
-            evidence_level=row.evidence_level or "UNVERIFIED",
-        )
-        # Deliver immediately — don't wait for the next worker heavy cycle.
+        kind = (getattr(row, "content_kind", None) or "ISSUE").strip().upper()
         try:
+            if kind == "NEWS":
+                from app.core.usage import NEWS_PUBLISHED
+                from app.services.push_enqueue_service import enqueue_news_new
+
+                record_usage(NEWS_PUBLISHED, 1, db=self.db)
+                enqueue_news_new(
+                    self.db,
+                    signal_id=row.id,
+                    title=row.title or "",
+                    summary=row.summary or "",
+                )
+            else:
+                enqueue_signal_new(
+                    self.db,
+                    signal_id=row.id,
+                    title=row.title or "",
+                    related_symbols=row.related_symbols or [],
+                    evidence_level=row.evidence_level or "UNVERIFIED",
+                )
             from app.services.push_send_service import send_pending_pushes
 
             send_pending_pushes(self.db, limit=50)
@@ -383,10 +403,17 @@ class AdminIssueService:
         )
 
     def publish_due(self, *, now: datetime | None = None, limit: int = 50) -> int:
-        """Publish drafts whose scheduled_publish_at has passed. Returns count."""
+        """Publish drafts whose scheduled_publish_at has passed. Returns count.
+
+        NEWS is capped per cycle (drip); ISSUE/other keep the normal limit.
+        """
+        from app.core.config import get_settings
+
         now = now or datetime.utcnow()
         limit = max(1, min(int(limit), 100))
-        rows = (
+        news_cap = max(0, int(get_settings().news_max_publish_per_cycle))
+
+        due_base = (
             self.db.query(Signal)
             .filter(
                 Signal.status == SignalStatus.DRAFT.value,
@@ -394,9 +421,19 @@ class AdminIssueService:
                 Signal.scheduled_publish_at <= now,
             )
             .order_by(Signal.scheduled_publish_at.asc())
-            .limit(limit)
-            .all()
         )
+        issue_rows = (
+            due_base.filter(Signal.content_kind != "NEWS").limit(limit).all()
+        )
+        news_rows: list[Signal] = []
+        if news_cap > 0:
+            news_rows = (
+                due_base.filter(Signal.content_kind == "NEWS")
+                .limit(news_cap)
+                .all()
+            )
+        # ISSUE first, then at most news_cap NEWS — order within each group is due time.
+        rows = list(issue_rows) + list(news_rows)
         published = 0
         for row in rows:
             try:
@@ -457,11 +494,28 @@ class AdminIssueService:
         )
 
     def counts(self) -> dict[str, int]:
-        def _n(status: str) -> int:
-            return self.db.query(Signal).filter(Signal.status == status).count()
+        def _n(status: str, *, kind: str | None = None) -> int:
+            q = self.db.query(Signal).filter(Signal.status == status)
+            if kind:
+                q = q.filter(Signal.content_kind == kind)
+            return q.count()
 
+        start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        news_today = (
+            self.db.query(Signal)
+            .filter(
+                Signal.content_kind == "NEWS",
+                Signal.status.in_(("draft", "published")),
+                Signal.first_seen_at >= start,
+            )
+            .count()
+        )
         return {
-            "draft": _n("draft"),
-            "published": _n("published"),
-            "rejected": _n("rejected"),
+            "draft": _n("draft", kind="ISSUE"),
+            "published": _n("published", kind="ISSUE"),
+            "rejected": _n("rejected", kind="ISSUE"),
+            "news_draft": _n("draft", kind="NEWS"),
+            "news_published": _n("published", kind="NEWS"),
+            "news_rejected": _n("rejected", kind="NEWS"),
+            "news_today": news_today,
         }

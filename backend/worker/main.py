@@ -220,21 +220,26 @@ def run_cycle() -> None:
 
 
 def _scheduled_wake_seconds() -> int:
-    """Scheduled mode checks slots often. X is still skipped outside a slot."""
+    """Wake often enough for X slots and NEWS drip publish."""
     from app.db.session import SessionLocal
     from app.services.x_ingest_admin import get_or_create as get_x_ingest_config
 
+    wake = int(settings.ingest_interval_seconds)
     init_db()
     db = SessionLocal()
     try:
         config = get_x_ingest_config(db)
         if config.scan_mode == "scheduled":
-            return 15 * 60
+            wake = min(wake, 15 * 60)
     except Exception:
         logger.exception("x ingest config unavailable; keeping ingest interval")
     finally:
         db.close()
-    return settings.ingest_interval_seconds
+
+    if settings.news_pipeline_enabled and settings.news_auto_publish:
+        drip = max(60, int(settings.news_publish_interval_seconds))
+        wake = min(wake, drip)
+    return wake
 
 
 def main(once: bool = False) -> None:

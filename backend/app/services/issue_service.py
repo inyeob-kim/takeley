@@ -15,6 +15,7 @@ from app.db.models import (
     IssueUserEvent,
     IssueView,
     Participation,
+    ParticipationChangeLog,
     ParticipationOption,
     RawItem,
     Signal,
@@ -320,17 +321,26 @@ def _to_issue_out(
         ctx = maps.get(signal.id)
 
     my_option_id = None
+    my_note = None
     if ctx and ctx.participation:
         my_option_id = ctx.participation.option_id
+        raw_note = getattr(ctx.participation, "note", None)
+        my_note = (raw_note or "").strip() or None
 
     has_new, my_last_seen, is_following = _compute_has_new_update(signal, ctx)
+
+    settings = get_settings()
+    min_n = max(1, int(settings.distribution_min_responses))
+    has_voted = bool(my_option_id)
+    distribution_visible = has_voted and total >= min_n
+    display_counts = counts if distribution_visible else {oid: 0 for oid in counts}
 
     option_outs = [
         ParticipationOptionOut(
             id=o.id,
             label=o.label,
             display_order=o.display_order,
-            count=counts.get(o.id, 0),
+            count=display_counts.get(o.id, 0),
         )
         for o in options
     ]
@@ -341,9 +351,18 @@ def _to_issue_out(
         show_sources if expose_sources is None else expose_sources
     )
 
-    from app.services.push_copy import build_signal_new_copy
+    from app.services.push_copy import build_news_new_copy, build_signal_new_copy
 
-    push_copy = build_signal_new_copy(signal)
+    kind = (getattr(signal, "content_kind", None) or "ISSUE").strip().upper()
+    if kind == "NEWS":
+        push_copy = build_news_new_copy(
+            signal_id=getattr(signal, "id", "") or "",
+            title=getattr(signal, "title", None),
+            push_title=getattr(signal, "push_title", None),
+            push_body=getattr(signal, "push_body", None),
+        )
+    else:
+        push_copy = build_signal_new_copy(signal)
 
     sources_out: list[IssueSourceOut] = []
     source_excerpts: list[str] = []
@@ -361,6 +380,13 @@ def _to_issue_out(
             if excerpt:
                 source_excerpts.append(excerpt)
             if should_expose:
+                from app.providers.rss_feed_provider import normalize_news_author
+
+                display_author = author
+                if (s.provider or "").lower() in ("news", "rss") or (
+                    author or ""
+                ).lower() in ("rss", "news", "news-demo"):
+                    display_author = normalize_news_author(author, url=s.url)
                 sources_out.append(
                     IssueSourceOut(
                         id=s.id,
@@ -368,15 +394,19 @@ def _to_issue_out(
                         provider=s.provider,
                         title=title,
                         excerpt=excerpt,
-                        author=author,
+                        author=display_author,
                     )
                 )
 
     column_body = (getattr(signal, "column_body", None) or "").strip()
-    if include_sources and len(column_body) < 120:
-        column_body = _compose_column_fallback(signal, source_excerpts)
-    elif not column_body:
-        column_body = _compose_column_fallback(signal, [])
+    # NEWS may store a long factual body in column_body, but never invent one
+    # from RSS excerpts (Google News / Yahoo related-headline dumps).
+    kind = (getattr(signal, "content_kind", None) or "ISSUE").strip().upper()
+    if kind != "NEWS":
+        if include_sources and len(column_body) < 120:
+            column_body = _compose_column_fallback(signal, source_excerpts)
+        elif not column_body:
+            column_body = _compose_column_fallback(signal, [])
 
     if comment_count is None:
         comment_count = int(
@@ -424,6 +454,7 @@ def _to_issue_out(
         importance=float(signal.importance or 0.5),
         confidence=float(signal.confidence or 0.5),
         content_type=signal.content_type or "REPORT",
+        content_kind=(getattr(signal, "content_kind", None) or "ISSUE"),
         evidence_level=signal.evidence_level or "UNVERIFIED",
         related_symbols=signal.related_symbols or [],
         participation_suitable=bool(signal.participation_suitable),
@@ -438,6 +469,8 @@ def _to_issue_out(
         options=option_outs,
         participation_count=total,
         my_option_id=my_option_id,
+        my_note=my_note,
+        distribution_visible=distribution_visible,
         source_count=public_source_count if expose_sources is None else raw_source_count,
         sources=sources_out,
         comment_count=int(comment_count),
@@ -466,6 +499,7 @@ class IssueService:
         limit: int = 20,
         sort: str = "trending",
         category: str | None = None,
+        content_kind: str | None = "ISSUE",
         q: str | None = None,
         user_id: str | None = None,
     ) -> IssueListOut:
@@ -492,6 +526,15 @@ class IssueService:
                 )
             )
         )
+        kind = (content_kind or "ISSUE").strip().upper()
+        if kind == "NEWS":
+            query = query.filter(Signal.content_kind == "NEWS")
+        elif kind == "ALL":
+            pass
+        else:
+            # Default / ISSUE — keep NEWS off the Issue home feed.
+            query = query.filter(Signal.content_kind == "ISSUE")
+
         cat_values = category_filter_values(category)
         if cat_values:
             query = query.filter(Signal.category.in_(cat_values))
@@ -510,7 +553,10 @@ class IssueService:
             )
 
         if sort == "new":
-            query = query.order_by(Signal.first_seen_at.desc())
+            query = query.order_by(
+                Signal.published_at.desc().nullslast(),
+                Signal.first_seen_at.desc(),
+            )
             rows = query.limit(limit).all()
         elif sort == "rising":
             query = query.order_by(
@@ -721,6 +767,16 @@ class IssueService:
             "take_option_pending",
             "take_confirm_tapped",
             "column_open",
+            "position_selected",
+            "position_changed",
+            "distribution_viewed",
+            "other_take_exposed",
+            "other_take_skipped",
+            "other_take_opened",
+            "take_started",
+            "take_submitted",
+            "take_30s_conversion",
+            "recap_viewed",
             *share_events,
         }:
             if user_id:
@@ -745,8 +801,18 @@ class IssueService:
         }
 
     def participate(
-        self, issue_id: str, *, user_id: str, option_id: str
+        self,
+        issue_id: str,
+        *,
+        user_id: str,
+        option_id: str,
+        note: str | None = None,
     ) -> dict | None:
+        from app.services.content_moderation import (
+            ObjectionableContent,
+            reject_objectionable,
+        )
+
         signal = (
             self.db.query(Signal)
             .options(joinedload(Signal.participation_options))
@@ -766,6 +832,21 @@ class IssueService:
         if not option:
             raise ValueError("invalid_option")
 
+        settings = get_settings()
+        note_clean: str | None = None
+        if note is not None:
+            note_clean = (note or "").strip()
+            max_chars = max(1, int(settings.judgment_note_max_chars))
+            if len(note_clean) > max_chars:
+                note_clean = note_clean[:max_chars]
+            if note_clean:
+                try:
+                    reject_objectionable(note_clean)
+                except ObjectionableContent as exc:
+                    raise ValueError("objectionable_content") from exc
+            else:
+                note_clean = None
+
         existing = (
             self.db.query(Participation)
             .filter(
@@ -774,25 +855,90 @@ class IssueService:
             )
             .first()
         )
+        now = datetime.utcnow()
+        position_changed = False
+        allow_change = bool(settings.allow_position_change)
+
         if existing:
-            # Take a side: first take is locked. Repeat taps are idempotent.
+            if existing.option_id != option_id:
+                if not allow_change:
+                    out = _to_issue_out(self.db, signal, user_id=user_id)
+                    return {
+                        "issue_id": issue_id,
+                        "my_option_id": existing.option_id,
+                        "my_note": (getattr(existing, "note", None) or None),
+                        "participation_count": out.participation_count,
+                        "options": out.options,
+                        "distribution_visible": out.distribution_visible,
+                        "is_following": out.is_following,
+                        "position_changed": False,
+                    }
+                self.db.add(
+                    ParticipationChangeLog(
+                        user_id=user_id,
+                        signal_id=issue_id,
+                        from_option_id=existing.option_id,
+                        to_option_id=option_id,
+                        changed_at=now,
+                    )
+                )
+                existing.option_id = option_id
+                position_changed = True
+                _append_user_event(
+                    self.db,
+                    user_id=user_id,
+                    signal_id=issue_id,
+                    event="position_changed",
+                )
+            if note_clean is not None:
+                existing.note = note_clean
+                _append_user_event(
+                    self.db,
+                    user_id=user_id,
+                    signal_id=issue_id,
+                    event="take_submitted",
+                )
+            existing.updated_at = now
+            from app.pipeline.trend_status import apply_trend_status
+
+            apply_trend_status(self.db, signal)
+            self.db.commit()
             out = _to_issue_out(self.db, signal, user_id=user_id)
             return {
                 "issue_id": issue_id,
                 "my_option_id": existing.option_id,
+                "my_note": (getattr(existing, "note", None) or None),
                 "participation_count": out.participation_count,
                 "options": out.options,
+                "distribution_visible": out.distribution_visible,
                 "is_following": out.is_following,
+                "position_changed": position_changed,
             }
 
+        row = Participation(
+            signal_id=issue_id,
+            user_id=user_id,
+            option_id=option_id,
+            note=note_clean,
+        )
+        self.db.add(row)
         self.db.add(
-            Participation(
-                signal_id=issue_id,
+            ParticipationChangeLog(
                 user_id=user_id,
-                option_id=option_id,
+                signal_id=issue_id,
+                from_option_id=None,
+                to_option_id=option_id,
+                changed_at=now,
             )
         )
         _append_user_event(self.db, user_id=user_id, signal_id=issue_id, event="vote")
+        _append_user_event(
+            self.db, user_id=user_id, signal_id=issue_id, event="position_selected"
+        )
+        if note_clean:
+            _append_user_event(
+                self.db, user_id=user_id, signal_id=issue_id, event="take_submitted"
+            )
         from app.pipeline.trend_status import apply_trend_status
 
         apply_trend_status(self.db, signal)
@@ -801,9 +947,12 @@ class IssueService:
         return {
             "issue_id": issue_id,
             "my_option_id": option_id,
+            "my_note": note_clean,
             "participation_count": out.participation_count,
             "options": out.options,
+            "distribution_visible": out.distribution_visible,
             "is_following": out.is_following,
+            "position_changed": False,
         }
 
     def list_comments(
