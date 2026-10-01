@@ -18,6 +18,8 @@ def _page(title: str, body: str) -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="apple-touch-icon" href="/static/favicon.png" />
   <title>{title} · TAKELEY</title>
   <style>
     body {{
@@ -39,7 +41,10 @@ def _page(title: str, body: str) -> str:
       font-size: 0.8125rem;
       font-weight: 700;
       letter-spacing: 0.04em;
+    }}
+    .brand a {{
       color: {_ACCENT};
+      text-decoration: none;
     }}
     h1 {{
       margin: 0 0 1rem;
@@ -60,7 +65,7 @@ def _page(title: str, body: str) -> str:
 </head>
 <body>
   <main class="shell">
-    <p class="brand">TAKELEY</p>
+    <p class="brand"><a href="/">TAKELEY</a></p>
     {body}
   </main>
 </body>

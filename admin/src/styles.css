@@ -328,6 +328,65 @@ button {
   .topbar h1 {
     font-size: 24px;
   }
+
+  /* Issue editor: one section per block, not a card inside the detail card. */
+  .panel.detail {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .editor {
+    gap: 28px;
+  }
+
+  .editor-section {
+    padding: 22px 18px 24px;
+  }
+
+  .editor select {
+    max-width: none;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .editor textarea,
+  .editor input[type="text"],
+  .image-field__url input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .editor textarea {
+    min-height: 120px;
+  }
+
+  .editor textarea.title-input {
+    min-height: 72px;
+  }
+
+  .column-editor {
+    border: none;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .column-editor__tools button,
+  .column-editor__modes button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .panel.detail.ingest-detail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 22px 18px 28px;
+    border-radius: var(--radius);
+  }
 }
 
 .panel {

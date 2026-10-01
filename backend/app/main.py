@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.legal import router as legal_router
 from app.api.share_landing import router as share_landing_router
+from app.api.site_pages import router as site_router
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -51,6 +52,7 @@ def health() -> dict[str, str]:
 
 
 app.include_router(legal_router)
+app.include_router(site_router)
 app.include_router(share_landing_router)
 app.include_router(api_router, prefix="/api/v1")
 

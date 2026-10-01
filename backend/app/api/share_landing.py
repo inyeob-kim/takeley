@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.config import get_settings
 from app.db.models import Participation, Signal
 from app.db.session import get_db
+from app.services.site_service import SiteService
 
 router = APIRouter(tags=["share"])
 
@@ -422,12 +423,30 @@ def issue_share_landing(
             "지금은 앱이 설치돼 있다면 위 버튼으로 열어 주세요.</p>"
         )
     store_html = "\n      ".join(store_links)
+    related_rows = SiteService(db).related(row.id, getattr(row, "category", None))
+    if related_rows:
+        related_items = []
+        for item in related_rows:
+            label = _category_label(getattr(item, "category", None) or "")
+            small = f"<small>{esc(label)}</small>" if label else ""
+            related_items.append(
+                f'<a href="/issues/{quote(item.id, safe="")}">{esc(item.title)}{small}</a>'
+            )
+        related_html = (
+            '<section class="related"><h2>다른 이슈</h2>'
+            + "".join(related_items)
+            + "</section>"
+        )
+    else:
+        related_html = ""
 
     page = f"""<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="apple-touch-icon" href="/static/favicon.png" />
   <title>{esc(f"TAKELEY · {title}")}</title>
   <meta name="description" content="{esc(description, quote=True)}" />
   <link rel="canonical" href="{esc(canonical, quote=True)}" />
@@ -474,6 +493,10 @@ def issue_share_landing(
       border-bottom: 1px solid var(--border);
     }}
     .topbar-inner {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       padding: 0.85rem 1.25rem;
     }}
     .brand {{
@@ -482,6 +505,40 @@ def issue_share_landing(
       font-weight: 700;
       letter-spacing: 0.04em;
       color: var(--accent);
+      text-decoration: none;
+    }}
+    .site-nav {{
+      display: flex;
+      gap: 14px;
+    }}
+    .site-nav a {{
+      color: #111;
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }}
+    .related {{
+      margin-top: 2rem;
+      padding-top: 1.1rem;
+      border-top: 1px solid var(--border);
+    }}
+    .related h2 {{
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }}
+    .related a {{
+      display: block;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      color: inherit;
+      text-decoration: none;
+      font-weight: 700;
+    }}
+    .related small {{
+      display: block;
+      margin-top: 0.2rem;
+      color: var(--muted);
+      font-weight: 500;
     }}
     .wrap {{
       padding: 1.25rem 1.25rem 9rem;
@@ -782,7 +839,11 @@ def issue_share_landing(
   <div class="shell">
   <header class="topbar">
     <div class="topbar-inner">
-      <p class="brand">TAKELEY</p>
+      <a class="brand" href="/">TAKELEY</a>
+      <nav class="site-nav">
+        <a href="/issues">이슈</a>
+        <a href="/columns">칼럼</a>
+      </nav>
     </div>
   </header>
   <div class="wrap">
@@ -792,6 +853,7 @@ def issue_share_landing(
     {cover_html}
     {teaser_html}
     {body_section}
+    {related_html}
   </div>
   <div class="footer">
     <div class="footer-inner">
