@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     news_max_publish_per_cycle: int = 1
     # Extra Understanding slots for NEWS-eligible candidates (lightweight path).
     news_llm_budget_per_cycle: int = 20
-    # Soft daily create cap for content_kind=NEWS (draft+published).
-    daily_news_cap: int = 30
+    # Daily create cap for content_kind=NEWS (draft+published). 0 = no cap.
+    daily_news_cap: int = 0
     # Reject NEWS whose source published_at is older than this.
     news_max_age_hours: int = 72
     # Understanding surface gate: min(hook, useful, takeley_fit) must clear this.

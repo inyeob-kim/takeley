@@ -105,6 +105,8 @@ def test_home_lists_issue_and_column():
         assert columns.status_code == 200
         assert "엔비디아 수요 이슈" in columns.text
         assert 'rel="canonical"' in body
+        assert 'name="naver-site-verification"' in body
+        assert 'href="/static/favicon-192.png"' in body
         assert "og:title" in body
         assert 'class="app-qr"' in body
         assert "모바일 앱 받기" in body

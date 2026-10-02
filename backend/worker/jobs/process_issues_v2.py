@@ -486,7 +486,8 @@ def run_process_issues_v2(db: Session, limit: int = 100) -> dict:
                 continue
             if kind == KIND_NEWS:
                 record_usage(CONTENT_KIND_NEWS, 1, db=db)
-                if count_news_cards_today(db) >= settings.daily_news_cap:
+                news_cap = int(settings.daily_news_cap)
+                if news_cap > 0 and count_news_cards_today(db) >= news_cap:
                     rejected += 1
                     record_usage(
                         NEWS_REJECTED, 1, db=db, tags={"reason": "daily_cap"}

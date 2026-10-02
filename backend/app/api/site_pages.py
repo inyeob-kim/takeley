@@ -110,7 +110,8 @@ def _page(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <meta name="naver-site-verification" content="7336265da617e44b84a6d1209082889e5a4089a5" />
+  <link rel="icon" type="image/png" href="/static/favicon-192.png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/static/favicon.png" />
   <title>{_esc(title)}</title>
   <meta name="description" content="{_esc(desc)}" />
@@ -178,6 +179,7 @@ def _footer() -> str:
     <footer class="foot">
       <div>
         <p class="logo">TAKELEY</p>
+        <p>이슈를 짧게 읽고, 한 번 눌러 생각을 남기는 곳입니다.</p>
         <p>Take a look. Take a side.</p>
       </div>
       <nav>
@@ -328,7 +330,7 @@ def home(db: Session = Depends(get_db)) -> HTMLResponse:
     return _page(
         title="TAKELEY — 이슈를 보고, 생각을 남기다",
         og_title="TAKELEY",
-        description="테이클리 — 이슈를 짧게 읽고, 한 번 눌러 생각을 남기는 곳입니다.",
+        description="이슈를 짧게 읽고, 한 번 눌러 생각을 남기는 곳입니다. Take a look. Take a side.",
         path="/",
         body="".join(parts),
         image="/static/og-splash.png",
