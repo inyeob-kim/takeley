@@ -13,6 +13,7 @@ import '../theme/takeley_colors.dart';
 import '../widgets/data_state.dart';
 import '../widgets/issue_card.dart';
 import '../widgets/page_header.dart';
+import '../widgets/recap_sheet.dart';
 import 'shell_screen.dart';
 
 /// Home IA: 오늘의 TAKE (priority) → 오늘의 뉴스 (capped preview).
@@ -186,100 +187,17 @@ class _HomeScreenState extends State<HomeScreen> {
       await prefs.setString(key, today);
       if (!mounted) return;
 
-      String streakLine(int days) {
-        if (days <= 1) return '';
-        if (days == 2) return '이틀째예요';
-        if (days == 3) return '사흘째예요';
-        return '$days일째예요';
-      }
-
-      final softStreak = streakLine(recap.streakDays);
-
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: TakeleyColors.canvas,
-        showDragHandle: true,
-        useSafeArea: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (ctx) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '오늘, 이렇게 봤어요',
-                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  softStreak.isEmpty
-                      ? '나중에 다시 볼 오늘의 판단이에요'
-                      : '나중에 다시 볼 오늘의 판단이에요. $softStreak',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: TakeleyColors.secondaryLabel,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                ...recap.items.take(5).map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              e.title,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                height: 1.35,
-                                fontWeight: FontWeight.w600,
-                                color: TakeleyColors.fg,
-                              ),
-                            ),
-                            if (e.optionLabel.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                e.optionLabel,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1.35,
-                                  color: TakeleyColors.muted,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      if (recap.items.isNotEmpty) {
-                        unawaited(widget.issuesApi.recordEvent(
-                          id: recap.items.first.issueId,
-                          event: 'recap_viewed',
-                          userId: userId,
-                        ));
-                      }
-                    },
-                    child: const Text('닫기'),
-                  ),
-                ),
-              ],
-            ),
-          );
+      await showRecapSheet(
+        context,
+        recap: recap,
+        onClosed: () {
+          if (recap.items.isNotEmpty) {
+            unawaited(widget.issuesApi.recordEvent(
+              id: recap.items.first.issueId,
+              event: 'recap_viewed',
+              userId: userId,
+            ));
+          }
         },
       );
     } catch (_) {}

@@ -62,6 +62,10 @@ def run_enabled_modules(db: Session, ctx: IngestContext) -> list[tuple[str, Modu
             result = impl.run(db, ctx)  # type: ignore[attr-defined]
         except Exception as exc:
             logger.exception("discovery module=%s failed", module_id)
+            try:
+                db.rollback()
+            except Exception:
+                logger.exception("discovery module=%s rollback failed", module_id)
             result = ModuleRunResult(failed=1, error=str(exc)[:500])
         result.elapsed_ms = int((datetime.utcnow() - started).total_seconds() * 1000)
         record_module_run(db, module_id, started_at=started, result=result)

@@ -548,9 +548,9 @@ def _vote_script(issue_id: str) -> str:
       return id;
     }).catch(function () { return ""; });
   }
-  function reveal(options, myId) {
-    var total = 0;
-    options.forEach(function (o) { total += Number(o.count) || 0; });
+  function reveal(options, myId, participationCount, distributionVisible) {
+    var total = Number(participationCount) || 0;
+    var showDist = distributionVisible === true && total > 0;
     box.classList.add("is-voted");
     box.querySelectorAll(".js-vote").forEach(function (btn) {
       var id = btn.getAttribute("data-option-id");
@@ -559,7 +559,9 @@ def _vote_script(issue_id: str) -> str:
       if (!match) return;
       var pct = total > 0 ? Math.round((Number(match.count) || 0) / total * 100) : 0;
       var pctEl = btn.querySelector(".opt-pct");
-      if (pctEl) pctEl.textContent = pct + "%% · " + (Number(match.count) || 0);
+      if (pctEl) {
+        pctEl.textContent = showDist ? (pct + "%% · " + (Number(match.count) || 0)) : "";
+      }
       btn.classList.toggle("is-mine", id === myId);
     });
     var confirm = box.querySelector(".js-confirm");
@@ -569,7 +571,13 @@ def _vote_script(issue_id: str) -> str:
     if (lock) lock.hidden = true;
     if (count) {
       count.hidden = false;
-      count.textContent = total + "명 생각 남김";
+      if (total > 0) {
+        count.textContent = showDist
+          ? (total + "명 생각 남김")
+          : (total + "명 생각 남김 · 비율은 더 모이면 공개");
+      } else {
+        count.textContent = "아직 충분한 응답이 모이지 않았어요.";
+      }
     }
   }
   function vote(optionId) {
@@ -582,7 +590,14 @@ def _vote_script(issue_id: str) -> str:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ option_id: optionId, user_id: userId })
       }).then(function (res) { return res.ok ? res.json() : null; }).then(function (data) {
-        if (data && data.options) reveal(data.options, data.my_option_id || optionId);
+        if (data && data.options) {
+          reveal(
+            data.options,
+            data.my_option_id || optionId,
+            data.participation_count,
+            data.distribution_visible
+          );
+        }
       }).finally(function () { voting = false; });
     });
   }
@@ -606,7 +621,14 @@ def _vote_script(issue_id: str) -> str:
     return fetch("/api/v1/issues/" + encodeURIComponent(issueId) + "?user_id=" + encodeURIComponent(userId))
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (data && data.my_option_id && data.options) reveal(data.options, data.my_option_id);
+        if (data && data.my_option_id && data.options) {
+          reveal(
+            data.options,
+            data.my_option_id,
+            data.participation_count,
+            data.distribution_visible
+          );
+        }
       });
   });
 })();

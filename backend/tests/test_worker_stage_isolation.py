@@ -68,6 +68,51 @@ def test_ingest_failure_does_not_stop_process(monkeypatch):
     assert "push" in seen
 
 
+def test_ingest_poisoned_session_is_rolled_back_before_process(monkeypatch):
+    """IntegrityError during ingest must not leave process stuck on PendingRollback."""
+    db = _db()
+    seen: list[str] = []
+
+    def boom_ingest(session):
+        seen.append("ingest")
+        from datetime import datetime
+
+        from app.db.models import RawItem
+
+        now = datetime.utcnow()
+        session.add(
+            RawItem(
+                provider="official",
+                external_id="dup-key",
+                text="first",
+                content_fingerprint="a",
+                fetched_at=now,
+                published_at=now,
+                raw_payload={},
+            )
+        )
+        session.flush()
+        session.add(
+            RawItem(
+                provider="official",
+                external_id="dup-key",
+                text="second",
+                content_fingerprint="b",
+                fetched_at=now,
+                published_at=now,
+                raw_payload={},
+            )
+        )
+        session.flush()
+
+    _patch_cycle(monkeypatch, seen, ingest=boom_ingest)
+    stages = run_heavy_cycle_body(db)
+    assert stages["ingest"] == "error"
+    assert stages["process"] == "ok"
+    assert "process" in seen
+    assert "push" in seen
+
+
 def test_process_failure_skips_settle_keeps_trend_push(monkeypatch):
     db = _db()
     seen: list[str] = []

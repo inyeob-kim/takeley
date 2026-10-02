@@ -281,7 +281,7 @@ class IssueOut(BaseModel):
     participation_count: int = 0
     my_option_id: Optional[str] = None
     my_note: Optional[str] = None
-    # False until user voted AND n >= distribution_min_responses.
+    # False until the viewer has voted (and there is at least one response).
     distribution_visible: bool = False
     source_count: int = 0
     sources: list[IssueSourceOut] = Field(default_factory=list)

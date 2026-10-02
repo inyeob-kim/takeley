@@ -330,9 +330,9 @@ def _to_issue_out(
     has_new, my_last_seen, is_following = _compute_has_new_update(signal, ctx)
 
     settings = get_settings()
-    min_n = max(1, int(settings.distribution_min_responses))
+    # After a take, show real option counts/bars immediately.
     has_voted = bool(my_option_id)
-    distribution_visible = has_voted and total >= min_n
+    distribution_visible = has_voted and total > 0
     display_counts = counts if distribution_visible else {oid: 0 for oid in counts}
 
     option_outs = [

@@ -45,6 +45,10 @@ class OfficialSourceModule:
                 failed += 1
                 last_error = str(exc)[:500]
                 logger.exception("official sec failed; continuing")
+                try:
+                    db.rollback()
+                except Exception:
+                    logger.exception("official sec rollback failed")
 
         if settings.dart_api_key.strip():
             dart = OfficialProvider()
@@ -68,6 +72,12 @@ class OfficialSourceModule:
                     failed += 1
                     last_error = str(exc)[:500]
                     logger.exception("official dart symbol=%s failed; continuing", entry.symbol)
+                    try:
+                        db.rollback()
+                    except Exception:
+                        logger.exception(
+                            "official dart rollback failed symbol=%s", entry.symbol
+                        )
 
         if fetched == 0 and failed == 0 and not settings.dart_api_key.strip() and not settings.official_sec_enabled:
             return ModuleRunResult(skipped_reason="no_official_sources")

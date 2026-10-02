@@ -1132,7 +1132,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               final pct = totalVotes > 0
                   ? ((opt.count / totalVotes) * 100).round()
                   : 0;
-              final meta = showDist ? '$pct% · ${fmt.format(opt.count)}' : '';
+              // Count lives in the footer (“N명 생각 남김”); keep option meta to %.
+              final meta = showDist ? '$pct%' : '';
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TakeleyVoteOptionButton(
@@ -1140,6 +1141,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   meta: meta,
                   selected: selected,
                   enabled: !_voting,
+                  fillFraction: showDist ? pct / 100.0 : null,
                   onPressed: () => _pickOption(opt.id),
                 ),
               );
@@ -1159,8 +1161,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             ],
             Text(
               hasTake
-                  ? (showDist
-                      ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                  ? (totalVotes > 0
+                      ? (showDist
+                          ? '${fmt.format(issue.participationCount)}명 생각 남김'
+                          : '${fmt.format(issue.participationCount)}명 생각 남김 · 비율은 더 모이면 공개')
                       : '아직 충분한 응답이 모이지 않았어요.')
                   : _pendingOptionId == null
                       ? '선택한 뒤에 다른 사람 생각을 볼 수 있어요.'

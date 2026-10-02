@@ -41,12 +41,22 @@ if settings.test_fast_ingest:
     )
 
 
-def run_isolated_stage(name: str, fn):
+def _safe_rollback(db, *, stage: str) -> None:
+    """Clear a poisoned session so later stages can still run."""
+    try:
+        db.rollback()
+    except Exception:
+        logger.exception("%s rollback failed", stage)
+
+
+def run_isolated_stage(name: str, fn, db=None):
     """Run one heavy-cycle stage. Exception is logged; later stages may continue."""
     try:
         return fn(), None
     except Exception as exc:
         logger.exception("%s stage failed", name)
+        if db is not None:
+            _safe_rollback(db, stage=name)
         return None, exc
 
 
@@ -58,7 +68,9 @@ def run_heavy_cycle_body(db) -> dict:
     stages: dict[str, str] = {}
 
     t = time.monotonic()
-    ingest_result, ingest_err = run_isolated_stage("ingest", lambda: run_ingest(db))
+    ingest_result, ingest_err = run_isolated_stage(
+        "ingest", lambda: run_ingest(db), db=db
+    )
     if ingest_err is not None:
         stages["ingest"] = "error"
     else:
@@ -79,14 +91,10 @@ def run_heavy_cycle_body(db) -> dict:
     else:
         t = time.monotonic()
         process_result, process_err = run_isolated_stage(
-            "process", lambda: run_process_signals(db)
+            "process", lambda: run_process_signals(db), db=db
         )
         if process_err is not None:
             stages["process"] = "error"
-            try:
-                db.rollback()
-            except Exception:
-                logger.exception("process rollback failed")
         else:
             stages["process"] = "ok"
             logger.info(
@@ -127,7 +135,7 @@ def run_heavy_cycle_body(db) -> dict:
                 idle_limit=int(x_config.hot_idle_scans or 2),
             )
 
-        _, settle_err = run_isolated_stage("settle", _settle)
+        _, settle_err = run_isolated_stage("settle", _settle, db=db)
         stages["settle"] = "error" if settle_err is not None else "ok"
 
     # Trend reads published Issues only — does not need this cycle's process.
@@ -142,7 +150,7 @@ def run_heavy_cycle_body(db) -> dict:
 
             return refresh_published_trend_statuses(db)
 
-        refreshed, trend_err = run_isolated_stage("trend", _trend)
+        refreshed, trend_err = run_isolated_stage("trend", _trend, db=db)
         if trend_err is not None:
             stages["trend"] = "error"
         else:
@@ -156,7 +164,7 @@ def run_heavy_cycle_body(db) -> dict:
     # Scheduled admin publishes before push so enqueue lands in this cycle.
     t = time.monotonic()
     sched_result, sched_err = run_isolated_stage(
-        "scheduled_publish", lambda: run_publish_scheduled(db)
+        "scheduled_publish", lambda: run_publish_scheduled(db), db=db
     )
     if sched_err is not None:
         stages["scheduled_publish"] = "error"
@@ -176,7 +184,9 @@ def run_heavy_cycle_body(db) -> dict:
 
         return run_judgment_pushes(db)
 
-    judgment_result, judgment_err = run_isolated_stage("judgment_push", _judgment)
+    judgment_result, judgment_err = run_isolated_stage(
+        "judgment_push", _judgment, db=db
+    )
     if judgment_err is not None:
         stages["judgment_push"] = "error"
     else:
@@ -193,7 +203,7 @@ def run_heavy_cycle_body(db) -> dict:
     else:
         t = time.monotonic()
         push_result, push_err = run_isolated_stage(
-            "push", lambda: run_pending_push(db)
+            "push", lambda: run_pending_push(db), db=db
         )
         if push_err is not None:
             stages["push"] = "error"
@@ -205,7 +215,7 @@ def run_heavy_cycle_body(db) -> dict:
                 time.monotonic() - t,
             )
 
-    run_isolated_stage("rollup", lambda: log_rollup(db, hours=24))
+    run_isolated_stage("rollup", lambda: log_rollup(db, hours=24), db=db)
     return stages
 
 

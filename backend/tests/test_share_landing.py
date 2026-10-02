@@ -105,6 +105,14 @@ def test_share_landing_readable_content_and_cta(monkeypatch):
     assert ">50%<" not in teaser_block
     assert "친구에게 보내기" in body
     assert "한 표 했어. 너는 어떻게 생각해?" in body
+    assert "이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요." in body
+    assert 'data-share-mode="issue_only"' in body
+    assert 'data-share-mode="with_take"' in body
+    assert "js-share-open" in body
+    assert 'id="share-sheet"' in body
+    assert "share-sheet__title" in body
+    assert ">공유<" in body
+    assert "상대방에게 이슈 카드가 보여요." in body
     assert "url: shareUrl" in body
     assert '"\\n" + shareUrl' not in body
     assert "앱에서 생각 남기기" in body
@@ -243,6 +251,8 @@ def test_web_participate_does_not_use_demo_user():
     assert voted.status_code == 200
     body = voted.json()
     assert body["my_option_id"] == opt.id
+    assert body["participation_count"] == 1
+    assert body["distribution_visible"] is True
     assert body["options"][0]["count"] == 1
 
     again = client.post(
@@ -262,15 +272,16 @@ def test_web_participate_does_not_use_demo_user():
     )
     assert switched.status_code == 200
     switched_body = switched.json()
-    assert switched_body["my_option_id"] == opt.id
+    assert switched_body["my_option_id"] == other.id
     assert switched_body["participation_count"] == 1
+    assert switched_body.get("position_changed") is True
 
     from app.db.models import Participation
 
     rows = db.query(Participation).filter(Participation.signal_id == signal.id).all()
     assert len(rows) == 1
     assert rows[0].user_id == user_id
-    assert rows[0].option_id == opt.id
+    assert rows[0].option_id == other.id
 
     app.dependency_overrides.clear()
 
@@ -322,5 +333,67 @@ def test_share_landing_news_copy_differs_from_issue(monkeypatch):
     assert "생각 남기기 · 댓글은 앱에서" not in body
     assert "앱에서 생각 남기기" not in body
     assert "다른 사람 생각" not in body
+
+    app.dependency_overrides.clear()
+
+
+def test_share_landing_related_excludes_news(monkeypatch):
+    db = _session()
+    issue = Signal(
+        title="참여용 이슈 제목입니다",
+        summary="이슈 요약입니다.",
+        column_body="이슈 칼럼 본문이 충분히 깁니다. " * 5,
+        status="published",
+        published_at=datetime.utcnow(),
+        category="스포츠",
+        content_kind="ISSUE",
+        participation_suitable=True,
+        participation_question="어떻게 생각하나요?",
+    )
+    news = Signal(
+        title="속보성 뉴스 카드가 보이면 안 됩니다",
+        summary="뉴스 요약입니다.",
+        column_body="뉴스 본문이 충분히 깁니다. " * 5,
+        status="published",
+        published_at=datetime.utcnow(),
+        category="스포츠",
+        content_kind="NEWS",
+        participation_suitable=False,
+    )
+    other_issue = Signal(
+        title="같은 카테고리의 다른 이슈입니다",
+        summary="다른 이슈 요약입니다.",
+        column_body="다른 이슈 칼럼 본문이 충분히 깁니다. " * 5,
+        status="published",
+        published_at=datetime.utcnow(),
+        category="스포츠",
+        content_kind="ISSUE",
+        participation_suitable=True,
+        participation_question="어떻게 생각하나요?",
+    )
+    db.add_all([issue, news, other_issue])
+    db.commit()
+    db.refresh(issue)
+
+    def _override():
+        try:
+            yield db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override
+    from app.core import config as cfg
+
+    cfg.get_settings.cache_clear()
+    monkeypatch.setenv("PUBLIC_SHARE_ORIGIN", "http://testserver")
+    cfg.get_settings.cache_clear()
+
+    client = TestClient(app)
+    res = client.get(f"/i/{issue.id}")
+    assert res.status_code == 200
+    body = res.text
+    assert "다른 이슈" in body
+    assert "같은 카테고리의 다른 이슈입니다" in body
+    assert "속보성 뉴스 카드가 보이면 안 됩니다" not in body
 
     app.dependency_overrides.clear()

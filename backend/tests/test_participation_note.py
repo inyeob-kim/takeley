@@ -86,15 +86,27 @@ def test_participate_stores_note_and_allows_change(monkeypatch):
     assert changed["my_note"] == "바꾼 이유입니다."
 
 
-def test_distribution_hidden_until_min_responses(monkeypatch):
+def test_distribution_hidden_before_vote(monkeypatch):
     db = _session()
     issue, o1, o2 = _issue_with_options(db, n_votes=5)
     _patch_settings(monkeypatch, distribution_min_responses=30)
     svc = IssueService(db)
+    out = svc.get_issue(issue.id, user_id=None)
+    assert out is not None
+    assert out.distribution_visible is False
+    assert all(o.count == 0 for o in out.options)
+
+
+def test_distribution_visible_after_first_vote(monkeypatch):
+    db = _session()
+    issue, o1, o2 = _issue_with_options(db, n_votes=0)
+    _patch_settings(monkeypatch, distribution_min_responses=30)
+    svc = IssueService(db)
     out = svc.participate(issue.id, user_id="viewer", option_id=o1.id)
     assert out is not None
-    assert out["distribution_visible"] is False
-    assert all(o.count == 0 for o in out["options"])
+    assert out["distribution_visible"] is True
+    assert out["participation_count"] == 1
+    assert sum(o.count for o in out["options"]) == 1
 
 
 def test_distribution_visible_when_enough_votes(monkeypatch):

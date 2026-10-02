@@ -827,22 +827,46 @@ export default function App() {
       {section === "issues" ? (
         <>
           {!isNews && participationMetrics ? (
-            <div className="panel" style={{ marginBottom: 12, padding: 12 }}>
-              <p className="meta" style={{ marginBottom: 8 }}>
-                참여 KPI · 최근 {participationMetrics.days}일
-              </p>
-              <p className="meta">
-                A/B{" "}
-                {participationMetrics.buckets.A ?? 0}/
-                {participationMetrics.buckets.B ?? 0}
-                {" · "}투표 {participationMetrics.participations_created}
-                {" · "}한 줄 {participationMetrics.notes_written}
-                {" · "}other-take {participationMetrics.other_take_exposures}
-                {" · "}분포열람{" "}
-                {participationMetrics.events.distribution_viewed ?? 0}
-                {" · "}리캡 {participationMetrics.events.recap_viewed ?? 0}
-              </p>
-            </div>
+            <section className="participation-kpi" aria-label="참여 KPI">
+              <header className="participation-kpi__head">
+                <p className="participation-kpi__eyebrow">참여 KPI</p>
+                <p className="participation-kpi__period">
+                  최근 {participationMetrics.days}일
+                </p>
+              </header>
+              <dl className="participation-kpi__grid">
+                <div className="participation-kpi__stat participation-kpi__stat--primary">
+                  <dt>투표</dt>
+                  <dd>{participationMetrics.participations_created}</dd>
+                </div>
+                <div className="participation-kpi__stat">
+                  <dt>한 줄</dt>
+                  <dd>{participationMetrics.notes_written}</dd>
+                </div>
+                <div className="participation-kpi__stat">
+                  <dt>다른 의견</dt>
+                  <dd>{participationMetrics.other_take_exposures}</dd>
+                </div>
+                <div className="participation-kpi__stat">
+                  <dt>분포 열람</dt>
+                  <dd>
+                    {participationMetrics.events.distribution_viewed ?? 0}
+                  </dd>
+                </div>
+                <div className="participation-kpi__stat">
+                  <dt>리캡</dt>
+                  <dd>{participationMetrics.events.recap_viewed ?? 0}</dd>
+                </div>
+                <div className="participation-kpi__stat">
+                  <dt>A / B</dt>
+                  <dd className="participation-kpi__ab">
+                    <span>{participationMetrics.buckets.A ?? 0}</span>
+                    <span className="participation-kpi__ab-sep">/</span>
+                    <span>{participationMetrics.buckets.B ?? 0}</span>
+                  </dd>
+                </div>
+              </dl>
+            </section>
           ) : null}
           <div className="tabs">
             {(

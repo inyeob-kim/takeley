@@ -142,8 +142,10 @@ class SiteService:
         return _take_card(row[0], row[1], row[2])
 
     def related(self, issue_id: str, category: str | None, *, limit: int = 3) -> list[Issue]:
+        # Share landing "다른 이슈" is Issue discovery — never surface NEWS cards.
         query = self.db.query(Issue).filter(
             Issue.status == "published",
+            Issue.content_kind == "ISSUE",
             Issue.id != issue_id,
         )
         label = (category or "").strip()

@@ -290,7 +290,7 @@ def _teaser_html(
   <p class="teaser-lock">선택한 뒤에 다른 사람 생각을 볼 수 있어요.</p>
   <p class="voted-note" hidden>내 생각을 남겼어요.</p>
   <div class="web-share" id="web-share" hidden>
-    <button type="button" class="web-share__btn js-share" data-share-mode="issue_only">친구에게 보내기</button>
+    <button type="button" class="web-share__btn js-share-open">친구에게 보내기</button>
   </div>
 </section>
 """
@@ -745,6 +745,86 @@ def issue_share_landing(
       cursor: pointer;
       padding: 0.35rem;
     }}
+    .share-sheet {{
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }}
+    .share-sheet[hidden] {{ display: none; }}
+    .share-sheet__scrim {{
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.32);
+    }}
+    .share-sheet__panel {{
+      position: relative;
+      width: 100%;
+      max-width: var(--phone);
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 0.35rem 1.25rem calc(1.75rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 28px rgba(0,0,0,0.08);
+    }}
+    .share-sheet__handle {{
+      width: 2.25rem;
+      height: 0.25rem;
+      border-radius: 999px;
+      background: rgba(10, 10, 10, 0.16);
+      margin: 0.45rem auto 0.85rem;
+    }}
+    .share-sheet__title {{
+      margin: 0;
+      font-size: 1.375rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+      color: var(--fg);
+    }}
+    .share-sheet__hint {{
+      margin: 0.4rem 0 1.25rem;
+      font-size: 0.9375rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }}
+    .share-sheet__primary,
+    .share-sheet__secondary {{
+      display: block;
+      width: 100%;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+      text-align: center;
+      cursor: pointer;
+    }}
+    .share-sheet__primary {{
+      min-height: 3.25rem;
+      margin: 0 0 0.625rem;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 4px 4px 0 #0A0A0A;
+      transition: transform 80ms ease, box-shadow 80ms ease;
+    }}
+    .share-sheet__primary:active {{
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 #0A0A0A;
+    }}
+    .share-sheet__secondary {{
+      min-height: 2.75rem;
+      margin: 0;
+      padding: 0.625rem 1.125rem;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #fff;
+      color: var(--fg);
+      font-size: 0.9375rem;
+    }}
+    .share-sheet__secondary[hidden] {{ display: none; }}
     .column-block {{ margin-top: 2rem; }}
     .column-block.is-collapsed .column {{
       max-height: 12rem;
@@ -865,6 +945,20 @@ def issue_share_landing(
     </div>
   </div>
   </div>
+  <div class="share-sheet" id="share-sheet" hidden>
+    <div class="share-sheet__scrim js-share-sheet-close" aria-hidden="true"></div>
+    <div class="share-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="share-sheet-title">
+      <div class="share-sheet__handle" aria-hidden="true"></div>
+      <h2 class="share-sheet__title" id="share-sheet-title">공유</h2>
+      <p class="share-sheet__hint">상대방에게 이슈 카드가 보여요.</p>
+      <button type="button" class="share-sheet__primary js-share" data-share-mode="issue_only">
+        이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.
+      </button>
+      <button type="button" class="share-sheet__secondary js-share" data-share-mode="with_take" id="share-with-take">
+        내 의견 포함해서 공유
+      </button>
+    </div>
+  </div>
   <script>
     (function () {{
       var appUrl = {json.dumps(app_url)};
@@ -961,10 +1055,10 @@ def issue_share_landing(
           return id;
         }}).catch(function () {{ return ""; }});
       }}
-      function reveal(options, myId) {{
+      function reveal(options, myId, participationCount, distributionVisible) {{
         if (!teaser || !options) return;
-        var total = 0;
-        options.forEach(function (o) {{ total += Number(o.count) || 0; }});
+        var total = Number(participationCount) || 0;
+        var showDist = distributionVisible === true && total > 0;
         teaser.classList.add("is-voted");
         var note = teaser.querySelector(".voted-note");
         var lock = teaser.querySelector(".teaser-lock");
@@ -980,15 +1074,17 @@ def issue_share_landing(
           var pct = total > 0 ? Math.round((count / total) * 100) : 0;
           var pctEl = btn.querySelector(".teaser-opt__pct");
           var fill = btn.querySelector(".teaser-opt__fill");
-          if (pctEl) pctEl.textContent = pct + "%";
-          if (fill) fill.style.width = pct + "%";
+          if (pctEl) pctEl.textContent = showDist ? (pct + "%") : "";
+          if (fill) fill.style.width = showDist ? (pct + "%") : "0%";
           btn.classList.toggle("is-mine", id === myId);
           if (id === myId) myLabel = ((btn.querySelector(".teaser-opt__label") || {{}}).textContent || "").trim();
         }});
         if (note && myLabel) {{
-          note.textContent = "‘" + myLabel + "’를 선택했어요. 선택은 바꿀 수 없어요.";
+          var countBit = total > 0 ? (" · " + total + "명 생각 남김") : "";
+          note.textContent = "‘" + myLabel + "’를 선택했어요." + countBit;
           note.hidden = false;
         }} else if (note) {{
+          if (total > 0) note.textContent = total + "명 생각 남김";
           note.hidden = false;
         }}
         var shareBox = document.getElementById("web-share");
@@ -1013,7 +1109,12 @@ def issue_share_landing(
             return res.json();
           }}).then(function (data) {{
             if (data && data.options) {{
-              reveal(data.options, data.my_option_id || optionId);
+              reveal(
+                data.options,
+                data.my_option_id || optionId,
+                data.participation_count,
+                data.distribution_visible
+              );
               return;
             }}
             voteFailed();
@@ -1043,17 +1144,48 @@ def issue_share_landing(
           }}
         }});
       }}
+      document.querySelectorAll(".js-share-open").forEach(function (btn) {{
+        btn.addEventListener("click", function () {{
+          var sheet = document.getElementById("share-sheet");
+          var takeBtn = document.getElementById("share-with-take");
+          if (takeBtn) {{
+            takeBtn.textContent = myLabel
+              ? ("‘" + myLabel + "’로 공유")
+              : "내 의견 포함해서 공유";
+            takeBtn.hidden = !myLabel;
+          }}
+          if (sheet) {{
+            sheet.hidden = false;
+            document.body.style.overflow = "hidden";
+          }}
+        }});
+      }});
+      function closeShareSheet() {{
+        var sheet = document.getElementById("share-sheet");
+        if (sheet) sheet.hidden = true;
+        document.body.style.overflow = "";
+      }}
+      document.querySelectorAll(".js-share-sheet-close").forEach(function (el) {{
+        el.addEventListener("click", closeShareSheet);
+      }});
       document.querySelectorAll(".js-share").forEach(function (btn) {{
         btn.addEventListener("click", function () {{
           var mode = btn.getAttribute("data-share-mode") || "issue_only";
           postEvent("share_clicked", mode);
+          closeShareSheet();
           if (!navigator.share) return;
-          var shareOpts = myLabel
-            ? {{
-                text: "나는 ‘" + myLabel + "’에 한 표 했어. 너는 어떻게 생각해?",
-                url: shareUrl
-              }}
-            : {{ url: shareUrl }};
+          var shareOpts;
+          if (mode === "with_take" && myLabel) {{
+            shareOpts = {{
+              text: "나는 ‘" + myLabel + "’에 한 표 했어. 너는 어떻게 생각해?",
+              url: shareUrl
+            }};
+          }} else {{
+            shareOpts = {{
+              text: "이 이슈, 너는 어떻게 생각해? 고르면 결과가 열려요.",
+              url: shareUrl
+            }};
+          }}
           navigator.share(shareOpts).catch(function (err) {{
             if (err && err.name === "AbortError") postEvent("share_cancelled", mode);
           }});
@@ -1098,7 +1230,14 @@ def issue_share_landing(
         return fetch("/api/v1/issues/" + encodeURIComponent(issueId) + "?user_id=" + encodeURIComponent(userId))
           .then(function (res) {{ return res.ok ? res.json() : null; }})
           .then(function (data) {{
-            if (data && data.my_option_id && data.options) reveal(data.options, data.my_option_id);
+            if (data && data.my_option_id && data.options) {{
+              reveal(
+                data.options,
+                data.my_option_id,
+                data.participation_count,
+                data.distribution_visible
+              );
+            }}
           }});
       }});
     }})();

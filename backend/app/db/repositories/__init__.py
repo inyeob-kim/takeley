@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.models import (
@@ -121,15 +122,31 @@ class RawItemRepository:
         self.db = db
 
     def upsert_many(self, items: list[RawItemDomain]) -> int:
+        """Insert new raw rows. Duplicates (same provider+external_id) are skipped.
+
+        Uses per-row SAVEPOINTs so a unique-constraint race cannot poison the
+        outer session / abort the rest of the heavy cycle.
+        """
         inserted = 0
+        seen_keys: set[tuple[str, str]] = set()
         for item in items:
+            provider = item.provider.value
+            external_id = (item.external_id or "").strip()
+            if not external_id:
+                continue
+            key = (provider, external_id)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+
             exists = (
-                self.db.query(RawItem)
+                self.db.query(RawItem.id)
                 .filter(
-                    RawItem.provider == item.provider.value,
-                    RawItem.external_id == item.external_id,
+                    RawItem.provider == provider,
+                    RawItem.external_id == external_id,
                 )
-                .one_or_none()
+                .limit(1)
+                .first()
             )
             if exists:
                 continue
@@ -151,8 +168,8 @@ class RawItemRepository:
                 continue
 
             row = RawItem(
-                provider=item.provider.value,
-                external_id=item.external_id,
+                provider=provider,
+                external_id=external_id,
                 url=item.url,
                 author=item.author,
                 title=item.title,
@@ -163,9 +180,19 @@ class RawItemRepository:
                 raw_payload=item.raw_payload,
                 content_fingerprint=fp,
             )
-            self.db.add(row)
-            inserted += 1
-        self.db.commit()
+            try:
+                with self.db.begin_nested():
+                    self.db.add(row)
+                    self.db.flush()
+                inserted += 1
+            except IntegrityError:
+                # Concurrent/same-batch unique hit — treat as duplicate.
+                continue
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            raise
         return inserted
 
     def unprocessed(self, limit: int = 100) -> list[RawItem]:

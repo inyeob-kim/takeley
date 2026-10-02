@@ -88,7 +88,7 @@ class _TakeleyOffsetPillButtonState extends State<TakeleyOffsetPillButton> {
   }
 }
 
-/// React `.issue-vote-btn` / `.is-selected`.
+/// React `.issue-vote-btn` / `.is-selected` — optional result bar after take.
 class TakeleyVoteOptionButton extends StatelessWidget {
   const TakeleyVoteOptionButton({
     super.key,
@@ -97,6 +97,7 @@ class TakeleyVoteOptionButton extends StatelessWidget {
     required this.selected,
     required this.onPressed,
     this.enabled = true,
+    this.fillFraction,
   });
 
   final String label;
@@ -105,8 +106,13 @@ class TakeleyVoteOptionButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool enabled;
 
+  /// 0–1 share of votes. Null/omitted hides the result bar (pre-vote).
+  final double? fillFraction;
+
   @override
   Widget build(BuildContext context) {
+    final showBar = fillFraction != null;
+    final raw = (fillFraction ?? 0).clamp(0.0, 1.0);
     return Opacity(
       opacity: enabled ? 1 : 0.7,
       child: Material(
@@ -132,27 +138,60 @@ class TakeleyVoteOptionButton extends StatelessWidget {
                   horizontal: 16,
                   vertical: 12,
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: TakeleyColors.fg,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: TakeleyColors.fg,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (meta.isNotEmpty)
+                          Text(
+                            meta,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                              color: selected
+                                  ? TakeleyColors.accent
+                                  : TakeleyColors.muted,
+                            ),
+                          ),
+                      ],
                     ),
-                    if (meta.isNotEmpty)
-                      Text(
-                        meta,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: TakeleyColors.muted,
+                    if (showBar) ...[
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: SizedBox(
+                          height: 6,
+                          width: double.infinity,
+                          child: Stack(
+                            children: [
+                              const ColoredBox(
+                                color: Color(0x0F000000),
+                                child: SizedBox.expand(),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: raw,
+                                child: const ColoredBox(
+                                  color: Color(0x732D5BE3), // accent @ ~45%
+                                  child: SizedBox.expand(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
